@@ -1,0 +1,20 @@
+node_modules/
+out/
+dist/
+release/
+*.local
+*.log
+logs/
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+coverage/
+.eslintcache
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+
+# Local editor chat history, not project source
+.specstory/
