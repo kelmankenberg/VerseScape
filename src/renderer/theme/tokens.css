@@ -1,0 +1,92 @@
+/* Design tokens (decision D-11: modern dark-first).
+   Never hard-code colour in components; always reference a token. */
+
+:root,
+:root[data-theme='dark'] {
+  --vs-bg-app: #0e1116;
+  --vs-bg-surface: #151a21;
+  --vs-bg-elevated: #1c232c;
+  --vs-fg-primary: #e6e9ef;
+  --vs-fg-muted: #8b94a3;
+  --vs-fg-inverse: #0e1116;
+  --vs-border: #252d38;
+  --vs-accent: #4f8cff;
+  --vs-accent-fg: #0b1220;
+  --vs-danger: #f2555a;
+  --vs-warning: #e0a336;
+  --vs-success: #3fb950;
+}
+
+:root[data-theme='light'] {
+  --vs-bg-app: #f7f8fa;
+  --vs-bg-surface: #ffffff;
+  --vs-bg-elevated: #eef1f5;
+  --vs-fg-primary: #12161c;
+  --vs-fg-muted: #5c6472;
+  --vs-fg-inverse: #ffffff;
+  --vs-border: #dde1e8;
+  --vs-accent: #2563d9;
+  --vs-accent-fg: #ffffff;
+  --vs-danger: #c62c31;
+  --vs-warning: #9a6b12;
+  --vs-success: #1a7f37;
+}
+
+:root {
+  --vs-radius-sm: 4px;
+  --vs-radius-md: 6px;
+  --vs-radius-lg: 10px;
+
+  --vs-space-1: 4px;
+  --vs-space-2: 8px;
+  --vs-space-3: 12px;
+  --vs-space-4: 16px;
+  --vs-space-5: 24px;
+  --vs-space-6: 32px;
+  --vs-space-7: 48px;
+  --vs-space-8: 64px;
+
+  --vs-toolbar-height: 40px;
+  --vs-tabstrip-height: 32px;
+  --vs-statusbar-height: 24px;
+  --vs-rail-width-collapsed: 56px;
+  --vs-rail-width-expanded: 220px;
+
+  --vs-font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --vs-font-reading: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --vs-font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--vs-bg-app);
+  color: var(--vs-fg-primary);
+  font-family: var(--vs-font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+:focus-visible {
+  outline: 2px solid var(--vs-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

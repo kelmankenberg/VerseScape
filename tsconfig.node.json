@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.base.json",
+  "include": [
+    "electron.vite.config.ts",
+    "eslint.config.mjs",
+    "vitest.config.mts",
+    "src/main/**/*",
+    "src/preload/**/*",
+    "packages/shared/src/**/*",
+    "packages/**/*.test.ts"
+  ],
+  "compilerOptions": {
+    "composite": true,
+    "types": ["node", "electron-vite/node"],
+    "lib": ["ES2022"]
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "@versescape/shared",
+  "version": "0.0.1",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "dependencies": {
+    "zod": "^4.5.4"
+  }
+}

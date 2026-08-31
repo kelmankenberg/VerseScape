@@ -1,0 +1,8 @@
+packages:
+  - 'packages/*'
+
+onlyBuiltDependencies:
+  - electron
+  - electron-builder
+  - app-builder-bin
+  - esbuild
