@@ -4,10 +4,12 @@
     "electron.vite.config.ts",
     "eslint.config.mjs",
     "vitest.config.mts",
+    "playwright.config.mts",
     "src/main/**/*",
     "src/preload/**/*",
     "packages/shared/src/**/*",
-    "packages/**/*.test.ts"
+    "packages/**/*.test.ts",
+    "tests/e2e/**/*"
   ],
   "compilerOptions": {
     "composite": true,

@@ -51,6 +51,15 @@ Full detail in [docs/planning-docs](docs/planning-docs/README.md), including the
 [panel system](docs/planning-docs/05-workspace-panel-system.md) and
 [decision log](docs/planning-docs/13-decision-log.md).
 
+## Linux display server
+
+VerseScape v1 targets **X11**. On a Wayland session it runs through XWayland,
+which is Electron's default and needs no configuration — but native Wayland is
+not supported until v2, and we do not recommend forcing
+`--ozone-platform=wayland`. The practical trade-off is that text may look soft
+under fractional scaling on a HiDPI Wayland desktop. See decision D-18 in the
+[decision log](docs/planning-docs/13-decision-log.md).
+
 ## Security posture
 
 Every renderer runs with `contextIsolation: true`, `nodeIntegration: false` and

@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import { is } from '@electron-toolkit/utils';
 import { IpcEvents } from '@shared/ipc/channels.js';
 import type { WindowState } from '@shared/ipc/contracts.js';
+import { loadSettings } from '../services/settings.js';
+import { resolveInitialBounds, trackWindowState } from './window-state.js';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -25,12 +27,15 @@ function broadcastState(window: BrowserWindow): void {
 }
 
 export function createMainWindow(): BrowserWindow {
+  const settings = loadSettings();
   const window = new BrowserWindow({
-    width: 1360,
-    height: 900,
+    ...resolveInitialBounds(settings),
     minWidth: 940,
     minHeight: 600,
     show: false,
+    // Frameless: the app draws its own titlebar and controls (FR-SH-01).
+    frame: false,
+    titleBarStyle: 'hidden',
     backgroundColor: '#0e1116',
     autoHideMenuBar: true,
     webPreferences: {
@@ -47,7 +52,12 @@ export function createMainWindow(): BrowserWindow {
     },
   });
 
-  window.once('ready-to-show', () => window.show());
+  window.once('ready-to-show', () => {
+    if (settings.window.maximized) window.maximize();
+    window.show();
+  });
+
+  trackWindowState(window);
 
   const notify = (): void => broadcastState(window);
   window.on('maximize', notify);

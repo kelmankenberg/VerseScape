@@ -27,9 +27,13 @@
 - Drag region declared with `-webkit-app-region: drag`; every interactive child
   must set `no-drag`. This is the #1 source of bugs — enforce via a shared
   `<DragRegion>` component rather than ad-hoc CSS.
-- 4 px invisible resize border implemented in CSS around the window edge; on
-  Linux, verify against both X11 and Wayland (Wayland client-side decorations
-  behave differently — needs a spike).
+- 4 px invisible resize border implemented in CSS around the window edge.
+  Verified on X11 and Windows; native Wayland is out of scope for v1 (D-18).
+- The top window edge carries a 4 px `no-drag` guard strip: without it the
+  titlebar drag region swallows the platform resize border.
+- Dragging must go through `-webkit-app-region` and never through manual
+  `setPosition` calls — the latter has no future on Wayland and breaks
+  compositor snap/tiling gestures.
 - Window controls rendered by us. **Decision D-09:** Windows-style ordering
   (`─ □ ✕`, right-aligned) on **both** Windows and Linux. We intentionally do not
   read the GTK `button-layout` setting — one code path, one design.

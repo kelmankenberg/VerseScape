@@ -3,6 +3,7 @@ import { electronApp, is, optimizer } from '@electron-toolkit/utils';
 import { applySecurityPolicy, enableProcessSandbox } from './platform/security.js';
 import { createMainWindow, getMainWindow } from './platform/window-manager.js';
 import { registerIpcHandlers } from './ipc/index.js';
+import { flushSettings } from './services/settings.js';
 
 enableProcessSandbox();
 
@@ -37,4 +38,6 @@ if (!app.requestSingleInstanceLock()) {
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
   });
+
+  app.on('will-quit', flushSettings);
 }

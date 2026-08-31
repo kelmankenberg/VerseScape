@@ -51,4 +51,5 @@ All libraries listed above were selected partly on this basis.
 ## Minimum supported targets
 
 - Windows 10 21H2 and later (x64, arm64 best-effort)
-- Linux: glibc 2.31+ (Ubuntu 20.04 baseline), X11 and Wayland, x64 and arm64
+- Linux: glibc 2.31+ (Ubuntu 20.04 baseline), X11 and XWayland, x64 and arm64.
+  Native Wayland is a v2 target (D-18).

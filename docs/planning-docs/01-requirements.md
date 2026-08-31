@@ -9,7 +9,7 @@ Priority: **M** must-have v1 · **S** should-have v1 · **C** could-have · **V2
 | FR-SH-01 | M   | Frameless window: no OS titlebar or native control buttons on Windows or Linux.                                                                                                                                         |
 | FR-SH-02 | M   | Custom draggable title region; double-click toggles maximize; standard snap behaviour preserved on Windows.                                                                                                             |
 | FR-SH-03 | M   | Custom minimize / maximize-restore / close buttons that match platform ordering conventions (**TBD**: single ordering vs per-platform).                                                                                 |
-| FR-SH-04 | M   | Window bounds, maximized state, and display are persisted and restored.                                                                                                                                                 |
+| FR-SH-04 | M   | Window size and maximized state are persisted and restored. Position and display are **best-effort**: restored where the platform reports them, silently skipped where it does not (D-18).                                                                                                 |
 | FR-SH-05 | M   | Collapsible left navigation rail: expanded (labels + icons) and collapsed (icons only) states, persisted.                                                                                                               |
 | FR-SH-06 | M   | Top toolbar containing: app/window title, global search entry, context actions, and window controls.                                                                                                                    |
 | FR-SH-07 | M   | Main "page area" hosts exactly one active page: Dashboard, Library, Notes, Settings, Account, or a Workspace.                                                                                                           |
@@ -133,5 +133,5 @@ See [05-workspace-panel-system.md](05-workspace-panel-system.md) for the model.
 | NFR-08 | M   | Deterministic reproducible builds from CI for both platforms.                                                    |
 | NFR-09 | S   | Crash-safe: user data writes are transactional; no data loss on hard kill.                                       |
 | NFR-10 | S   | i18n-ready string extraction from day one; English only at v1.                                                   |
-| NFR-11 | M   | HiDPI and fractional scaling correct on Wayland and X11.                                                         |
+| NFR-11 | M   | HiDPI and fractional scaling correct on Windows and on Linux/X11 (including XWayland). Native Wayland fidelity is a v2 goal (D-18).                                                         |
 | NFR-12 | M   | All bundled dependencies, fonts and resources must be GPL-3.0-compatible (D-08); enforced by a CI licence check. |

@@ -48,6 +48,15 @@ jobs:
       - name: Build
         run: pnpm exec electron-vite build
 
+      # Electron needs a display server on Linux runners.
+      - name: End-to-end tests (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run --auto-servernum pnpm test:e2e
+
+      - name: End-to-end tests (Windows)
+        if: runner.os == 'Windows'
+        run: pnpm test:e2e
+
   audit:
     name: audit and licences
     runs-on: ubuntu-latest

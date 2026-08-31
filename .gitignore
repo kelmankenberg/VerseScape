@@ -18,3 +18,8 @@ coverage/
 
 # Local editor chat history, not project source
 .specstory/
+
+# Playwright artifacts
+test-results/
+playwright-report/
+blob-report/

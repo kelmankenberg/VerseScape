@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import { IpcChannels, IpcEvents } from '@shared/ipc/channels.js';
 import type { VerseScapeBridge } from '@shared/bridge.js';
 import type { AppInfo, WindowState } from '@shared/ipc/contracts.js';
+import type { AppSettings } from '@shared/settings.js';
 import type { IpcResult } from '@shared/ipc/result.js';
 
 /**
@@ -12,6 +13,11 @@ import type { IpcResult } from '@shared/ipc/result.js';
 const bridge: VerseScapeBridge = {
   app: {
     getInfo: () => ipcRenderer.invoke(IpcChannels.appGetInfo) as Promise<IpcResult<AppInfo>>,
+  },
+  settings: {
+    get: () => ipcRenderer.invoke(IpcChannels.settingsGet) as Promise<IpcResult<AppSettings>>,
+    patch: (patch) =>
+      ipcRenderer.invoke(IpcChannels.settingsPatch, patch) as Promise<IpcResult<AppSettings>>,
   },
   window: {
     minimize: () => ipcRenderer.invoke(IpcChannels.windowMinimize) as Promise<IpcResult<null>>,

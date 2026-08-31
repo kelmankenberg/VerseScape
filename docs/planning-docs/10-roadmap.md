@@ -20,7 +20,7 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 - Theme tokens, dark/light/system, settings persisted to `settings.json`
 - Page router (Dashboard / Library / Notes / Settings / Account / Workspace stubs)
 - **Exit:** FR-SH-01..07, FR-SH-12 demonstrable; Playwright test drives window controls
-- **Risk spike:** Wayland decorations and Windows 11 snap layouts (B2)
+- **Risk spike:** Windows 11 snap layouts over the custom maximize button
 
 ## M2 — Workspace engine
 
@@ -97,7 +97,7 @@ collaborative features
 
 | Risk                                                             | Mitigation                                                                                              |
 | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Frameless window quirks on Wayland                               | Spike in M1; fall back to X11 ozone flag                                                                |
+| Frameless window quirks on Wayland                               | Deferred, not mitigated: v1 targets X11/XWayland (D-18). Revisit in v2.                                 |
 | Custom docking engine is the largest unknown (D-03, no fallback) | Build the reducer layer first with exhaustive unit tests before any UI; invariant checker in dev builds |
 | Public-domain commentary source data quality varies wildly       | Pick 1–2 well-structured sources; the compiler fails loudly on malformed input                          |
 | Unsigned Windows installer deters users (F3)                     | Decide early; document SmartScreen bypass in release notes if unsigned                                  |

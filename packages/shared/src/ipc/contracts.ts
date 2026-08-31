@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { appSettings, settingsPatch } from '../settings.js';
 
 /**
  * Request/response schemas for every IPC channel. Main validates the request
@@ -32,6 +33,8 @@ export const contracts = {
   'window:toggle-maximize': { request: emptyRequest, response: windowState },
   'window:close': { request: emptyRequest, response: z.null() },
   'window:get-state': { request: emptyRequest, response: windowState },
+  'settings:get': { request: emptyRequest, response: appSettings },
+  'settings:patch': { request: settingsPatch, response: appSettings },
 } as const;
 
 export type Contracts = typeof contracts;

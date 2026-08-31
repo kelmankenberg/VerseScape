@@ -21,7 +21,7 @@ Settled items are struck through and recorded in [13-decision-log.md](13-decisio
 | #      | Question                                                                           | Options / default                                          |
 | ------ | ---------------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | ~~B1~~ | ~~Window control button order on Linux?~~                                          | **Resolved D-09:** Windows-style on both platforms.        |
-| B2     | Support Wayland client-side decorations properly, or force `--ozone-platform=x11`? | Needs a spike; affects resize handles and snapping.        |
+| ~~B2~~ | ~~Support Wayland client-side decorations properly, or force `--ozone-platform=x11`?~~ | **Resolved D-18:** native Wayland deferred to v2; v1 runs on X11/XWayland. |
 | ~~B3~~ | ~~Multiple top-level windows in v1?~~                                              | **Resolved D-15:** single window in v1; multi-window → v2. |
 | ~~B4~~ | ~~Secondary contextual sidebar in v1?~~                                            | **Resolved D-13:** yes, must-have (FR-SH-12).              |
 | B5     | Status bar in v1?                                                                  | Default: yes, minimal.                                     |

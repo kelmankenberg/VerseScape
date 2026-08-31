@@ -2,8 +2,10 @@ import { app, BrowserWindow } from 'electron';
 import { is } from '@electron-toolkit/utils';
 import { IpcChannels } from '@shared/ipc/channels.js';
 import type { AppInfo, WindowState } from '@shared/ipc/contracts.js';
+import type { AppSettings } from '@shared/settings.js';
 import { handle } from './handle.js';
 import { readWindowState } from '../platform/window-manager.js';
+import { loadSettings, patchSettings } from '../services/settings.js';
 
 function requireWindow(event: Electron.IpcMainInvokeEvent): BrowserWindow {
   const window = BrowserWindow.fromWebContents(event.sender);
@@ -50,4 +52,8 @@ export function registerIpcHandlers(): void {
   handle(IpcChannels.windowGetState, (_payload, event): WindowState =>
     readWindowState(requireWindow(event)),
   );
+
+  handle(IpcChannels.settingsGet, (): AppSettings => loadSettings());
+
+  handle(IpcChannels.settingsPatch, (patch): AppSettings => patchSettings(patch));
 }
