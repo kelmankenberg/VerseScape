@@ -11,6 +11,7 @@ import type { ResourceMeta } from './emit.js';
 import type { ParsedBook, ParseDiagnostic } from './types.js';
 import { emitVersification, parseTvtms, versificationMeta } from './tvtms.js';
 import type { VersificationMeta } from './tvtms.js';
+import { emitCrossReferences, parseCrossReferences } from './cross-references.js';
 
 /**
  * Runs under Electron's Node (`ELECTRON_RUN_AS_NODE=1`), so better-sqlite3 is
@@ -146,6 +147,24 @@ export function compileVersification(
     'utf8',
   );
   console.log(`Wrote ${mappings.length} conditional mappings to ${dbPath}`);
+  return 0;
+}
+
+function compileCrossReferences(sourcePath: string, outputDir: string, recipePath: string): number {
+  const recipe = JSON.parse(readFileSync(recipePath, 'utf8')) as { meta?: Record<string, unknown> };
+  if (!recipe.meta) throw new Error(`Invalid cross-reference metadata in ${recipePath}.`);
+  const rows = parseCrossReferences(readFileSync(sourcePath, 'utf8'));
+  mkdirSync(outputDir, { recursive: true });
+  const dbPath = join(outputDir, 'cross-references.db');
+  rmSync(dbPath, { force: true });
+  emitCrossReferences(dbPath, rows);
+  const checksum = createHash('sha256').update(readFileSync(dbPath)).digest('hex');
+  writeFileSync(
+    join(outputDir, 'manifest.json'),
+    `${JSON.stringify({ schemaVersion: 1, ...recipe.meta, files: [{ path: 'cross-references.db', sha256: checksum }] }, null, 2)}\n`,
+    'utf8',
+  );
+  console.log(`Wrote ${rows.length} cross-references to ${dbPath}`);
   return 0;
 }
 
@@ -306,6 +325,19 @@ export function selfTest(): number {
       .update(readFileSync(join(tvtmsOutTwo, 'versification.db')))
       .digest('hex');
     check('produces deterministic versification output', tvtmsA === tvtmsB);
+
+    const crossRefPath = join(dir, 'cross-references.db');
+    const crossRefs = parseCrossReferences(
+      'From Verse\tTo Verse\tVotes\t# attribution\nGen.1.1\tJohn.1.1-John.1.3\t378\nGen.1.1\tExod.31.18\t-38\n',
+    );
+    emitCrossReferences(crossRefPath, crossRefs);
+    const crossRefDb = new Database(crossRefPath, { readonly: true });
+    const strongest = crossRefDb
+      .prepare('SELECT to_start, to_end, votes FROM cross_ref ORDER BY votes DESC LIMIT 1')
+      .get() as { to_start: number; to_end: number; votes: number } | undefined;
+    check('stores cross-reference ranges', strongest?.to_end === 43_001_003);
+    check('indexes cross-references by vote strength', strongest?.votes === 378);
+    crossRefDb.close();
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -343,6 +375,15 @@ function main(): void {
       process.exit(1);
     }
     process.exit(compileVersification(sourcePath, outputDir, parsed.data));
+  }
+
+  if (args[0] === '--cross-references') {
+    const [, sourcePath, outputDir, metaPath] = args;
+    if (!sourcePath || !outputDir || !metaPath) {
+      console.error('Usage: cli --cross-references <data-file> <output-dir> <meta.json>');
+      process.exit(1);
+    }
+    process.exit(compileCrossReferences(sourcePath, outputDir, metaPath));
   }
 
   const [sourceDir, outputDir, metaPath] = args;

@@ -8,7 +8,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const recipesDir = join(root, 'resources', 'recipes');
 const sourcesDir = join(root, 'resources', 'sources');
 const requested = process.argv.slice(2).filter((argument) => argument !== '--');
-const ids = requested.length > 0 ? requested : ['bsb', 'kjv', 'tvtms'];
+const ids = requested.length > 0 ? requested : ['bsb', 'kjv', 'tvtms', 'cross-references'];
 
 async function download(url, destination) {
   const response = await fetch(url, { redirect: 'follow' });
@@ -29,7 +29,7 @@ for (const id of ids) {
   const sourcePath = join(target, sourceName);
   const temporarySource = `${sourcePath}.download`;
   const unpacked = join(target, '.unpacked');
-  const usfm = join(target, 'usfm');
+  const extracted = join(target, recipe.archive?.directory ?? 'usfm');
 
   await mkdir(target, { recursive: true });
   await rm(temporarySource, { force: true });
@@ -51,16 +51,16 @@ for (const id of ids) {
   }
 
   await rm(unpacked, { recursive: true, force: true });
-  await rm(usfm, { recursive: true, force: true });
+  await rm(extracted, { recursive: true, force: true });
   await mkdir(unpacked, { recursive: true });
   new AdmZip(sourcePath).extractAllTo(unpacked, true);
 
   const extractedRoot =
     recipe.archive.root === '.' ? unpacked : join(unpacked, recipe.archive.root);
   if (recipe.archive.root === '.') {
-    await rename(unpacked, usfm);
+    await rename(unpacked, extracted);
   } else {
-    await rename(extractedRoot, usfm);
+    await rename(extractedRoot, extracted);
     await rm(unpacked, { recursive: true, force: true });
   }
 

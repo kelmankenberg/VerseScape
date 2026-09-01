@@ -9,13 +9,16 @@ import './build-compiler.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const compiler = join(root, 'packages', 'resource-compiler', 'dist', 'cli.cjs');
 const requested = process.argv.slice(2).filter((argument) => argument !== '--');
-const ids = requested.length > 0 ? requested : ['bsb', 'kjv', 'tvtms'];
+const ids = requested.length > 0 ? requested : ['bsb', 'kjv', 'tvtms', 'cross-references'];
 
 for (const id of ids) {
   const isVersification = id === 'tvtms';
+  const isCrossReferences = id === 'cross-references';
   const source = isVersification
     ? join(root, 'resources', 'sources', id, 'tvtms.txt')
-    : join(root, 'resources', 'sources', id, 'usfm');
+    : isCrossReferences
+      ? join(root, 'resources', 'sources', id, 'data', 'cross_references.txt')
+      : join(root, 'resources', 'sources', id, 'usfm');
   const output = join(root, 'resources', 'compiled', isVersification ? 'versification' : id);
   const recipe = join(root, 'resources', 'recipes', `${id}.json`);
 
@@ -26,7 +29,9 @@ for (const id of ids) {
 
   const args = isVersification
     ? [compiler, '--versification', source, output, recipe]
-    : [compiler, source, output, recipe];
+    : isCrossReferences
+      ? [compiler, '--cross-references', source, output, recipe]
+      : [compiler, source, output, recipe];
   const result = spawnSync(electron, args, {
     cwd: root,
     env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },

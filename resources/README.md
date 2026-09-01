@@ -18,6 +18,8 @@ pnpm resources:fetch -- bsb
 pnpm resources:compile -- bsb
 pnpm resources:fetch -- tvtms
 pnpm resources:compile -- tvtms
+pnpm resources:fetch -- cross-references
+pnpm resources:compile -- cross-references
 ```
 
 A checksum mismatch is intentional failure, not a transient warning. It means
@@ -36,3 +38,8 @@ columns. Conditional tests and `!a`/`!b` subverse markers are retained verbatim.
 Empty TSV padding columns, explanatory prose, the human-oriented Condensed
 section and notes outside Expanded are omitted. No mapping is corrected or
 inferred. The current pinned input emits 22,874 rows.
+
+The cross-reference recipe takes only OpenBible.info's reference-pair TSV. Book,
+chapter and verse references become canonical integer keys; ranges and signed
+vote strength are preserved for ranked display. It contains no Scripture text,
+including none of the ESV quotations shown on the source web page.

@@ -1,0 +1,19 @@
+{
+  "archive": {
+    "url": "https://a.openbible.info/data/cross-references.zip",
+    "sha256": "aafb5bbad45f9b70e9ad67aef393c1987e61950f266d62aba8823f222b6558bf",
+    "root": ".",
+    "directory": "data"
+  },
+  "meta": {
+    "id": "cross-references",
+    "title": "OpenBible.info Cross References",
+    "source": "https://www.openbible.info/labs/cross-references/",
+    "data": "https://a.openbible.info/data/cross-references.zip",
+    "sourceSha256": "aafb5bbad45f9b70e9ad67aef393c1987e61950f266d62aba8823f222b6558bf",
+    "retrieved": "2026-09-01",
+    "licence": "CC-BY-4.0",
+    "attribution": "OpenBible.info — https://www.openbible.info",
+    "transformation": "Reference pairs and vote counts are converted to canonical VerseScape integer keys. Target ranges are retained. No quoted Scripture text is included."
+  }
+}

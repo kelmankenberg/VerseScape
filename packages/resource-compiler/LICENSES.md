@@ -181,6 +181,7 @@ in `packages/resource-compiler/src/tvtms.ts` and `tvtms.test.ts`.
 - **Source:** https://www.openbible.info/labs/cross-references/
 - **Data:** https://a.openbible.info/data/cross-references.zip (~2 MB)
 - **Retrieved:** 2026-09-01
+- **Archive SHA-256:** `aafb5bbad45f9b70e9ad67aef393c1987e61950f266d62aba8823f222b6558bf`
 - **Licence:** CC BY 4.0
 
 > This data draws primarily from public-domain sources, especially the Treasury
@@ -194,6 +195,13 @@ in `packages/resource-compiler/src/tvtms.ts` and `tvtms.test.ts`.
 **Note:** the page also carries ESV quotations, which are copyrighted by
 Crossway. We take only the **reference data** — verse-key pairs — and no
 Scripture text, so that copyright is not engaged.
+
+**Transformation record:** `From Verse` and `To Verse` references are converted
+to VerseScape's canonical integer keys. Target ranges and signed `Votes` are
+preserved; no prose or Scripture text is imported. The pinned archive emits
+**344,799 rows**. Recipe and implementation are recorded in
+`resources/recipes/cross-references.json` and
+`packages/resource-compiler/src/cross-references.ts`.
 
 ---
 
