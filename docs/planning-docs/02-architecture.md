@@ -116,6 +116,11 @@ resources; M6's enable/disable state narrows that to the enabled-resource list.
 
 ## Threading / performance notes
 
-- Bible text rendering uses windowed virtualisation keyed by verse id.
+- Bible and commentary rendering uses a sliding, windowed chapter buffer keyed
+  by verse id. Near either boundary it prefetches the adjacent chapter within
+  the book; old chapters may be evicted outside the window. Prepending a chapter
+  restores the prior top verse and pixel offset after measurement, so the
+  viewport never jumps. The top visible verse remains available in constant
+  time for sync publication (FR-RD-03, D-30).
 - Search runs in the utility process against SQLite FTS5, streaming results.
 - Layout persistence is debounced (~500 ms) and written atomically.

@@ -42,7 +42,7 @@ Settled items are struck through and recorded in [13-decision-log.md](13-decisio
 | #      | Question                                                              | Options / default                                             |
 | ------ | --------------------------------------------------------------------- | ------------------------------------------------------------- |
 | ~~D1~~ | ~~Default reading layout?~~                                           | **Resolved D-10:** one verse per line; paragraph is a toggle. |
-| D2     | Continuous scroll across whole book, or per-chapter paging?           | Default: continuous within a book.                            |
+| ~~D2~~ | ~~Continuous scroll across whole book, or per-chapter paging?~~       | **Closed 2026-09-01 by D-30:** seamless bidirectional continuous scroll within the current book for Bible and commentary panels. |
 | D3     | Original-language fonts — bundle SBL fonts (check licence) or system? | Deferred with originals to v2.                                |
 | D4     | Audio Bible / TTS in scope at all?                                    | Default: no.                                                  |
 

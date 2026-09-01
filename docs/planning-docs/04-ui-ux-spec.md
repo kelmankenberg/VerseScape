@@ -167,6 +167,24 @@ Deferred with original languages to v2.
 - Hover reveals affordances; nothing important is hover-only.
 - Destructive actions confirm, and are undoable where feasible.
 
+### Continuous reading
+
+- Bible and commentary panels are continuous reading surfaces within a book,
+  not chapter-sized pages. Approaching either scroll boundary automatically
+  loads the adjacent chapter; there is no “Next chapter” gate in the normal
+  reading flow.
+- Loading the previous chapter prepends content while preserving the current
+  verse or commentary entry at the same visual position. Loading indicators
+  may appear at the edge, but existing text must not jump.
+- The panel header updates to the chapter containing the verse at the viewport
+  top. In a sync set, crossing a boundary publishes that verse exactly like any
+  other user-driven scroll.
+- Continuous traversal stops at the first/last chapter of a book. Crossing into
+  another book requires explicit navigation, avoiding accidental canon jumps.
+- Commentaries may have sparse coverage. Their reader moves through available
+  entries for the adjacent chapter and shows a quiet no-coverage state where
+  appropriate; it does not fabricate blank entries.
+
 ## Core keyboard map (draft)
 
 | Keys               | Action                                  |

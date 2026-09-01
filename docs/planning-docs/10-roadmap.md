@@ -45,7 +45,9 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 - Resource DB access layer, `versescape://` protocol
 - Verse-key indexed virtualisation: the renderer must name the verse at the
   viewport top cheaply, every frame, or sync cannot work (D-23)
-- Bible panel: chapter render, virtualised scroll, translation switch
+- Bible panel: chapter render, translation switch, and a sliding virtualised
+  chapter window that automatically prepends/appends adjacent chapters without
+  jumping the viewport (FR-RD-03, D-30)
 - Display options; Passage Compare panel
 - Verse sync made real across Bible panels: scroll, click, selection, keyboard
 - **Exit:** FR-RD-01..05, FR-WS-08, FR-WS-13..16; three synced panels track together
@@ -78,6 +80,8 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 - Signed catalogue fetch, resumable download, atomic install
 - Resource Reader panel; compile Matthew Henry and JFB commentaries from CCEL
   (D-29 — text only, never their formatting)
+- Commentary continuous reading: automatically traverse previous/next chapter
+  coverage with stable prepend anchoring, matching Bible-panel behavior (D-30)
 - Commentary follows its sync set alongside Bible panels
 - Personal commentaries listed in the Library and exportable as `.vsres`
   (FR-NT-13)
