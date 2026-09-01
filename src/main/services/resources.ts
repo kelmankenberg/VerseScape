@@ -71,7 +71,14 @@ export function listResources(): ResourceSummary[] {
     if (!entry.isDirectory() || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(entry.name)) continue;
     if (!existsSync(join(root, entry.name, `${entry.name}.db`))) continue;
 
-    const meta = metadata(openResource(entry.name));
+    let meta: Map<string, string>;
+    try {
+      meta = metadata(openResource(entry.name));
+    } catch {
+      // Auxiliary databases (versification, cross-references) and incompatible
+      // resources are not Bible choices, but must not hide valid Bibles.
+      continue;
+    }
     resources.push({
       id: entry.name,
       title: meta.get('title') ?? entry.name,

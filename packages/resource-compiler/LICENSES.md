@@ -131,6 +131,8 @@ compiled.** "It came from eBible" is not evidence of anything.
 ## STEPBible — TVTMS versification data
 
 - **Source:** https://github.com/STEPBible/STEPBible-Data
+- **Pinned commit:** `02843f07cbb5009e00999a7c0efead6430dbb6e7`
+- **Source SHA-256:** `63058e0f20201af4bdaa7d830da5be8f493455d947c5f147d84840b33db9ddf8`
 - **Retrieved:** 2026-09-01
 - **Licence:** CC BY 4.0
 
@@ -162,6 +164,15 @@ originally recorded.
    table — **record the changes and make them available.** The compiler's
    transformation code being in this GPL repository satisfies that, provided the
    transformation stays inspectable.
+
+**Transformation record:** the compiler reads only the source's
+machine-oriented **Expanded** section. Its semantic columns 1–9 are copied to
+indexed SQLite rows without correction or inference. Conditional `Tests`,
+actions and subverse markers are preserved verbatim. Empty padding columns
+10–13, explanatory prose, the human-oriented Condensed section, and notes
+outside Expanded are omitted. The pinned source produces **22,874 mappings**.
+The exact recipe is `resources/recipes/tvtms.json`; implementation and tests are
+in `packages/resource-compiler/src/tvtms.ts` and `tvtms.test.ts`.
 
 ---
 

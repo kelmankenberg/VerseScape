@@ -9,6 +9,8 @@ import { hasErrors, validateBook } from './validate.js';
 import { emitResource, resourceMeta, RESOURCE_SCHEMA_VERSION } from './emit.js';
 import type { ResourceMeta } from './emit.js';
 import type { ParsedBook, ParseDiagnostic } from './types.js';
+import { emitVersification, parseTvtms, versificationMeta } from './tvtms.js';
+import type { VersificationMeta } from './tvtms.js';
 
 /**
  * Runs under Electron's Node (`ELECTRON_RUN_AS_NODE=1`), so better-sqlite3 is
@@ -109,6 +111,44 @@ export function compileDirectory(sourceDir: string, outputDir: string, meta: Res
   return 0;
 }
 
+export function compileVersification(
+  sourcePath: string,
+  outputDir: string,
+  meta: VersificationMeta,
+): number {
+  const mappings = parseTvtms(readFileSync(sourcePath, 'utf8'));
+  mkdirSync(outputDir, { recursive: true });
+  const dbPath = join(outputDir, 'versification.db');
+  rmSync(dbPath, { force: true });
+  emitVersification(dbPath, meta, mappings);
+
+  const checksum = createHash('sha256').update(readFileSync(dbPath)).digest('hex');
+  writeFileSync(
+    join(outputDir, 'manifest.json'),
+    `${JSON.stringify(
+      {
+        schemaVersion: 1,
+        id: meta.id,
+        title: meta.title,
+        type: 'versification',
+        licence: 'CC-BY-4.0',
+        attribution: meta.attribution,
+        source: meta.source,
+        sourceCommit: meta.sourceCommit,
+        sourceSha256: meta.sourceSha256,
+        retrieved: meta.retrieved,
+        transformation: meta.transformation,
+        files: [{ path: 'versification.db', sha256: checksum }],
+      },
+      null,
+      2,
+    )}\n`,
+    'utf8',
+  );
+  console.log(`Wrote ${mappings.length} conditional mappings to ${dbPath}`);
+  return 0;
+}
+
 const FIXTURE = String.raw`
 \id JUD Jude
 \h Jude
@@ -121,6 +161,13 @@ const FIXTURE = String.raw`
 \q1
 \v 3 Beloved, while I was very diligent to write to you,
 \v 4 For certain men have crept in unnoticed.
+`;
+
+const TVTMS_FIXTURE = `
+#DataStart(Expanded)
+SourceType\tSourceRef\tStandardRef\tAction\tNoteMarker\tReversification Note\tVersification Note\tAncient Versions\tTests\t\t\t\t
+Greek\tPhp.1:16\tPhp.1:17\tRenumber verse*\tOpt. (17)^16\tNormally...\t1:17 in most Bibles\t(Greek=1:16 / 1:17)\tPhp.1:16=Exist & Php.1:16<Php.1:17\t\t\t\t
+#DataEnd(Expanded)
 `;
 
 /**
@@ -224,6 +271,41 @@ export function selfTest(): number {
       .update(readFileSync(join(outTwo, 'fixture.db')))
       .digest('hex');
     check('produces byte-identical output for identical input', a === b);
+
+    const tvtmsSource = join(dir, 'tvtms.txt');
+    const tvtmsOut = join(dir, 'versification');
+    const versificationMeta: VersificationMeta = {
+      id: 'versification',
+      title: 'Fixture Versification',
+      source: 'https://example.invalid/tvtms.txt',
+      sourceCommit: 'fixture',
+      sourceSha256: createHash('sha256').update(TVTMS_FIXTURE).digest('hex'),
+      retrieved: '2026-09-01',
+      licence: 'CC-BY-4.0',
+      attribution: 'STEP Bible — https://www.STEPBible.org',
+      transformation: 'Expanded rows copied to indexed SQLite without corrections.',
+    };
+    writeFileSync(tvtmsSource, TVTMS_FIXTURE, 'utf8');
+    check(
+      'compiles conditional versification mappings',
+      compileVersification(tvtmsSource, tvtmsOut, versificationMeta) === 0,
+    );
+    const tvtmsDb = new Database(join(tvtmsOut, 'versification.db'), { readonly: true });
+    const mapping = tvtmsDb.prepare("SELECT * FROM mapping WHERE source_ref = 'Php.1:16'").get() as
+      { standard_ref: string; tests: string } | undefined;
+    check('indexes mappings by source reference', mapping?.standard_ref === 'Php.1:17');
+    check('retains mapping conditions', mapping?.tests.includes('Php.1:16<Php.1:17') === true);
+    tvtmsDb.close();
+
+    const tvtmsOutTwo = join(dir, 'versification2');
+    compileVersification(tvtmsSource, tvtmsOutTwo, versificationMeta);
+    const tvtmsA = createHash('sha256')
+      .update(readFileSync(join(tvtmsOut, 'versification.db')))
+      .digest('hex');
+    const tvtmsB = createHash('sha256')
+      .update(readFileSync(join(tvtmsOutTwo, 'versification.db')))
+      .digest('hex');
+    check('produces deterministic versification output', tvtmsA === tvtmsB);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -243,9 +325,31 @@ function main(): void {
     process.exit(selfTest());
   }
 
+  if (args[0] === '--versification') {
+    const [, sourcePath, outputDir, metaPath] = args;
+    if (!sourcePath || !outputDir || !metaPath) {
+      console.error('Usage: cli --versification <tvtms-file> <output-dir> <meta.json>');
+      process.exit(1);
+    }
+    const document: unknown = JSON.parse(readFileSync(metaPath, 'utf8'));
+    const metadata =
+      typeof document === 'object' && document !== null && 'meta' in document
+        ? document.meta
+        : document;
+    const parsed = versificationMeta.safeParse(metadata);
+    if (!parsed.success) {
+      console.error(`Invalid versification metadata in ${metaPath}:`);
+      console.error(z.prettifyError(parsed.error));
+      process.exit(1);
+    }
+    process.exit(compileVersification(sourcePath, outputDir, parsed.data));
+  }
+
   const [sourceDir, outputDir, metaPath] = args;
   if (!sourceDir || !outputDir || !metaPath) {
-    console.error('Usage:\n  cli --selftest\n  cli <usfm-dir> <output-dir> <meta.json>');
+    console.error(
+      'Usage:\n  cli --selftest\n  cli --versification <tvtms-file> <output-dir> <meta.json>\n  cli <usfm-dir> <output-dir> <meta.json>',
+    );
     process.exit(1);
   }
 

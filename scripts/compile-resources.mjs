@@ -9,11 +9,14 @@ import './build-compiler.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const compiler = join(root, 'packages', 'resource-compiler', 'dist', 'cli.cjs');
 const requested = process.argv.slice(2).filter((argument) => argument !== '--');
-const ids = requested.length > 0 ? requested : ['bsb', 'kjv'];
+const ids = requested.length > 0 ? requested : ['bsb', 'kjv', 'tvtms'];
 
 for (const id of ids) {
-  const source = join(root, 'resources', 'sources', id, 'usfm');
-  const output = join(root, 'resources', 'compiled', id);
+  const isVersification = id === 'tvtms';
+  const source = isVersification
+    ? join(root, 'resources', 'sources', id, 'tvtms.txt')
+    : join(root, 'resources', 'sources', id, 'usfm');
+  const output = join(root, 'resources', 'compiled', isVersification ? 'versification' : id);
   const recipe = join(root, 'resources', 'recipes', `${id}.json`);
 
   if (!existsSync(source)) {
@@ -21,7 +24,10 @@ for (const id of ids) {
   }
   await mkdir(output, { recursive: true });
 
-  const result = spawnSync(electron, [compiler, source, output, recipe], {
+  const args = isVersification
+    ? [compiler, '--versification', source, output, recipe]
+    : [compiler, source, output, recipe];
+  const result = spawnSync(electron, args, {
     cwd: root,
     env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
     stdio: 'inherit',

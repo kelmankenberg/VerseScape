@@ -8,7 +8,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const recipesDir = join(root, 'resources', 'recipes');
 const sourcesDir = join(root, 'resources', 'sources');
 const requested = process.argv.slice(2).filter((argument) => argument !== '--');
-const ids = requested.length > 0 ? requested : ['bsb', 'kjv'];
+const ids = requested.length > 0 ? requested : ['bsb', 'kjv', 'tvtms'];
 
 async function download(url, destination) {
   const response = await fetch(url, { redirect: 'follow' });
@@ -19,36 +19,41 @@ async function download(url, destination) {
 for (const id of ids) {
   const recipePath = join(recipesDir, `${id}.json`);
   const recipe = JSON.parse(await readFile(recipePath, 'utf8'));
-  if (recipe.meta?.id !== id || !recipe.archive?.url || !recipe.archive?.sha256) {
+  const source = recipe.archive ?? recipe.file;
+  if (!recipe.meta?.id || !source?.url || !source?.sha256) {
     throw new Error(`Invalid source recipe: ${recipePath}`);
   }
 
   const target = join(sourcesDir, id);
-  const archive = join(target, basename(new URL(recipe.archive.url).pathname));
-  const temporaryArchive = `${archive}.download`;
+  const sourceName = recipe.file?.name ?? basename(new URL(source.url).pathname);
+  const sourcePath = join(target, sourceName);
+  const temporarySource = `${sourcePath}.download`;
   const unpacked = join(target, '.unpacked');
   const usfm = join(target, 'usfm');
 
   await mkdir(target, { recursive: true });
-  await rm(temporaryArchive, { force: true });
+  await rm(temporarySource, { force: true });
   console.log(`Fetching ${recipe.meta.title}...`);
-  await download(recipe.archive.url, temporaryArchive);
+  await download(source.url, temporarySource);
 
   const actual = createHash('sha256')
-    .update(await readFile(temporaryArchive))
+    .update(await readFile(temporarySource))
     .digest('hex');
-  if (actual !== recipe.archive.sha256) {
-    await rm(temporaryArchive, { force: true });
-    throw new Error(
-      `Checksum mismatch for ${id}: expected ${recipe.archive.sha256}, received ${actual}`,
-    );
+  if (actual !== source.sha256) {
+    await rm(temporarySource, { force: true });
+    throw new Error(`Checksum mismatch for ${id}: expected ${source.sha256}, received ${actual}`);
   }
 
-  await rename(temporaryArchive, archive);
+  await rename(temporarySource, sourcePath);
+  if (recipe.file) {
+    console.log(`Verified ${id} (${actual})`);
+    continue;
+  }
+
   await rm(unpacked, { recursive: true, force: true });
   await rm(usfm, { recursive: true, force: true });
   await mkdir(unpacked, { recursive: true });
-  new AdmZip(archive).extractAllTo(unpacked, true);
+  new AdmZip(sourcePath).extractAllTo(unpacked, true);
 
   const extractedRoot =
     recipe.archive.root === '.' ? unpacked : join(unpacked, recipe.archive.root);
