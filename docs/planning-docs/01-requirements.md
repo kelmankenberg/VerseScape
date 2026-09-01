@@ -32,17 +32,20 @@ See [05-workspace-panel-system.md](05-workspace-panel-system.md) for the model.
 | FR-WS-05 | M   | Splitters are draggable; sizes stored as fractions and preserved on window resize.                                                                 |
 | FR-WS-06 | M   | Closing the last tab in a group collapses the group and rebalances siblings.                                                                       |
 | FR-WS-07 | M   | Layouts are named, savable, and reloadable; last layout auto-restores on launch.                                                                   |
-| FR-WS-08 | S   | Panels can join a coloured "link set" and follow each other by reference.                                                                          |
+| FR-WS-08 | M   | Panels can join a coloured "link set" and follow each other by reference. Bible, commentary, Resource Reader and Notes panels are all linkable.                                                       |
 | FR-WS-09 | S   | Maximize/zen a single panel temporarily (`Ctrl+Shift+Enter`).                                                                                      |
 | FR-WS-10 | V2  | Float a tab into its own window; drop back to re-dock. Deferred by D-15.                                                                           |
 | FR-WS-11 | C   | Layout presets shipped with the app (Sermon Prep, Compare Translations, Word Study).                                                               |
 | FR-WS-12 | M   | Inactive tabs remain mounted up to an LRU cap of 8 live panels; beyond the cap panels unmount and restore from serialised state without data loss. |
+| FR-WS-13 | M   | **Scroll sync.** Scrolling any panel in a link set moves every other member to the same place in the text, continuously rather than only on explicit navigation. Anchoring is by verse key, not pixel ratio, so a Bible, a commentary and a notes panel stay aligned despite wildly different content lengths. |
+| FR-WS-14 | M   | Scroll sync is loop-guarded and debounced; the panel the user is actively scrolling is never moved by its own echo.                                |
+| FR-WS-15 | S   | A panel can follow a link set for reference but opt out of scroll sync, for a panel the user wants to hold still while reading elsewhere.          |
 
 ### Panel types (v1)
 
 `Bible` · `Notes` · `Search Results` · `Passage Compare` · `Reading Plan` ·
-`Resource Reader` (commentaries and reference works) · `Web Article` (sandboxed) ·
-`Timeline` (C)
+`Resource Reader` (published commentaries and reference works) ·
+`Personal Commentary` · `Web Article` (sandboxed) · `Timeline` (C)
 
 ## 3. Reading
 
@@ -80,6 +83,11 @@ See [05-workspace-panel-system.md](05-workspace-panel-system.md) for the model.
 | FR-NT-06 | M   | Export note / notebook to Markdown, HTML, PDF — required for lesson/sermon handouts (**TBD**: PDF engine). |
 | FR-NT-07 | C   | Tags across notes, highlights, and bookmarks.                                                              |
 | FR-NT-08 | S   | Outline-style note mode with collapsible headings, for lesson and sermon prep.                             |
+| FR-NT-09 | M   | **Personal commentary.** A notebook can be designated a personal commentary: a user-authored resource whose entries are keyed to a verse or verse range. |
+| FR-NT-10 | M   | A personal commentary opens in a commentary panel alongside published commentaries, appears in the Library, and participates in link sets and scroll sync exactly as a published resource does. |
+| FR-NT-11 | M   | Entries may anchor to a single verse or an arbitrary verse range, and more than one entry may cover the same verse. The panel shows every entry covering the current reference, in canonical order. |
+| FR-NT-12 | M   | Creating or editing an entry is possible directly from the commentary panel and from a Bible panel's selection context menu.                       |
+| FR-NT-13 | S   | A personal commentary can be exported as a whole to Markdown/HTML/PDF, and shared as a `.vsres` resource file others can import.                    |
 
 ## 6. Library and resources
 
@@ -118,6 +126,22 @@ See [05-workspace-panel-system.md](05-workspace-panel-system.md) for the model.
 | FR-ST-03 | M   | Full keyboard shortcut listing with rebinding and conflict detection.                      |
 | FR-ST-04 | M   | Manual export/import of all user data as a single archive.                                 |
 | FR-ST-05 | S   | Account page — placeholder in v1, real sync in v2.                                         |
+
+## 10. Account and sync (v2)
+
+Planned direction, specified now so v1 does not foreclose it. See decision D-21.
+
+| ID       | Pri | Requirement                                                                                                                                  |
+| -------- | --- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-AC-01 | V2  | A user can create an account and sign in from the Account page.                                                                              |
+| FR-AC-02 | V2  | Signing in is **optional**. Every feature except sync works fully without an account, offline, forever. The app never prompts on first run.  |
+| FR-AC-03 | V2  | Signed-in users can sync notes, personal commentaries, highlights, bookmarks, reading positions, plans and layouts across devices.           |
+| FR-AC-04 | V2  | Purchased or downloaded resources are **not** synced; the library is re-downloaded per device from the catalogue.                            |
+| FR-AC-05 | V2  | Sync is last-writer-wins per record with a conflict log the user can inspect; no silent data loss.                                           |
+| FR-AC-06 | V2  | Sign out wipes credentials and offers to keep or remove local data; local data is retained by default.                                       |
+| FR-AC-07 | V2  | Tokens are stored in the OS keychain via `safeStorage`, never in `settings.json`.                                                            |
+| FR-AC-08 | V2  | Account deletion removes all server-side data on request, and the client can export everything first.                                        |
+| FR-AC-09 | V2  | Sync payloads are encrypted in transit; end-to-end encryption of note content is a stated goal pending key-recovery design (see **H3**).     |
 
 ## Non-functional
 

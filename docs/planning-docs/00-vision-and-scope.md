@@ -32,7 +32,7 @@ be excellent rather than broad.
 2. **Workspace, not a reader.** Arbitrary rows/columns of tabbed panels that the
    user arranges and saves as named layouts.
 3. **Linked reading.** Panels can join a "link set" and follow one another by
-   scripture reference.
+   scripture reference, staying aligned as the reader scrolls.
 4. **Own your data.** Notes are plain, exportable, and stored locally in an open
    format.
 5. **Cross-platform parity.** Linux is a first-class target, not an afterthought.
@@ -41,8 +41,10 @@ be excellent rather than broad.
 
 - Bible reading with multiple translations
 - Custom panel workspace (tabs, splits, saved layouts)
+- Linked reading: panels follow one another by reference **and scroll together**
 - Dashboard / home page
 - Notes and highlights linked to references
+- Personal commentary: user-authored, verse-keyed, usable as a resource
 - Commentaries and reference works via a generic Resource Reader panel
 - Sermon/lesson prep: outline notes and export to Markdown/HTML/PDF
 - Full-text and reference search across installed resources
@@ -53,7 +55,8 @@ be excellent rather than broad.
 ## Out of scope (v1)
 
 - Mobile / web clients
-- Cloud account and multi-device sync (design for it, do not ship it)
+- Accounts, sign-in and multi-device sync — specified for v2 (D-21), and v1
+  keeps the schema ready for it
 - Original-language morphology and lexicon integration (v2)
 - Commercial resource store / DRM — the app is free and open source
 - Collaborative real-time editing

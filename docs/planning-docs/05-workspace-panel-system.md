@@ -104,8 +104,41 @@ Dragging outside the window does nothing in v1 (single-window, D-15).
 - On navigation, the panel publishes `{ setId, reference, originTabId }`;
   members other than the origin navigate. Versification differences resolved
   by the mapping layer (doc 06).
-- Scroll-linking (S): within a set, proportional scroll sync for panels showing
-  the same passage.
+- Linkable panel types: Bible, Passage Compare, Resource Reader (commentaries,
+  published and personal), and Notes.
+
+## Scroll sync (FR-WS-13)
+
+A link set stays aligned **continuously while scrolling**, not only when the
+user explicitly navigates.
+
+**Anchor by verse key, never by pixel ratio.** Proportional scrolling breaks
+immediately across heterogeneous resources: a commentary entry on Romans 9 may
+run for pages while the verse itself is two lines, and a notes panel may hold
+one paragraph for a whole chapter. Percentage-based sync would drift apart
+within a screen.
+
+The algorithm:
+
+1. Each linkable panel exposes `getAnchorAtViewportTop(): VerseKey` and
+   `scrollToVerse(key: VerseKey, options): void`.
+2. On scroll, the origin panel reads its top anchor and publishes
+   `{ setId, verseKey, originTabId }`, throttled to animation frames.
+3. Each other member maps the key into its own versification and calls
+   `scrollToVerse`. Panels whose content does not cover that verse scroll to
+   the nearest covered verse and show a subtle "nearest match" affordance
+   rather than jumping somewhere misleading.
+4. Sync is **suppressed on the origin** for the duration of the gesture plus a
+   short tail, so an echo cannot fight the user's own scrolling (FR-WS-14).
+5. A panel may follow references but opt out of scroll sync (FR-WS-15).
+
+Correctness rules that fall out of this:
+
+- Programmatic scrolls must be tagged so they do not re-publish.
+- The publisher is whichever panel the user last interacted with; hover alone
+  does not transfer origin.
+- Sync must survive a panel being LRU-unmounted and remounted (D-14): the
+  panel re-joins its set and jumps to the set's current reference on mount.
 
 ## Persistence
 

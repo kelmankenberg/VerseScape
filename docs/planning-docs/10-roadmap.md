@@ -40,8 +40,8 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 - Reference model, parser, formatter (heavily unit-tested)
 - Bible panel: chapter render, virtualised scroll, nav bar, translation switch
 - Display options; Passage Compare panel
-- Link sets with reference following
-- **Exit:** FR-RD-01..05, FR-WS-08; three linked panels scroll together
+- Link sets with reference following and verse-anchored scroll sync
+- **Exit:** FR-RD-01..05, FR-WS-08, FR-WS-13..14; three linked panels scroll together
 
 ## M4 — Search
 
@@ -55,11 +55,14 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 
 - Notes schema, notebook tree, TipTap editor with `ref` nodes
 - Notes panel + full-page Notes view
+- Notes panel joins link sets and participates in scroll sync
+- Personal commentary: notebook `kind`, verse-keyed entry view, commentary
+  panel, create/edit from a Bible selection (FR-NT-09..12)
 - Outline mode with collapsible headings (lesson/sermon prep)
 - Highlights: selection → colour, margin indicators, persistence
 - Selection context menu (copy with citation, note, highlight, search)
 - Export note/notebook to Markdown, HTML and PDF
-- **Exit:** FR-NT-01..08
+- **Exit:** FR-NT-01..12
 
 ## M6 — Library and resources
 
@@ -68,6 +71,8 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 - Signed catalogue fetch, resumable download, atomic install
 - Resource Reader panel; compile Matthew Henry and JFB commentaries
 - Commentary follows the reference link set alongside Bible panels
+- Personal commentaries listed in the Library and exportable as `.vsres`
+  (FR-NT-13)
 - **Exit:** FR-LB-01..07
 
 ## M7 — Dashboard, plans, polish
@@ -89,9 +94,9 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 
 ## Deferred to v2
 
-Original languages and lexicons · cloud sync and Account · multi-window and
-floating panels (D-15) · timeline/atlas panels · plugin API · macOS ·
-collaborative features
+Original languages and lexicons · accounts, sign-in and cloud sync (D-21,
+FR-AC-\*) · multi-window and floating panels (D-15) · native Wayland (D-18) ·
+timeline/atlas panels · plugin API · macOS · collaborative features
 
 ## Cross-cutting risks
 
@@ -103,4 +108,6 @@ collaborative features
 | Unsigned Windows installer deters users (F3)                     | Decide early; document SmartScreen bypass in release notes if unsigned                                  |
 | Resource licensing ambiguity                                     | Public domain only for v1; licence recorded per resource                                                |
 | better-sqlite3 native rebuilds across platforms                  | Pin versions, build in CI matrix, cache prebuilds                                                       |
+| Scroll sync feels laggy or fights the user (D-19)                | Verse-key anchoring, rAF throttling, origin suppression; measure against NFR-02 with 6 linked panels    |
+| Sync server cost and custody with no revenue (D-21, H1)          | Answer H1/H2 before committing to v2 accounts; self-host or BYO-storage keeps cost at zero              |
 | Scope creep from Logos feature parity                            | Requirements table is the contract; new asks go to v2                                                   |

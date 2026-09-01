@@ -77,3 +77,17 @@ Settled items are struck through and recorded in [13-decision-log.md](13-decisio
 | ~~G1~~ | ~~App icon / logo?~~ **Resolved D-17:** placeholder mark for now.                             |
 | G2     | Linux app id and desktop entry name (`app.versescape.VerseScape`?).                           |
 | ~~G3~~ | ~~Accent colour and visual tone?~~ **Resolved D-11:** modern dark-first, VS Code/Linear feel. |
+
+## H. Accounts and sync (v2, D-21)
+
+None of these block v1, but they shape whether v2 is feasible for a free
+GPL project with no revenue (D-02).
+
+| #   | Question                                                                            | Notes                                                                                                                        |
+| --- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| H1  | Who pays for and operates the sync server?                                          | The unsolved problem. Options: self-hostable server, a BYO-storage model (user's own Dropbox/WebDAV/S3), or a funded service. |
+| H2  | Self-hosted / BYO-storage instead of a first-party service?                         | Fits the GPL and privacy stance far better and removes hosting cost; worse onboarding for non-technical users.                |
+| H3  | End-to-end encryption of note content — and if so, how is key recovery handled?     | E2EE plus "I forgot my password" is a genuine tension; losing a decade of sermon notes is unacceptable.                       |
+| H4  | Auth mechanism: email + password, magic link, or OAuth via an existing provider?    | Device-code flow keeps credentials out of the app.                                                                           |
+| H5  | Conflict resolution beyond last-writer-wins for long-form note bodies?              | Two devices editing the same note offline is the realistic bad case; consider CRDT or per-field merge.                        |
+| H6  | Does an account ever gate any non-sync feature?                                     | Strong default: **no**, per FR-AC-02.                                                                                        |

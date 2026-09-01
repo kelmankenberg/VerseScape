@@ -84,7 +84,14 @@ Adding a panel type = one folder + one registry entry. No shell changes.
 - A panel opts in to at most one link set.
 - When a linkable panel navigates, it publishes to its set; other members
   resolve that reference into their own versification and navigate.
-- Publishing is debounced and loop-guarded by originator id.
+- Scrolling publishes the same way, anchored on the verse at the viewport top
+  rather than a scroll percentage (FR-WS-13). Panel types therefore implement
+  `getAnchorAtViewportTop()` and `scrollToVerse()` as part of the panel
+  contract.
+- Publishing is throttled to animation frames and loop-guarded by originator
+  id; programmatic scrolls are tagged so they never re-publish.
+- Link sets live entirely in the renderer. They are view state, not user data,
+  and are persisted only as part of the workspace layout.
 
 ## Custom protocol
 

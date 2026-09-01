@@ -48,6 +48,11 @@ interface ReferenceRange {
 CREATE TABLE notebook (
   id TEXT PRIMARY KEY, name TEXT NOT NULL, parent_id TEXT REFERENCES notebook(id),
   sort_order INTEGER NOT NULL DEFAULT 0,
+  -- 'notebook' = ordinary notes; 'commentary' = a personal commentary that
+  -- surfaces in the Library and opens in a commentary panel (FR-NT-09).
+  kind TEXT NOT NULL DEFAULT 'notebook',
+  abbreviation TEXT,                       -- shown on the panel tab
+  description TEXT,
   created_at TEXT NOT NULL, updated_at TEXT NOT NULL
 );
 
@@ -159,6 +164,45 @@ Every resource directory contains `manifest.json`, Zod-validated on import:
   "files": [{ "path": "kjv.db", "sha256": "…" }]
 }
 ```
+
+## Personal commentary
+
+A personal commentary (FR-NT-09) is **not** a second storage format. It is a
+notebook with `kind = 'commentary'`, read through a view that presents its notes
+as verse-keyed entries:
+
+```sql
+-- every entry covering a reference, in canonical order
+SELECT n.id, n.title, n.body_md, a.start_key, a.end_key
+FROM note n
+JOIN note_anchor a ON a.note_id = n.id
+WHERE n.notebook_id = :notebookId
+  AND a.start_key <= :key AND a.end_key >= :key
+ORDER BY a.start_key, a.end_key DESC, n.created_at;
+```
+
+Consequences of reusing notes rather than duplicating:
+
+- Editing an entry is editing a note; there is one copy and no sync problem.
+- A note may carry several anchors, so one entry can cover several passages.
+- Overlapping entries are allowed and all are shown; ordering is widest-range
+  first so a chapter-level comment precedes a verse-level one.
+- The Library lists personal commentaries beside published ones, marked as
+  user-authored and always editable.
+- Export to `.vsres` (FR-NT-13) compiles the notebook through the same emitter
+  the resource compiler uses for published commentaries, so a shared personal
+  commentary is indistinguishable from any other resource on import.
+
+## Sync readiness (v2)
+
+Accounts and sync are v2 (D-21), but v1 schema choices must not block them:
+
+- Every user-data row uses a **client-generated UUID** primary key, never an
+  autoincrement integer, so records created offline on two devices never collide.
+- Every user-data table carries `created_at` and `updated_at` in UTC ISO-8601.
+- Deletions intended to sync need tombstones; v1 hard-deletes, and a migration
+  will add a `deleted_at` column rather than reworking the tables.
+- Nothing in the schema assumes a single device or a single user profile.
 
 ## Backup and export
 
