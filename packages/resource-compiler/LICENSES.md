@@ -19,14 +19,15 @@ such rather than resolved.
 
 ## Summary
 
-| Resource                               | Licence                 | Status                     | Obligation                                 |
-| -------------------------------------- | ----------------------- | -------------------------- | ------------------------------------------ |
-| Berean Standard Bible (BSB)            | CC0 1.0 / public domain | **Verified**               | None required; naming limit on derivatives |
-| King James Version (KJV)               | Public domain by age    | **Verified (with caveat)** | None; UK Crown copyright caveat            |
-| World English Bible (WEB)              | Public domain           | **Verified**               | Trademark limit on the name                |
-| STEPBible **TVTMS** versification      | CC BY 4.0               | **Verified**               | Credit "STEP Bible" + link; record changes |
-| openbible.info cross-references        | CC BY 4.0               | **Verified**               | Attribution                                |
-| CCEL commentaries (Matthew Henry, JFB) | Presumed public domain  | **UNVERIFIED**             | Must be checked before M6                  |
+| Resource                          | Licence                 | Status                     | Obligation                                 |
+| --------------------------------- | ----------------------- | -------------------------- | ------------------------------------------ |
+| Berean Standard Bible (BSB)       | CC0 1.0 / public domain | **Verified**               | None required; naming limit on derivatives |
+| King James Version (KJV)          | Public domain by age    | **Verified (with caveat)** | None; UK Crown copyright caveat            |
+| World English Bible (WEB)         | Public domain           | **Verified**               | Trademark limit on the name                |
+| STEPBible **TVTMS** versification | CC BY 4.0               | **Verified**               | Credit "STEP Bible" + link; record changes |
+| openbible.info cross-references   | CC BY 4.0               | **Verified**               | Attribution                                |
+| CCEL (as a source)                | Non-commercial only     | **Verified — EXCLUDED**    | Incompatible with GPL redistribution       |
+| Matthew Henry / JFB (the works)   | Public domain by age    | Source not yet chosen      | See **E11**                                |
 
 ---
 
@@ -179,27 +180,50 @@ Scripture text, so that copyright is not engaged.
 
 ---
 
-## CCEL commentaries — NOT YET VERIFIED
+## CCEL — VERIFIED AND EXCLUDED
 
-- **Intended source:** https://www.ccel.org/ (Matthew Henry, Jamieson-Fausset-Brown)
-- **Attempted:** 2026-09-01 — `ccel.org/copyright` and `ccel.org/info/copyright`
-  could not be retrieved.
-- **Status:** **unverified.**
+- **Source:** https://www.ccel.org/about/copyright.html (linked only from the
+  site footer)
+- **Retrieved:** 2026-09-01
+- **Status:** **Verified — and excluded as a source.**
 
-Both works are almost certainly public domain by age (Henry d. 1714; JFB 1871).
-The open question is whether CCEL asserts any rights over **its own
-transcriptions and ThML markup**, which is a distinct claim from the underlying
-text.
+> CCEL.org website and special contents copyright 1993-2020 Harry Plantinga.
+>
+> Most of the editions at the Christian Classics Ethereal library are based on
+> books that are public domain in the United States. However, they may have
+> copyrighted introductions, cover art, and other special contents. A few books
+> are under another publisher's copyright and are used by permission; these are
+> noted on the book information page.
+>
+> These books may be used for personal, educational, or non-profit purposes.
+> Contact us for permission to republish CCEL works or to use them commercially.
 
-**Blocks M6.** Do not compile either commentary until this row is completed with
-a quoted statement and a date.
+**Why this excludes them.** "Non-profit purposes" plus "contact us for
+permission to republish" is a non-commercial restriction. VerseScape is
+GPL-3.0-or-later (D-08), which grants every downstream recipient the right to
+redistribute commercially. We cannot pass on rights we do not hold, so a
+CCEL-sourced resource could not ship (NFR-13).
+
+Requesting permission does not help either: a grant to this project would not
+propagate to people who receive the app under the GPL.
+
+**The underlying works are unaffected.** Matthew Henry (d. 1714) and
+Jamieson-Fausset-Brown (1871) are public domain. CCEL's claim covers its own
+additions — introductions, cover art, "special contents" and ThML markup. A
+faithful transcription of a public-domain text attracts no new copyright under
+US law, so the commentary text itself was never CCEL's to restrict.
+
+**Consequence:** D-26 stands, but the _source_ changes. Use a transcription
+whose own terms are explicit and GPL-compatible — Wikisource, Project Gutenberg
+(strip the trademark header), or scans of the original editions. Whichever is
+chosen needs its own verified row here before M6. Tracked as **E11**.
 
 ---
 
 ## Outstanding
 
-| Item                               | Why it matters                                        |
-| ---------------------------------- | ----------------------------------------------------- |
-| CCEL transcription terms           | Blocks compiling Matthew Henry and JFB (M6)           |
-| Per-translation eBible rows        | Each text needs its own verified row before compiling |
-| E9 — UK Crown copyright on the KJV | Accepted risk; non-commercial distribution only       |
+| Item                                    | Why it matters                                        |
+| --------------------------------------- | ----------------------------------------------------- |
+| Commentary source to replace CCEL (E11) | Blocks compiling Matthew Henry and JFB (M6)           |
+| Per-translation eBible rows             | Each text needs its own verified row before compiling |
+| E9 — UK Crown copyright on the KJV      | Accepted risk; non-commercial distribution only       |

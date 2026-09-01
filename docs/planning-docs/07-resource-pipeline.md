@@ -28,8 +28,8 @@ APIs. It is a directory, not a source — licences still apply per resource.
 | ASV                             | openbibleinfo ASV repo (USX)    | Public domain         | Catalogue |
 | YLT, Darby, Webster, Geneva 1599 | eBible.org                     | Public domain         | Catalogue |
 | Douay-Rheims, Catholic PD Version | GitHub USFM repos             | Public domain         | Catalogue |
-| Matthew Henry (Concise)         | CCEL, htmlbible.com             | Public domain         | Catalogue |
-| Jamieson-Fausset-Brown          | CCEL                            | Public domain         | Catalogue |
+| Matthew Henry (Concise)         | **Source TBD** (E11)            | Public domain (work) | Catalogue |
+| Jamieson-Fausset-Brown          | **Source TBD** (E11)            | Public domain (work) | Catalogue |
 | **Cross-references**            | openbible.info (TSK-derived)    | Verify                | Bundled   |
 | **Versification mapping**       | STEPBible **TVTMS**             | CC BY 4.0 — verify    | Bundled   |
 
@@ -43,15 +43,20 @@ letters patent); public domain elsewhere. Flagged, not resolved.
 | **fetch.bible**  | 1,100+ translations, normalised USX 3+/USFM — least cleanup |
 | **eBible.org**   | Hundreds of translations in USFM, per-translation licence pages |
 | **open.bible**   | Biblica's CC-licensed texts, 700+ languages, USX/USFM      |
-| **CCEL**         | Public-domain commentaries in ThML                          |
 | **openbible.info** | Cross-references and place geocoding (atlas, v2)          |
 | **STEPBible**    | Versification, tagged texts, lexicons (originals are v2)    |
+| **Wikisource / Project Gutenberg** | Public-domain commentaries with explicit terms |
 
 ### Deliberately not used
 
 - **Bible Hub, StudyLight, Blue Letter Bible** — the underlying texts are public
   domain, but their site terms forbid scraping and their compilations are their
   own work. Use the original transcriptions instead.
+- **CCEL** — verified 2026-09-01 and excluded. Their copyright policy permits
+  "personal, educational, or non-profit purposes" and requires permission to
+  republish. That is a non-commercial restriction, which GPL-3.0 redistribution
+  cannot carry (NFR-13). The underlying commentaries remain public domain; only
+  CCEL's own transcriptions and ThML markup are off limits.
 - **CrossWire / SWORD modules** — distribution permission is frequently granted
   to CrossWire specifically and is not transferable. Also raises a GPL-2.0 vs
   GPL-3.0 question if the library were linked. Excluded for v1 (**E2**).
