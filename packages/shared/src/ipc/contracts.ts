@@ -71,6 +71,19 @@ export const chapterData = z.object({
 });
 export type ChapterData = z.infer<typeof chapterData>;
 
+export const crossReferenceRequest = z.object({
+  verseKey: z.number().int().positive(),
+  limit: z.number().int().min(1).max(50).default(12),
+});
+export type CrossReferenceRequest = z.infer<typeof crossReferenceRequest>;
+
+export const crossReference = z.object({
+  startKey: z.number().int().positive(),
+  endKey: z.number().int().positive(),
+  votes: z.number().int(),
+});
+export type CrossReference = z.infer<typeof crossReference>;
+
 export const contracts = {
   'app:get-info': { request: emptyRequest, response: appInfo },
   'window:minimize': { request: emptyRequest, response: z.null() },
@@ -83,6 +96,10 @@ export const contracts = {
   'workspace:save': { request: workspaceSchema, response: z.null() },
   'resource:list': { request: emptyRequest, response: z.array(resourceSummary) },
   'resource:get-chapter': { request: chapterRequest, response: chapterData },
+  'resource:get-cross-references': {
+    request: crossReferenceRequest,
+    response: z.array(crossReference),
+  },
 } as const;
 
 export type Contracts = typeof contracts;

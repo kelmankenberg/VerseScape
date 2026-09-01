@@ -3,7 +3,13 @@ import { existsSync, readdirSync, realpathSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import Database from 'better-sqlite3';
 import { getBook } from '@shared/reference/canon.js';
-import type { ChapterData, ChapterRequest, ResourceSummary } from '@shared/ipc/contracts.js';
+import type {
+  ChapterData,
+  ChapterRequest,
+  CrossReference,
+  CrossReferenceRequest,
+  ResourceSummary,
+} from '@shared/ipc/contracts.js';
 
 const RESOURCE_SCHEMA_VERSION = '1';
 const openDatabases = new Map<string, Database.Database>();
@@ -60,6 +66,26 @@ function openResource(id: string): Database.Database {
     db.close();
     throw cause;
   }
+}
+
+function openCrossReferences(): Database.Database | null {
+  const id = 'cross-references';
+  const cached = openDatabases.get(id);
+  if (cached) return cached;
+
+  const path = join(resourceRoot(), id, `${id}.db`);
+  if (!existsSync(path)) return null;
+  const db = new Database(path, { readonly: true, fileMustExist: true });
+  const schemaVersion = db
+    .prepare("SELECT value FROM meta WHERE key = 'schemaVersion'")
+    .pluck()
+    .get();
+  if (schemaVersion !== RESOURCE_SCHEMA_VERSION) {
+    db.close();
+    throw new Error('Cross-reference data is incompatible with this version of VerseScape.');
+  }
+  openDatabases.set(id, db);
+  return db;
 }
 
 export function listResources(): ResourceSummary[] {
@@ -155,6 +181,22 @@ export function getChapter(request: ChapterRequest): ChapterData {
       text: footnote.text,
     })),
   };
+}
+
+export function getCrossReferences(request: CrossReferenceRequest): CrossReference[] {
+  const db = openCrossReferences();
+  if (!db) return [];
+  const rows = db
+    .prepare(
+      `SELECT to_start, to_end, votes
+       FROM cross_ref WHERE from_key = ? ORDER BY votes DESC, to_start LIMIT ?`,
+    )
+    .all(request.verseKey, request.limit) as Array<{
+    to_start: number;
+    to_end: number;
+    votes: number;
+  }>;
+  return rows.map((row) => ({ startKey: row.to_start, endKey: row.to_end, votes: row.votes }));
 }
 
 export function closeResources(): void {

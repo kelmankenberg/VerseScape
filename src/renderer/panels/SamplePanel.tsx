@@ -6,6 +6,7 @@ import type { JsonValue } from '@shared/workspace/index.js';
 import { useVerseSync } from '../workspace/use-verse-sync.js';
 import { useWorkspace } from '../workspace/store.js';
 import { BibleText } from './BibleText.js';
+import { CrossReferencesButton } from './CrossReferencesButton.js';
 import { useBibleChapterWindow } from './use-bible-chapter-window.js';
 import type { PanelProps } from './registry.js';
 
@@ -30,7 +31,7 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
   const containerRef = useRef<HTMLDivElement | null>(null);
   const initialScrollKey = useRef('');
   const pendingRestore = useRef<{ verseKey: number; offset: number } | null>(null);
-  const ignoreAnchorsUntil = useRef(0);
+  const positioningTarget = useRef<number | null>(null);
   const navigateTab = useWorkspace((store) => store.navigateTab);
   const followTab = useWorkspace((store) => store.followTab);
   const [resources, setResources] = useState<ResourceSummary[]>([]);
@@ -90,7 +91,7 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
   );
 
   const getAnchorVerse = useCallback((): number | null => {
-    const top = virtualizer.getVirtualItemForOffset(virtualizer.scrollOffset ?? 0);
+    const top = virtualizer.getVirtualItemForOffset(containerRef.current?.scrollTop ?? 0);
     return top ? (verses[top.index]?.key ?? null) : null;
   }, [verses, virtualizer]);
 
@@ -110,14 +111,15 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
   const shiftWindow = useCallback(
     async (direction: 'before' | 'after'): Promise<void> => {
       if (pendingRestore.current || !containerRef.current) return;
-      const top = virtualizer.getVirtualItemForOffset(virtualizer.scrollOffset ?? 0);
+      const scrollOffset = containerRef.current.scrollTop;
+      const top = virtualizer.getVirtualItemForOffset(scrollOffset);
       const verse = top ? verses[top.index] : null;
       if (!top || !verse) return;
 
-      ignoreAnchorsUntil.current = 0;
+      positioningTarget.current = null;
       pendingRestore.current = {
         verseKey: verse.key,
-        offset: (virtualizer.scrollOffset ?? 0) - top.start,
+        offset: scrollOffset - top.start,
       };
       setRestoring(true);
       if (!(await extend(direction))) {
@@ -135,9 +137,10 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
       const verse = verses[index];
       if (!verse) return;
 
-      if (Date.now() >= ignoreAnchorsUntil.current) {
-        updateLiveReference(verse);
+      if (positioningTarget.current !== null) {
+        return;
       }
+      updateLiveReference(verse);
       if (index < 8) void shiftWindow('before');
       const last = virtualizer.getVirtualItems().at(-1);
       if (last && last.index >= verses.length - 8) void shiftWindow('after');
@@ -185,12 +188,35 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
     );
     if (!target) return;
 
-    const frame = requestAnimationFrame(() => {
-      ignoreAnchorsUntil.current = Date.now() + 240;
+    positioningTarget.current = target.key;
+    let frame: number | null = null;
+    let attempts = 0;
+    const position = (): void => {
+      attempts += 1;
       if (scrollToVerse(target.key)) initialScrollKey.current = key;
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [verses, resourceId, anchor.book, anchor.chapter, anchor.verse, scrollToVerse]);
+      frame = requestAnimationFrame(() => {
+        const atTarget = getAnchorVerse() === target.key;
+        if (atTarget || attempts >= 8) {
+          positioningTarget.current = null;
+        } else {
+          position();
+        }
+      });
+    };
+    frame = requestAnimationFrame(position);
+    return () => {
+      if (frame !== null) cancelAnimationFrame(frame);
+      if (positioningTarget.current === target.key) positioningTarget.current = null;
+    };
+  }, [
+    verses,
+    resourceId,
+    anchor.book,
+    anchor.chapter,
+    anchor.verse,
+    getAnchorVerse,
+    scrollToVerse,
+  ]);
 
   useEffect(() => {
     const restore = pendingRestore.current;
@@ -277,7 +303,9 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
                   data-index={virtualRow.index}
                   data-verse={verse.key}
                   className={`bible-panel__verse${
-                    verse.verse === anchor.verse ? ' bible-panel__verse--current' : ''
+                    verse.chapter === anchor.chapter && verse.verse === anchor.verse
+                      ? ' bible-panel__verse--current'
+                      : ''
                   }${verse.poetry > 0 ? ' bible-panel__verse--poetry' : ''}`}
                   style={{ transform: `translateY(${virtualRow.start}px)` }}
                   onClick={() => navigateToVerse(verse.key)}
@@ -301,6 +329,7 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
                     }
                   >
                     <span className="bible-panel__number">{verse.verse}</span>
+                    <CrossReferencesButton verseKey={verse.key} onNavigate={navigateToVerse} />
                     <BibleText text={verse.text} footnotes={footnotes} verseKey={verse.key} />
                   </p>
                 </div>

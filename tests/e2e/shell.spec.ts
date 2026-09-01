@@ -140,6 +140,23 @@ test('reads a real chapter through the sandboxed resource bridge', async () => {
   expect(result.data.verses[15]!.text).toContain('God so loved the world');
   expect(result.data.footnotes.length).toBeGreaterThan(0);
 
+  const crossReferences = await page.evaluate(() =>
+    (
+      globalThis as unknown as { versescape: VerseScapeBridge }
+    ).versescape.resources.getCrossReferences({
+      verseKey: 1_001_001,
+      limit: 5,
+    }),
+  );
+  expect(crossReferences.ok).toBe(true);
+  if (crossReferences.ok) {
+    expect(crossReferences.data[0]).toEqual({
+      startKey: 43_001_001,
+      endKey: 43_001_003,
+      votes: 378,
+    });
+  }
+
   const assetDir = 'resources/compiled/bsb/assets';
   const assetPath = `${assetDir}/protocol-test.txt`;
   mkdirSync(assetDir, { recursive: true });

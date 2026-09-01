@@ -561,6 +561,10 @@
   cursor: text;
 }
 
+.bible-panel__verse:has(.crossrefs__popover) {
+  z-index: 20;
+}
+
 .bible-panel__verse--current {
   background: color-mix(in srgb, var(--vs-accent) 12%, transparent);
 }
@@ -631,4 +635,84 @@
   font-size: 10px;
   vertical-align: super;
   cursor: help;
+}
+
+.crossrefs {
+  position: relative;
+  display: inline-block;
+  margin-right: 5px;
+  font-family: var(--vs-font-ui);
+  vertical-align: middle;
+}
+
+.crossrefs__trigger,
+.crossrefs__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px;
+  color: var(--vs-fg-muted);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.crossrefs__trigger:hover,
+.crossrefs__close:hover {
+  color: var(--vs-accent);
+}
+
+.crossrefs__popover {
+  position: absolute;
+  z-index: 30;
+  top: 18px;
+  left: -20px;
+  display: block;
+  width: 210px;
+  padding: var(--vs-space-2);
+  color: var(--vs-fg-primary);
+  background: var(--vs-bg-elevated);
+  border: 1px solid var(--vs-border);
+  border-radius: var(--vs-radius-sm);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 30%);
+}
+
+.crossrefs__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--vs-space-1);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.crossrefs__list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+}
+
+.crossrefs__item {
+  padding: 3px 5px;
+  overflow: hidden;
+  color: var(--vs-accent);
+  background: transparent;
+  border: 0;
+  border-radius: 2px;
+  font: inherit;
+  font-size: 11px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.crossrefs__item:hover {
+  background: var(--vs-bg-surface);
+}
+
+.crossrefs__empty {
+  display: block;
+  color: var(--vs-fg-muted);
+  font-size: 11px;
 }

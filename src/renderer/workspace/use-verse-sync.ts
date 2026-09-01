@@ -55,6 +55,7 @@ export function useVerseSync({
   const suppressUntil = useRef(0);
   const pending = useRef<number | null>(null);
   const frame = useRef<number | null>(null);
+  const settleTimer = useRef<number | null>(null);
 
   const scrollToVerse = useCallback(
     (verseKey: number): boolean => {
@@ -106,25 +107,36 @@ export function useVerseSync({
     const container = containerRef.current;
     if (!container) return;
 
+    const publishAnchor = (): void => {
+      const verse = getAnchorVerse ? getAnchorVerse() : verseAtViewportTop(container);
+      if (verse !== null) {
+        onAnchorVerse?.(verse);
+        if (syncSet) publishVerse(tabId, verse);
+      }
+    };
+
     const onScroll = (): void => {
       if (Date.now() < suppressUntil.current) return;
-      if (frame.current !== null) return;
-
-      frame.current = requestAnimationFrame(() => {
-        frame.current = null;
-        const verse = getAnchorVerse ? getAnchorVerse() : verseAtViewportTop(container);
-        if (verse !== null) {
-          onAnchorVerse?.(verse);
-          if (syncSet) publishVerse(tabId, verse);
-        }
-      });
+      if (frame.current === null) {
+        frame.current = requestAnimationFrame(() => {
+          frame.current = null;
+          publishAnchor();
+        });
+      }
+      if (settleTimer.current !== null) window.clearTimeout(settleTimer.current);
+      settleTimer.current = window.setTimeout(() => {
+        settleTimer.current = null;
+        publishAnchor();
+      }, 60);
     };
 
     container.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       container.removeEventListener('scroll', onScroll);
       if (frame.current !== null) cancelAnimationFrame(frame.current);
+      if (settleTimer.current !== null) window.clearTimeout(settleTimer.current);
       frame.current = null;
+      settleTimer.current = null;
     };
   }, [containerRef, syncSet, tabId, publishVerse, getAnchorVerse, onAnchorVerse]);
 }

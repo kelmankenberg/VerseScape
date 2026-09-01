@@ -16,6 +16,7 @@ export const IpcChannels = {
   workspaceSave: 'workspace:save',
   resourceList: 'resource:list',
   resourceGetChapter: 'resource:get-chapter',
+  resourceGetCrossReferences: 'resource:get-cross-references',
 } as const;
 
 export type IpcChannel = (typeof IpcChannels)[keyof typeof IpcChannels];

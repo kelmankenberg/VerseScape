@@ -1,7 +1,13 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IpcChannels, IpcEvents } from '@shared/ipc/channels.js';
 import type { VerseScapeBridge } from '@shared/bridge.js';
-import type { AppInfo, ChapterData, ResourceSummary, WindowState } from '@shared/ipc/contracts.js';
+import type {
+  AppInfo,
+  ChapterData,
+  CrossReference,
+  ResourceSummary,
+  WindowState,
+} from '@shared/ipc/contracts.js';
 import type { AppSettings } from '@shared/settings.js';
 import type { Workspace } from '@shared/workspace/types.js';
 import type { IpcResult } from '@shared/ipc/result.js';
@@ -31,6 +37,10 @@ const bridge: VerseScapeBridge = {
     getChapter: (request) =>
       ipcRenderer.invoke(IpcChannels.resourceGetChapter, request) as Promise<
         IpcResult<ChapterData>
+      >,
+    getCrossReferences: (request) =>
+      ipcRenderer.invoke(IpcChannels.resourceGetCrossReferences, request) as Promise<
+        IpcResult<CrossReference[]>
       >,
   },
   window: {

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { contracts, appInfo, chapterData, chapterRequest } from './contracts.js';
+import {
+  contracts,
+  appInfo,
+  chapterData,
+  chapterRequest,
+  crossReferenceRequest,
+} from './contracts.js';
 import { IpcChannels } from './channels.js';
 import { err, ok, IpcErrorCodes } from './result.js';
 
@@ -56,6 +62,14 @@ describe('ipc contracts', () => {
         footnotes: [],
       }).success,
     ).toBe(true);
+  });
+
+  it('bounds cross-reference lookup work and supplies a default limit', () => {
+    expect(crossReferenceRequest.parse({ verseKey: 1_001_001 })).toEqual({
+      verseKey: 1_001_001,
+      limit: 12,
+    });
+    expect(crossReferenceRequest.safeParse({ verseKey: 1_001_001, limit: 51 }).success).toBe(false);
   });
 });
 

@@ -172,6 +172,25 @@ test('renders real Scripture and switches translation', async () => {
   await expect(current).toContainText('whosoever believeth in him');
 });
 
+test('opens ranked cross-references and navigates to one', async () => {
+  await openReader();
+  const reference = page.locator('.reference__input');
+  await reference.fill('Genesis 1:1');
+  await reference.press('Enter');
+
+  const current = page.locator('.bible-panel__verse--current');
+  await expect(current).toHaveAttribute('data-verse', '1001001');
+  await current.getByRole('button', { name: 'Cross references' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Cross references' });
+  await expect(dialog).toBeVisible();
+  const first = dialog.locator('.crossrefs__item').first();
+  await expect(first).toHaveText('John 1:1-3');
+  await first.click();
+
+  await expect(page.locator('.bible-panel__heading')).toHaveText('John 1');
+  await expect(reference).toHaveValue('John 1:1');
+});
+
 test('virtualizes a long chapter and scrolls directly to an unmounted verse', async () => {
   await openReader();
   const reference = page.locator('.reference__input');

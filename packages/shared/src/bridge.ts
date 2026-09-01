@@ -2,6 +2,8 @@ import type {
   AppInfo,
   ChapterData,
   ChapterRequest,
+  CrossReference,
+  CrossReferenceRequest,
   ResourceSummary,
   WindowState,
 } from './ipc/contracts.js';
@@ -30,6 +32,7 @@ export interface VerseScapeBridge {
   readonly resources: {
     list(): Promise<IpcResult<ResourceSummary[]>>;
     getChapter(request: ChapterRequest): Promise<IpcResult<ChapterData>>;
+    getCrossReferences(request: CrossReferenceRequest): Promise<IpcResult<CrossReference[]>>;
   };
   readonly window: {
     minimize(): Promise<IpcResult<null>>;
