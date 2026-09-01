@@ -3,7 +3,16 @@ import tseslint from 'typescript-eslint';
 import globals from 'globals';
 
 export default tseslint.config(
-  { ignores: ['out/**', 'dist/**', 'release/**', 'node_modules/**', 'coverage/**'] },
+  {
+    ignores: [
+      'out/**',
+      'dist/**',
+      'release/**',
+      'node_modules/**',
+      'coverage/**',
+      'packages/**/dist/**',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -42,5 +51,10 @@ export default tseslint.config(
         },
       ],
     },
+  },
+  // The resource compiler is a command-line tool; its output is the point.
+  {
+    files: ['packages/resource-compiler/**/*.ts', 'scripts/**/*.mjs'],
+    rules: { 'no-console': 'off' },
   },
 );

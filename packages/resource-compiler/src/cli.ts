@@ -1,0 +1,247 @@
+import { createHash } from 'node:crypto';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { basename, join } from 'node:path';
+import Database from 'better-sqlite3';
+import { parseUsfm } from './usfm.js';
+import { hasErrors, validateBook } from './validate.js';
+import { emitResource, RESOURCE_SCHEMA_VERSION } from './emit.js';
+import type { ResourceMeta } from './emit.js';
+import type { ParsedBook, ParseDiagnostic } from './types.js';
+
+/**
+ * Runs under Electron's Node (`ELECTRON_RUN_AS_NODE=1`), so better-sqlite3 is
+ * the same binary the app loads. See decision D-28.
+ */
+
+function report(diagnostics: ParseDiagnostic[], label: string): void {
+  const errors = diagnostics.filter((d) => d.severity === 'error');
+  const warnings = diagnostics.filter((d) => d.severity === 'warning');
+
+  for (const error of errors) console.error(`  error  ${label}:${error.line} ${error.message}`);
+  if (warnings.length > 0) {
+    const shown = warnings.slice(0, 5);
+    for (const warning of shown)
+      console.warn(`  warn   ${label}:${warning.line} ${warning.message}`);
+    if (warnings.length > shown.length) {
+      console.warn(`  warn   ${label} … and ${warnings.length - shown.length} more`);
+    }
+  }
+}
+
+export function compileDirectory(sourceDir: string, outputDir: string, meta: ResourceMeta): number {
+  const files = readdirSync(sourceDir)
+    .filter((name) => /\.usfm$|\.sfm$|\.usx$/iu.test(name))
+    .sort();
+
+  if (files.length === 0) {
+    console.error(`No USFM files found in ${sourceDir}`);
+    return 1;
+  }
+
+  const books: ParsedBook[] = [];
+  let failed = false;
+
+  for (const file of files) {
+    const source = readFileSync(join(sourceDir, file), 'utf8');
+    const outcome = parseUsfm(source);
+    report(outcome.diagnostics, basename(file));
+
+    if (!outcome.book || hasErrors(outcome.diagnostics)) {
+      failed = true;
+      continue;
+    }
+
+    const validation = validateBook(outcome.book);
+    report(validation.diagnostics, basename(file));
+    if (hasErrors(validation.diagnostics)) {
+      failed = true;
+      continue;
+    }
+
+    books.push(outcome.book);
+    console.log(`  ok     ${outcome.book.id} — ${validation.verseCount} verses`);
+  }
+
+  if (failed) {
+    console.error('Compilation failed; no resource written.');
+    return 1;
+  }
+
+  mkdirSync(outputDir, { recursive: true });
+  const dbPath = join(outputDir, `${meta.id}.db`);
+  rmSync(dbPath, { force: true });
+
+  const result = emitResource(dbPath, meta, books);
+  const checksum = createHash('sha256').update(readFileSync(dbPath)).digest('hex');
+
+  writeFileSync(
+    join(outputDir, 'manifest.json'),
+    `${JSON.stringify(
+      {
+        schemaVersion: RESOURCE_SCHEMA_VERSION,
+        id: meta.id,
+        title: meta.title,
+        abbreviation: meta.abbreviation,
+        type: meta.type,
+        language: meta.language,
+        versification: meta.versification,
+        deliveryMode: 'local',
+        licence: {
+          spdx: meta.licenceSpdx,
+          text: meta.licence,
+          attribution: meta.attribution ?? null,
+          source: meta.source,
+          retrieved: meta.retrieved,
+        },
+        files: [{ path: `${meta.id}.db`, sha256: checksum }],
+      },
+      null,
+      2,
+    )}\n`,
+    'utf8',
+  );
+
+  console.log(`Wrote ${result.books} books, ${result.verses} verses to ${dbPath}`);
+  return 0;
+}
+
+const FIXTURE = String.raw`
+\id JUD Jude
+\h Jude
+\mt1 The Letter of Jude
+\c 1
+\s1 Greeting
+\p
+\v 1 Jude, a servant of Jesus Christ\f + \fr 1:1 \ft Or slave.\f*, to those who are called.
+\v 2 Mercy, peace and love be yours in abundance.
+\q1
+\v 3 Beloved, while I was very diligent to write to you,
+\v 4 For certain men have crept in unnoticed.
+`;
+
+/**
+ * End-to-end check: compile a fixture, read it back, and confirm the schema,
+ * the verse text and the FTS index all survived the round trip.
+ *
+ * This is the emitter's test. It cannot run under Vitest because the native
+ * module is built for Electron's ABI, not Node's (D-28).
+ */
+export function selfTest(): number {
+  const dir = mkdtempSync(join(tmpdir(), 'versescape-compile-'));
+  const failures: string[] = [];
+
+  const check = (label: string, condition: boolean): void => {
+    if (condition) console.log(`  ok     ${label}`);
+    else {
+      console.error(`  FAIL   ${label}`);
+      failures.push(label);
+    }
+  };
+
+  try {
+    const source = join(dir, 'src');
+    mkdirSync(source);
+    writeFileSync(join(source, '65-JUD.usfm'), FIXTURE, 'utf8');
+
+    const meta: ResourceMeta = {
+      id: 'fixture',
+      title: 'Fixture Bible',
+      abbreviation: 'FIX',
+      type: 'bible',
+      language: 'en',
+      versification: 'kjv',
+      licence: 'Public domain test fixture.',
+      licenceSpdx: 'PublicDomain',
+      source: 'built-in fixture',
+      retrieved: '2026-09-01',
+    };
+
+    const out = join(dir, 'out');
+    check('compiles without errors', compileDirectory(source, out, meta) === 0);
+
+    const db = new Database(join(out, 'fixture.db'), { readonly: true });
+
+    const schemaVersion = db.prepare("SELECT value FROM meta WHERE key = 'schemaVersion'").get() as
+      { value: string } | undefined;
+    check('records the schema version', schemaVersion?.value === String(RESOURCE_SCHEMA_VERSION));
+
+    const verses = db.prepare('SELECT COUNT(*) AS n FROM verse').get() as { n: number };
+    check('stores every verse', verses.n === 4);
+
+    const first = db.prepare('SELECT * FROM verse ORDER BY verse_key LIMIT 1').get() as {
+      verse_key: number;
+      book_id: string;
+      text: string;
+      para_start: number;
+    };
+    check('keys verses canonically', first.verse_key === 65_001_001);
+    check('keeps the footnote marker inline', first.text.includes('<n id="fn1"/>'));
+    check('records paragraph starts', first.para_start === 1);
+
+    const poetry = db.prepare('SELECT poetry FROM verse WHERE verse_key = ?').get(65_001_003) as {
+      poetry: number;
+    };
+    check('records poetry level', poetry.poetry === 1);
+
+    const heading = db.prepare('SELECT text FROM heading LIMIT 1').get() as
+      { text: string } | undefined;
+    check('stores headings', heading?.text === 'Greeting');
+
+    const footnote = db.prepare('SELECT text FROM footnote LIMIT 1').get() as
+      { text: string } | undefined;
+    check('stores footnote text without the origin reference', footnote?.text === 'Or slave.');
+
+    // External-content FTS5 exposes the content rowid as `rowid`, not by the
+    // content table's column name.
+    const hit = db.prepare("SELECT rowid FROM verse_fts WHERE verse_fts MATCH 'mercy'").get() as
+      { rowid: number } | undefined;
+    check('builds a queryable FTS index', hit?.rowid === 65_001_002);
+
+    const missing = db
+      .prepare("SELECT COUNT(*) AS n FROM verse_fts WHERE verse_fts MATCH 'zebra'")
+      .get() as { n: number };
+    check('FTS does not match absent words', missing.n === 0);
+
+    db.close();
+
+    // Determinism: a second compile of the same input must be byte-identical.
+    const outTwo = join(dir, 'out2');
+    compileDirectory(source, outTwo, meta);
+    const a = createHash('sha256')
+      .update(readFileSync(join(out, 'fixture.db')))
+      .digest('hex');
+    const b = createHash('sha256')
+      .update(readFileSync(join(outTwo, 'fixture.db')))
+      .digest('hex');
+    check('produces byte-identical output for identical input', a === b);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+
+  if (failures.length > 0) {
+    console.error(`\n${failures.length} check(s) failed.`);
+    return 1;
+  }
+  console.log('\nAll compiler integration checks passed.');
+  return 0;
+}
+
+function main(): void {
+  const args = process.argv.slice(2);
+
+  if (args.includes('--selftest')) {
+    process.exit(selfTest());
+  }
+
+  const [sourceDir, outputDir, metaPath] = args;
+  if (!sourceDir || !outputDir || !metaPath) {
+    console.error('Usage:\n  cli --selftest\n  cli <usfm-dir> <output-dir> <meta.json>');
+    process.exit(1);
+  }
+
+  const meta = JSON.parse(readFileSync(metaPath, 'utf8')) as ResourceMeta;
+  process.exit(compileDirectory(sourceDir, outputDir, meta));
+}
+
+main();

@@ -1,8 +1,11 @@
 packages:
   - 'packages/*'
 
-onlyBuiltDependencies:
-  - electron
-  - electron-builder
-  - app-builder-bin
-  - esbuild
+allowBuilds:
+  electron: true
+  electron-builder: true
+  app-builder-bin: true
+  esbuild: true
+  # @electron/rebuild builds this for Electron's ABI in postinstall (D-28),
+  # so pnpm's own build script is redundant.
+  better-sqlite3: false
