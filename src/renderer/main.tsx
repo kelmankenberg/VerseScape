@@ -1,7 +1,10 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App.js';
+import { registerBuiltInPanels } from './panels/index.js';
 import './theme/tokens.css';
+
+registerBuiltInPanels();
 
 const container = document.getElementById('root');
 if (!container) {

@@ -2,6 +2,7 @@ import { PanelLeft, Search, Bell } from 'lucide-react';
 import { useSettings } from '../stores/settings.js';
 import { navItemFor } from './navigation.js';
 import { WindowControls } from './WindowControls.js';
+import { WorkspaceActions } from './WorkspaceActions.js';
 
 export function TitleBar(): React.JSX.Element {
   const activePage = useSettings((state) => state.settings.shell.activePage);
@@ -42,6 +43,7 @@ export function TitleBar(): React.JSX.Element {
       </div>
 
       <div className="titlebar__actions no-drag">
+        {activePage === 'workspace' && <WorkspaceActions />}
         <button type="button" className="icon-button" aria-label="Notifications">
           <Bell size={16} aria-hidden />
         </button>

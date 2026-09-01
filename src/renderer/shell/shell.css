@@ -130,6 +130,72 @@
   margin-left: auto;
 }
 
+/* ---------- Toolbar actions ---------- */
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--vs-space-1);
+  margin-right: var(--vs-space-2);
+}
+
+.toolbar-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 8px;
+  color: var(--vs-fg-muted);
+  background: transparent;
+  border: 1px solid var(--vs-border);
+  border-radius: var(--vs-radius-sm);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.toolbar-button:hover {
+  color: var(--vs-fg-primary);
+  background: var(--vs-bg-elevated);
+}
+
+.menu {
+  position: relative;
+}
+
+.menu__list {
+  position: absolute;
+  top: 28px;
+  left: 0;
+  z-index: 30;
+  min-width: 170px;
+  padding: 4px;
+  background: var(--vs-bg-elevated);
+  border: 1px solid var(--vs-border);
+  border-radius: var(--vs-radius-sm);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+}
+
+.menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  color: var(--vs-fg-primary);
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu__item:hover {
+  background: var(--vs-bg-surface);
+}
+
 /* ---------- Buttons ---------- */
 
 .icon-button {
