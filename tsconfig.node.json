@@ -8,6 +8,7 @@
     "src/main/**/*",
     "src/preload/**/*",
     "packages/shared/src/**/*",
+    "packages/resource-compiler/src/**/*",
     "packages/**/*.test.ts",
     "tests/e2e/**/*"
   ],
