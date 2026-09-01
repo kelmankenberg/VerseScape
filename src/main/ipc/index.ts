@@ -6,6 +6,8 @@ import type { AppSettings } from '@shared/settings.js';
 import { handle } from './handle.js';
 import { readWindowState } from '../platform/window-manager.js';
 import { loadSettings, patchSettings } from '../services/settings.js';
+import { loadWorkspace, saveWorkspace } from '../services/workspace.js';
+import type { Workspace } from '@shared/workspace/types.js';
 
 function requireWindow(event: Electron.IpcMainInvokeEvent): BrowserWindow {
   const window = BrowserWindow.fromWebContents(event.sender);
@@ -56,4 +58,11 @@ export function registerIpcHandlers(): void {
   handle(IpcChannels.settingsGet, (): AppSettings => loadSettings());
 
   handle(IpcChannels.settingsPatch, (patch): AppSettings => patchSettings(patch));
+
+  handle(IpcChannels.workspaceGet, (): Workspace | null => loadWorkspace());
+
+  handle(IpcChannels.workspaceSave, (workspace): null => {
+    saveWorkspace(workspace as Workspace);
+    return null;
+  });
 }

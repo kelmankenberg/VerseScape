@@ -11,6 +11,7 @@ import {
   reopenLastClosed,
   resizeSplit,
   setSyncSet,
+  setSyncSetVerse,
   setTabState,
   splitGroup,
   toggleMaximize,
@@ -33,6 +34,10 @@ const ctx: WorkspaceContext = {
 
 interface WorkspaceStore {
   workspace: Workspace;
+  /** Who last published to a sync set; used to suppress the origin's own echo. */
+  syncOrigin: { tabId: TabId; at: number } | null;
+  /** Most-recently-active tabs, capped at MOUNT_LIMIT (D-14). */
+  mounted: TabId[];
   openPanel: (panelType: string, targetGroup?: NodeId) => void;
   closeTab: (tabId: TabId) => void;
   reopenLastClosed: () => void;
@@ -45,6 +50,16 @@ interface WorkspaceStore {
   setSyncSet: (tabId: TabId, syncSet: SyncSetId | null) => void;
   setTabState: (tabId: TabId, state: JsonValue) => void;
   toggleMaximize: (groupId: NodeId) => void;
+  publishVerse: (tabId: TabId, verseKey: number) => void;
+  navigateTab: (tabId: TabId, verseKey: number, reference: string) => void;
+  replaceWorkspace: (workspace: Workspace) => void;
+}
+
+/** Live panels per window before the least-recently-used one unmounts (D-14). */
+export const MOUNT_LIMIT = 8;
+
+function promote(mounted: TabId[], tabId: TabId): TabId[] {
+  return [tabId, ...mounted.filter((id) => id !== tabId)].slice(0, MOUNT_LIMIT);
 }
 
 export const useWorkspace = create<WorkspaceStore>((set) => {
@@ -58,6 +73,8 @@ export const useWorkspace = create<WorkspaceStore>((set) => {
 
   return {
     workspace: createWorkspace(ctx, { name: 'Study', panelType: 'placeholder' }),
+    syncOrigin: null,
+    mounted: [],
 
     openPanel: (panelType, targetGroup) =>
       apply('openPanel', (w) =>
@@ -65,7 +82,10 @@ export const useWorkspace = create<WorkspaceStore>((set) => {
       ),
     closeTab: (tabId) => apply('closeTab', (w) => closeTab(w, tabId, ctx)),
     reopenLastClosed: () => apply('reopenLastClosed', (w) => reopenLastClosed(w, ctx)),
-    activateTab: (tabId) => apply('activateTab', (w) => activateTab(w, tabId, ctx)),
+    activateTab: (tabId) => {
+      set((state) => ({ mounted: promote(state.mounted, tabId) }));
+      apply('activateTab', (w) => activateTab(w, tabId, ctx));
+    },
     focusGroup: (groupId) => apply('focusGroup', (w) => focusGroup(w, groupId, ctx)),
     moveTab: (tabId, toGroup, index) =>
       apply('moveTab', (w) =>
@@ -82,5 +102,36 @@ export const useWorkspace = create<WorkspaceStore>((set) => {
     setSyncSet: (tabId, syncSet) => apply('setSyncSet', (w) => setSyncSet(w, tabId, syncSet, ctx)),
     setTabState: (tabId, state) => apply('setTabState', (w) => setTabState(w, tabId, state, ctx)),
     toggleMaximize: (groupId) => apply('toggleMaximize', (w) => toggleMaximize(w, groupId, ctx)),
+
+    publishVerse: (tabId, verseKey) =>
+      set((state) => {
+        const syncSet = state.workspace.tabs[tabId]?.syncSet;
+        if (!syncSet) return state;
+        if (state.workspace.syncSets[syncSet].verseKey === verseKey) return state;
+
+        const next = setSyncSetVerse(state.workspace, syncSet, verseKey, ctx);
+        return { workspace: next, syncOrigin: { tabId, at: Date.now() } };
+      }),
+
+    navigateTab: (tabId, verseKey, reference) =>
+      set((state) => {
+        const tab = state.workspace.tabs[tabId];
+        if (!tab) return state;
+
+        const base = typeof tab.state === 'object' && tab.state !== null ? tab.state : {};
+        let next = setTabState(
+          state.workspace,
+          tabId,
+          { ...(base as Record<string, JsonValue>), reference, verseKey },
+          ctx,
+        );
+
+        if (tab.syncSet) next = setSyncSetVerse(next, tab.syncSet, verseKey, ctx);
+        if (import.meta.env.DEV) assertValid(next, 'navigateTab');
+
+        return { workspace: next, syncOrigin: { tabId, at: Date.now() } };
+      }),
+
+    replaceWorkspace: (workspace) => set({ workspace, syncOrigin: null, mounted: [] }),
   };
 });

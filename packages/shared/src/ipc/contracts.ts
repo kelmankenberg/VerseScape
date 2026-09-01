@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { appSettings, settingsPatch } from '../settings.js';
+import { workspace as workspaceSchema } from '../workspace/schema.js';
 
 /**
  * Request/response schemas for every IPC channel. Main validates the request
@@ -35,6 +36,8 @@ export const contracts = {
   'window:get-state': { request: emptyRequest, response: windowState },
   'settings:get': { request: emptyRequest, response: appSettings },
   'settings:patch': { request: settingsPatch, response: appSettings },
+  'workspace:get': { request: emptyRequest, response: workspaceSchema.nullable() },
+  'workspace:save': { request: workspaceSchema, response: z.null() },
 } as const;
 
 export type Contracts = typeof contracts;

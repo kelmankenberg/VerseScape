@@ -1,6 +1,7 @@
-import { ChevronDown, Link2, Maximize2, Minimize2 } from 'lucide-react';
+import { Link2, Maximize2, Minimize2 } from 'lucide-react';
 import { useState } from 'react';
 import { useWorkspace } from './store.js';
+import { ReferenceInput } from './ReferenceInput.js';
 import { getPanel } from '../panels/registry.js';
 import { DEFAULT_SYNC_SET_COLOURS, SYNC_SET_IDS } from '@shared/workspace/index.js';
 import type { GroupNode, SyncSetId, Tab } from '@shared/workspace/index.js';
@@ -73,15 +74,7 @@ export function PanelHeader({ group, tab }: { group: GroupNode; tab: Tab }): Rea
   return (
     <div className="panelheader">
       {descriptor?.hasReferenceInput ? (
-        <div className="panelheader__reference">
-          <input
-            className="panelheader__input"
-            placeholder="Reference — M2 step 6"
-            aria-label="Go to reference"
-            disabled
-          />
-          <ChevronDown size={13} aria-hidden className="panelheader__chevron" />
-        </div>
+        <ReferenceInput tabId={tab.id} />
       ) : (
         <span className="panelheader__title">{descriptor?.title ?? tab.panelType}</span>
       )}
