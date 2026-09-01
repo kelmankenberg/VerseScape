@@ -19,15 +19,15 @@ such rather than resolved.
 
 ## Summary
 
-| Resource                          | Licence                 | Status                     | Obligation                                 |
-| --------------------------------- | ----------------------- | -------------------------- | ------------------------------------------ |
-| Berean Standard Bible (BSB)       | CC0 1.0 / public domain | **Verified**               | None required; naming limit on derivatives |
-| King James Version (KJV)          | Public domain by age    | **Verified (with caveat)** | None; UK Crown copyright caveat            |
-| World English Bible (WEB)         | Public domain           | **Verified**               | Trademark limit on the name                |
-| STEPBible **TVTMS** versification | CC BY 4.0               | **Verified**               | Credit "STEP Bible" + link; record changes |
-| openbible.info cross-references   | CC BY 4.0               | **Verified**               | Attribution                                |
-| CCEL (as a source)                | Non-commercial only     | **Verified — EXCLUDED**    | Incompatible with GPL redistribution       |
-| Matthew Henry / JFB (the works)   | Public domain by age    | Source not yet chosen      | See **E11**                                |
+| Resource                          | Licence                   | Status                      | Obligation                                 |
+| --------------------------------- | ------------------------- | --------------------------- | ------------------------------------------ |
+| Berean Standard Bible (BSB)       | CC0 1.0 / public domain   | **Verified**                | None required; naming limit on derivatives |
+| King James Version (KJV)          | Public domain by age      | **Verified (with caveat)**  | None; UK Crown copyright caveat            |
+| World English Bible (WEB)         | Public domain             | **Verified**                | Trademark limit on the name                |
+| STEPBible **TVTMS** versification | CC BY 4.0                 | **Verified**                | Credit "STEP Bible" + link; record changes |
+| openbible.info cross-references   | CC BY 4.0                 | **Verified**                | Attribution                                |
+| CCEL (as a source)                | Non-commercial by default | **Permission being sought** | Blocked until the grant is recorded        |
+| Matthew Henry / JFB (the works)   | Public domain by age      | Source pending permission   | See **E11**                                |
 
 ---
 
@@ -180,12 +180,13 @@ Scripture text, so that copyright is not engaged.
 
 ---
 
-## CCEL — VERIFIED AND EXCLUDED
+## CCEL — PERMISSION BEING SOUGHT
 
 - **Source:** https://www.ccel.org/about/copyright.html (linked only from the
   site footer)
 - **Retrieved:** 2026-09-01
-- **Status:** **Verified — and excluded as a source.**
+- **Status:** **Blocked pending written permission.** Do not compile until the
+  grant is recorded below.
 
 > CCEL.org website and special contents copyright 1993-2020 Harry Plantinga.
 >
@@ -198,25 +199,47 @@ Scripture text, so that copyright is not engaged.
 > These books may be used for personal, educational, or non-profit purposes.
 > Contact us for permission to republish CCEL works or to use them commercially.
 
-**Why this excludes them.** "Non-profit purposes" plus "contact us for
-permission to republish" is a non-commercial restriction. VerseScape is
-GPL-3.0-or-later (D-08), which grants every downstream recipient the right to
-redistribute commercially. We cannot pass on rights we do not hold, so a
-CCEL-sourced resource could not ship (NFR-13).
+### Why the default terms are not enough
 
-Requesting permission does not help either: a grant to this project would not
-propagate to people who receive the app under the GPL.
+"Non-profit purposes" plus "contact us for permission to republish" restricts
+redistribution. VerseScape is GPL-3.0-or-later (D-08), so everyone who receives
+the app may redistribute it. A grant covering only this project would leave the
+resource non-redistributable by its recipients.
 
-**The underlying works are unaffected.** Matthew Henry (d. 1714) and
-Jamieson-Fausset-Brown (1871) are public domain. CCEL's claim covers its own
-additions — introductions, cover art, "special contents" and ThML markup. A
-faithful transcription of a public-domain text attracts no new copyright under
-US law, so the commentary text itself was never CCEL's to restrict.
+That is survivable — resource databases are **mere aggregation**, delivered as
+separate catalogue downloads (D-04) rather than linked into the program — but a
+non-redistributable resource has real consequences: it cannot be bundled in an
+installer, and Linux packagers must be able to exclude it.
 
-**Consequence:** D-26 stands, but the _source_ changes. Use a transcription
-whose own terms are explicit and GPL-compatible — Wikisource, Project Gutenberg
-(strip the trademark header), or scans of the original editions. Whichever is
-chosen needs its own verified row here before M6. Tracked as **E11**.
+### What the permission needs to say
+
+**Preferred.** Ask CCEL to license their transcriptions of _Matthew Henry's
+Commentary_ and _Jamieson-Fausset-Brown_ under **CC BY 4.0**, or to release them
+to the public domain. Both underlying works are already public domain, so this
+grants away nothing beyond CCEL's own transcription and markup. A public licence
+travels with the file and needs no follow-up.
+
+**Acceptable fallback.** Permission for VerseScape to distribute the texts, _and_
+for recipients of VerseScape to redistribute them unmodified. The second half
+matters more than the first.
+
+**Insufficient.** Permission for this project alone. The resource would then be
+marked `redistributable: false`, excluded from any bundled installer, and
+flagged in the Library so users know they may not pass it on.
+
+### Record the grant here when it arrives
+
+| Field                         | Value     |
+| ----------------------------- | --------- |
+| Date granted                  | _pending_ |
+| Granted by                    | _pending_ |
+| Scope                         | _pending_ |
+| Redistributable by recipients | _pending_ |
+| Verbatim wording              | _pending_ |
+
+The underlying works remain public domain regardless: Matthew Henry (d. 1714)
+and Jamieson-Fausset-Brown (1871). If permission does not arrive, **E11** lists
+alternative transcriptions with open terms.
 
 ---
 

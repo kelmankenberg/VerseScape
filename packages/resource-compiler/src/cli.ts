@@ -93,6 +93,8 @@ export function compileDirectory(sourceDir: string, outputDir: string, meta: Res
           attribution: meta.attribution ?? null,
           source: meta.source,
           retrieved: meta.retrieved,
+          redistributable: meta.redistributable,
+          restrictions: meta.restrictions ?? null,
         },
         files: [{ path: `${meta.id}.db`, sha256: checksum }],
       },
@@ -155,6 +157,7 @@ export function selfTest(): number {
       licenceSpdx: 'PublicDomain',
       source: 'built-in fixture',
       retrieved: '2026-09-01',
+      redistributable: true,
     };
 
     const out = join(dir, 'out');
@@ -191,6 +194,11 @@ export function selfTest(): number {
     const footnote = db.prepare('SELECT text FROM footnote LIMIT 1').get() as
       { text: string } | undefined;
     check('stores footnote text without the origin reference', footnote?.text === 'Or slave.');
+
+    const redistributable = db
+      .prepare("SELECT value FROM meta WHERE key = 'redistributable'")
+      .get() as { value: string } | undefined;
+    check('records redistribution rights', redistributable?.value === '1');
 
     // External-content FTS5 exposes the content rowid as `rowid`, not by the
     // content table's column name.

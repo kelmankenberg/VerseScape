@@ -14,6 +14,14 @@ export interface ResourceMeta {
   source: string;
   retrieved: string;
   attribution?: string;
+  /**
+   * Whether recipients may redistribute this resource. False means the grant
+   * covers this project only, so the resource must not be bundled in an
+   * installer and packagers must be able to exclude it.
+   */
+  redistributable: boolean;
+  /** Human-readable summary of any restriction, shown in the Library. */
+  restrictions?: string;
 }
 
 export const RESOURCE_SCHEMA_VERSION = 1;
@@ -119,6 +127,8 @@ export function emitResource(
         ['source', meta.source],
         ['retrieved', meta.retrieved],
         ['attribution', meta.attribution ?? ''],
+        ['redistributable', meta.redistributable ? '1' : '0'],
+        ['restrictions', meta.restrictions ?? ''],
       ];
       for (const [key, value] of entries) insertMeta.run(key, value);
 

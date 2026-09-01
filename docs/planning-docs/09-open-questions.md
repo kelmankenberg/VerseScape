@@ -60,7 +60,7 @@ Settled items are struck through and recorded in [13-decision-log.md](13-decisio
 | E8     | **New** — Who signs and hosts the catalogue for an OSS project? | GitHub Releases + a project key committed to the repo; key custody matters.          |
 | E9     | **New** — Does UK Crown copyright on the KJV affect distributing a bundled KJV? | **Accepted risk.** Public domain outside the UK; perpetual letters patent within it. Distribution is non-commercial (D-02). Recorded in `LICENSES.md`, not formally resolved. |
 | E10    | **New** — Confirm licences at source for BSB, STEPBible TVTMS, openbible.info cross-references, and each CCEL commentary. | **Closed 2026-09-01.** All verified with quoted statements in `packages/resource-compiler/LICENSES.md`: BSB (CC0), WEB/eBible (PD, per-translation check required), STEPBible TVTMS (CC BY 4.0), openbible.info (CC BY 4.0), CCEL (non-commercial — **excluded**). |
-| E11    | **New** — Which transcription of Matthew Henry and JFB do we compile, now that CCEL is excluded? | Candidates with explicit terms: Wikisource, Project Gutenberg (strip trademark header), Internet Archive scans of the original editions. The works themselves are public domain; only a clean source is needed. Blocks M6. |
+| E11    | **New** — Which transcription of Matthew Henry and JFB do we compile, now that CCEL is excluded? | **Superseded by D-29:** CCEL stays, and written permission is being procured. Tracks the grant, not a replacement source. What it must cover is in `LICENSES.md`. Blocks M6. |
 
 ## F. Engineering
 
