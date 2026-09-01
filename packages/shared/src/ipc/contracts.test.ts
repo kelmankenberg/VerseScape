@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { contracts, appInfo } from './contracts.js';
+import { contracts, appInfo, chapterData, chapterRequest } from './contracts.js';
 import { IpcChannels } from './channels.js';
 import { err, ok, IpcErrorCodes } from './result.js';
 
@@ -23,6 +23,39 @@ describe('ipc contracts', () => {
     expect(appInfo.safeParse(valid).success).toBe(true);
     expect(appInfo.safeParse({ ...valid, platform: 'solaris' }).success).toBe(false);
     expect(appInfo.safeParse({ ...valid, version: '' }).success).toBe(false);
+  });
+
+  it('constrains resource chapter requests before they reach a file path', () => {
+    expect(chapterRequest.safeParse({ resourceId: 'bsb', bookId: 'JHN', chapter: 3 }).success).toBe(
+      true,
+    );
+    expect(
+      chapterRequest.safeParse({ resourceId: '../private', bookId: 'JHN', chapter: 3 }).success,
+    ).toBe(false);
+    expect(
+      chapterRequest.safeParse({ resourceId: 'bsb', bookId: 'john', chapter: 0 }).success,
+    ).toBe(false);
+  });
+
+  it('validates chapter data returned across the bridge', () => {
+    expect(
+      chapterData.safeParse({
+        resourceId: 'bsb',
+        bookId: 'JHN',
+        chapter: 3,
+        verses: [
+          {
+            key: 43_003_016,
+            verse: 16,
+            text: 'For God so loved...',
+            paragraphStart: true,
+            poetry: 0,
+          },
+        ],
+        headings: [],
+        footnotes: [],
+      }).success,
+    ).toBe(true);
   });
 });
 

@@ -1,4 +1,10 @@
-import type { AppInfo, WindowState } from './ipc/contracts.js';
+import type {
+  AppInfo,
+  ChapterData,
+  ChapterRequest,
+  ResourceSummary,
+  WindowState,
+} from './ipc/contracts.js';
 import type { AppSettings, SettingsPatch } from './settings.js';
 import type { Workspace } from './workspace/types.js';
 import type { IpcResult } from './ipc/result.js';
@@ -20,6 +26,10 @@ export interface VerseScapeBridge {
   readonly workspace: {
     get(): Promise<IpcResult<Workspace | null>>;
     save(workspace: Workspace): Promise<IpcResult<null>>;
+  };
+  readonly resources: {
+    list(): Promise<IpcResult<ResourceSummary[]>>;
+    getChapter(request: ChapterRequest): Promise<IpcResult<ChapterData>>;
   };
   readonly window: {
     minimize(): Promise<IpcResult<null>>;

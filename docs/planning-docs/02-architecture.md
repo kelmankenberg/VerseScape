@@ -99,6 +99,14 @@ Resources are served to the renderer over a registered `versescape://` scheme
 handled in main. Benefits: no `file://` access from the renderer, streaming of
 large assets, and per-request authorisation against the enabled-resource list.
 
+Structured Bible data does **not** travel through the protocol. Chapter reads
+use the validated `resource:get-chapter` IPC contract and return typed verse,
+heading and footnote rows. `versescape://resource/<id>/<asset>` is reserved for
+streamed assets. Its handler accepts resource ids rather than paths, rejects
+encoded separators and traversal, and realpath-checks every asset under the
+installed resource's `assets/` directory. M3 authorises installed bundled
+resources; M6's enable/disable state narrows that to the enabled-resource list.
+
 ## Error handling
 
 - Main: structured logger (`electron-log`) with rotating files under `logs/`.

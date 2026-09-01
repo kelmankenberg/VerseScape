@@ -1,8 +1,9 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test, expect, _electron as electron } from '@playwright/test';
 import type { ElectronApplication, Page } from '@playwright/test';
+import type { VerseScapeBridge } from '@shared/bridge.js';
 
 let app: ElectronApplication;
 let page: Page;
@@ -112,4 +113,50 @@ test('the About dialog credits the sources we are obliged to credit', async () =
 
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
+});
+
+test('reads a real chapter through the sandboxed resource bridge', async () => {
+  test.skip(!existsSync('resources/compiled/bsb/bsb.db'), 'Run pnpm resources:build first.');
+
+  const resources = await page.evaluate(() =>
+    (globalThis as unknown as { versescape: VerseScapeBridge }).versescape.resources.list(),
+  );
+  expect(resources.ok).toBe(true);
+  if (!resources.ok) return;
+  expect(resources.data.map((resource) => resource.id)).toEqual(['bsb', 'kjv']);
+
+  const result = await page.evaluate(() =>
+    (globalThis as unknown as { versescape: VerseScapeBridge }).versescape.resources.getChapter({
+      resourceId: 'bsb',
+      bookId: 'JHN',
+      chapter: 3,
+    }),
+  );
+  expect(result.ok).toBe(true);
+  if (!result.ok) return;
+
+  expect(result.data.verses).toHaveLength(36);
+  expect(result.data.verses[15]).toMatchObject({ key: 43_003_016, verse: 16 });
+  expect(result.data.verses[15]!.text).toContain('God so loved the world');
+  expect(result.data.footnotes.length).toBeGreaterThan(0);
+
+  const assetDir = 'resources/compiled/bsb/assets';
+  const assetPath = `${assetDir}/protocol-test.txt`;
+  mkdirSync(assetDir, { recursive: true });
+  writeFileSync(assetPath, 'VerseScape protocol', 'utf8');
+  try {
+    const asset = await app.evaluate(async ({ net }) => {
+      const response = await net.fetch('versescape://resource/bsb/protocol-test.txt');
+      return { status: response.status, text: await response.text() };
+    });
+    expect(asset).toEqual({ status: 200, text: 'VerseScape protocol' });
+
+    const traversalStatus = await app.evaluate(async ({ net }) => {
+      const response = await net.fetch('versescape://resource/bsb/%2e%2e/bsb.db');
+      return response.status;
+    });
+    expect(traversalStatus).toBe(404);
+  } finally {
+    rmSync(assetPath, { force: true });
+  }
 });

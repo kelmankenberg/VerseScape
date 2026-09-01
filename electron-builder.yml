@@ -7,6 +7,12 @@ directories:
 files:
   - out/**/*
   - package.json
+extraResources:
+  - from: resources/compiled
+    to: resources
+    filter:
+      - '**/*.db'
+      - '**/manifest.json'
 asar: true
 
 linux:

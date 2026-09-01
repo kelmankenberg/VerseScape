@@ -14,6 +14,8 @@ export const IpcChannels = {
   settingsPatch: 'settings:patch',
   workspaceGet: 'workspace:get',
   workspaceSave: 'workspace:save',
+  resourceList: 'resource:list',
+  resourceGetChapter: 'resource:get-chapter',
 } as const;
 
 export type IpcChannel = (typeof IpcChannels)[keyof typeof IpcChannels];

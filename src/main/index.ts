@@ -4,7 +4,10 @@ import { applySecurityPolicy, enableProcessSandbox } from './platform/security.j
 import { createMainWindow, getMainWindow } from './platform/window-manager.js';
 import { registerIpcHandlers } from './ipc/index.js';
 import { flushSettings } from './services/settings.js';
+import { closeResources } from './services/resources.js';
+import { installResourceProtocol, registerResourceScheme } from './platform/resource-protocol.js';
 
+registerResourceScheme();
 enableProcessSandbox();
 
 // Single window in v1 (decision D-15): a second launch focuses the first.
@@ -22,6 +25,7 @@ if (!app.requestSingleInstanceLock()) {
   void app.whenReady().then(() => {
     electronApp.setAppUserModelId('app.versescape.VerseScape');
     applySecurityPolicy(is.dev);
+    installResourceProtocol();
     registerIpcHandlers();
 
     app.on('browser-window-created', (_event, window) => {
@@ -39,5 +43,8 @@ if (!app.requestSingleInstanceLock()) {
     if (process.platform !== 'darwin') app.quit();
   });
 
-  app.on('will-quit', flushSettings);
+  app.on('will-quit', () => {
+    flushSettings();
+    closeResources();
+  });
 }
