@@ -40,8 +40,8 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 - Reference model, parser, formatter (heavily unit-tested)
 - Bible panel: chapter render, virtualised scroll, nav bar, translation switch
 - Display options; Passage Compare panel
-- Link sets with reference following and verse-anchored scroll sync
-- **Exit:** FR-RD-01..05, FR-WS-08, FR-WS-13..14; three linked panels scroll together
+- Sync sets A–D with verse-anchored following on scroll, click and navigation
+- **Exit:** FR-RD-01..05, FR-WS-08, FR-WS-13..15; three linked panels scroll together
 
 ## M4 — Search
 
@@ -55,7 +55,7 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 
 - Notes schema, notebook tree, TipTap editor with `ref` nodes
 - Notes panel + full-page Notes view
-- Notes panel joins link sets and participates in scroll sync
+- Notes panel joins sync sets and follows the current verse
 - Personal commentary: notebook `kind`, verse-keyed entry view, commentary
   panel, create/edit from a Bible selection (FR-NT-09..12)
 - Outline mode with collapsible headings (lesson/sermon prep)
@@ -70,10 +70,12 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 - `.vsres` import with full validation and sandboxed extraction
 - Signed catalogue fetch, resumable download, atomic install
 - Resource Reader panel; compile Matthew Henry and JFB commentaries
-- Commentary follows the reference link set alongside Bible panels
+- Commentary follows its sync set alongside Bible panels
 - Personal commentaries listed in the Library and exportable as `.vsres`
   (FR-NT-13)
-- **Exit:** FR-LB-01..07
+- Configurable library location with move-and-rollback migration, plus the
+  unavailable-path degraded state (FR-LB-08/09)
+- **Exit:** FR-LB-01..09
 
 ## M7 — Dashboard, plans, polish
 
@@ -87,16 +89,19 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 
 - electron-builder config: AppImage, deb, NSIS
 - Auto-update channel, signing (F3 permitting)
-- Backup/export/import of user data
+- Backup/export/import of user data, with a user-chosen backup directory,
+  cloud-folder guard rails and optional scheduled backups (FR-ST-06..08)
 - Performance pass against NFR-01..03
 - Docs: user guide, keyboard reference, resource authoring guide
 - **Exit:** installable v1.0 on Linux and Windows
 
 ## Deferred to v2
 
-Original languages and lexicons · accounts, sign-in and cloud sync (D-21,
-FR-AC-\*) · multi-window and floating panels (D-15) · native Wayland (D-18) ·
-timeline/atlas panels · plugin API · macOS · collaborative features
+Original languages and lexicons · multi-window and floating panels (D-15) ·
+native Wayland (D-18) · timeline/atlas panels · plugin API · macOS ·
+collaborative features
+
+**Deferred indefinitely:** accounts, sign-in and cloud database sync (D-22).
 
 ## Cross-cutting risks
 
@@ -109,5 +114,6 @@ timeline/atlas panels · plugin API · macOS · collaborative features
 | Resource licensing ambiguity                                     | Public domain only for v1; licence recorded per resource                                                |
 | better-sqlite3 native rebuilds across platforms                  | Pin versions, build in CI matrix, cache prebuilds                                                       |
 | Scroll sync feels laggy or fights the user (D-19)                | Verse-key anchoring, rAF throttling, origin suppression; measure against NFR-02 with 6 linked panels    |
-| Sync server cost and custody with no revenue (D-21, H1)          | Answer H1/H2 before committing to v2 accounts; self-host or BYO-storage keeps cost at zero              |
+| User puts the live database in a cloud-synced folder (D-24)      | Refuse for the user DB, warn for the library; document why in Settings and the user guide              |
+| Library on a removable or network drive disappears               | Degraded startup with a banner (FR-LB-09); resources open read-only so nothing corrupts                |
 | Scope creep from Logos feature parity                            | Requirements table is the contract; new asks go to v2                                                   |

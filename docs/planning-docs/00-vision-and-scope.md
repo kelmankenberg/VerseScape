@@ -27,14 +27,15 @@ be excellent rather than broad.
 
 ## Product pillars
 
-1. **Offline-first.** Everything works with no network. Network is for
-   downloading resources and optional sync only.
+1. **Offline-first.** Everything works with no network. Network is used only to
+   download resources. There is no server, no account, and no cloud database.
 2. **Workspace, not a reader.** Arbitrary rows/columns of tabbed panels that the
    user arranges and saves as named layouts.
-3. **Linked reading.** Panels can join a "link set" and follow one another by
-   scripture reference, staying aligned as the reader scrolls.
+3. **Linked reading.** Panels can join one of four sync sets (A–D) and stay on
+   the same verse as the reader moves.
 4. **Own your data.** Notes are plain, exportable, and stored locally in an open
-   format.
+   format. The library and the backup destination are the user's choice of
+   folder, including a cloud-synced one.
 5. **Cross-platform parity.** Linux is a first-class target, not an afterthought.
 
 ## In scope (v1)
@@ -55,8 +56,8 @@ be excellent rather than broad.
 ## Out of scope (v1)
 
 - Mobile / web clients
-- Accounts, sign-in and multi-device sync — specified for v2 (D-21), and v1
-  keeps the schema ready for it
+- Accounts, sign-in and cloud database sync — deferred indefinitely (D-22).
+  Off-device continuity is a backup folder the user's own cloud client syncs.
 - Original-language morphology and lexicon integration (v2)
 - Commercial resource store / DRM — the app is free and open source
 - Collaborative real-time editing

@@ -2,18 +2,51 @@
 
 ## Storage locations
 
-| Data         | Location                                                                                          |
-| ------------ | ------------------------------------------------------------------------------------------------- |
-| User DB      | `app.getPath('userData')/versescape.db`                                                           |
-| Resources    | `userData/resources/<resourceId>/` (one SQLite file + assets per resource)                        |
-| Search index | Per-resource FTS tables inside the resource DB; a shared `catalog.db` for cross-resource metadata |
-| Settings     | `userData/settings.json` (human-editable, Zod-validated)                                          |
-| Logs         | `userData/logs/`                                                                                  |
-| Backups      | `userData/backups/`                                                                               |
+| Data         | Default location                                                                                  | User-configurable       |
+| ------------ | ------------------------------------------------------------------------------------------------- | ----------------------- |
+| User DB      | `app.getPath('userData')/versescape.db`                                                           | No — see the warning    |
+| Resources    | `userData/resources/<resourceId>/` (one SQLite file + assets per resource)                        | **Yes** (FR-LB-08)      |
+| Search index | Per-resource FTS tables inside the resource DB; a shared `catalog.db` for cross-resource metadata | Follows the library     |
+| Settings     | `userData/settings.json` (human-editable, Zod-validated)                                          | No                      |
+| Logs         | `userData/logs/`                                                                                  | No                      |
+| Backups      | `userData/backups/`                                                                               | **Yes** (FR-ST-06)      |
 
 Rationale for **one DB per resource**: install/uninstall is a file operation,
 resources stay read-only and shareable, and the user DB stays small and easy to
 back up.
+
+### Configurable library location (FR-LB-08)
+
+The library may live on another drive — a NAS mount, an external disk, or a
+second SSD — because a full commentary set is large. Requirements that follow:
+
+- The path is validated on selection: it must exist, be writable, and have
+  enough free space for the current library.
+- Changing the location **moves** the existing library with progress and a
+  rollback on failure; it never silently orphans resources.
+- If the path is missing at startup (drive unplugged, network share down), the
+  app starts in a degraded state with a clear banner and the library disabled,
+  rather than failing to launch or re-downloading.
+- Resource files are opened read-only, so a slow or removable volume degrades
+  performance but cannot corrupt anything.
+
+### Configurable backup location (FR-ST-06)
+
+The backup destination is an ordinary directory path. Pointing it at a
+Dropbox, MEGA, Google Drive, iCloud or OneDrive folder is explicitly supported
+and needs **no API integration or account** — the vendor's desktop client syncs
+the folder. This is how off-device backup works while the app stays local-first.
+
+> **Do not put the live database or the library in a cloud-synced folder.**
+> Sync clients copy files mid-write and reconcile them behind our back. For
+> SQLite that means a WAL desynchronised from its database and a corrupted
+> store. Backups are safe because they are written once, atomically, and never
+> reopened for writing.
+>
+> The app therefore refuses to place the **user DB** in a directory it detects
+> as cloud-synced, warns loudly for the **library**, and permits it freely for
+> **backups**. Detection is best-effort by well-known folder names, so the
+> warning is advisory rather than a hard guarantee.
 
 ## Reference model
 

@@ -71,7 +71,7 @@ Left → right:
 2. App title + current context (`VerseScape · John 3 · KJV`), doubles as drag handle
 3. Centre: global search input (`Ctrl+K` focuses), reference-aware
 4. Special actions (contextual to active page):
-   - Workspace: `New Panel ▾`, `Split ▾`, `Layouts ▾`, `Link Sets ▾`
+   - Workspace: `New Panel ▾`, `Split ▾`, `Layouts ▾`, `Sync Sets ▾` (A–D)
    - Notes: `New Note`, `Export`
 5. Global actions: notifications, theme toggle, profile
 6. Window controls

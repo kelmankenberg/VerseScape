@@ -25,13 +25,15 @@ interface GroupNode {
   activeTab: TabId;
 }
 
+type SyncSetId = 'A' | 'B' | 'C' | 'D';
+
 interface Tab {
   id: TabId;
   panelType: string; // key into the panel registry
   state: JsonValue; // serialized panel state
   title?: string; // user override
   pinned?: boolean;
-  linkSet?: LinkSetId | null;
+  syncSet?: SyncSetId | null;
 }
 
 interface Workspace {
@@ -39,7 +41,7 @@ interface Workspace {
   name: string;
   root: LayoutNode;
   tabs: Record<TabId, Tab>;
-  linkSets: Record<LinkSetId, { colour: string; reference: string | null }>;
+  syncSets: Record<SyncSetId, { colour: string; verseKey: number | null }>;
   focusedGroup: NodeId;
   updatedAt: string;
 }
@@ -97,48 +99,64 @@ dragging. Tab strip shows an insertion caret.
 
 Dragging outside the window does nothing in v1 (single-window, D-15).
 
-## Link sets
+## Sync sets
 
-- Up to 6 colour-coded sets: A–F.
-- A panel's tab shows a small colour dot when linked.
-- On navigation, the panel publishes `{ setId, reference, originTabId }`;
-  members other than the origin navigate. Versification differences resolved
-  by the mapping layer (doc 06).
-- Linkable panel types: Bible, Passage Compare, Resource Reader (commentaries,
-  published and personal), and Notes.
+Four sets, **A, B, C and D**, each with a colour — the Logos model.
 
-## Scroll sync (FR-WS-13)
+- A panel belongs to at most one set, or to none.
+- The tab shows the set letter and colour; the set is chosen from the tab
+  context menu and from the toolbar's set picker.
+- Sets are workspace state, saved with the layout.
+- Linkable panel types: Bible, Passage Compare, Resource Reader (published and
+  personal commentaries), and Notes.
 
-A link set stays aligned **continuously while scrolling**, not only when the
-user explicitly navigates.
+## Verse sync (FR-WS-13..16)
+
+Members of a set stay on the same verse. Sync fires whenever a verse **comes
+into focus**, not only on explicit navigation:
+
+| Trigger                              | Publishes                                                |
+| ------------------------------------ | -------------------------------------------------------- |
+| Scrolling                            | verse at the viewport top, throttled to animation frames |
+| Reference navigation                 | the target reference                                     |
+| Clicking a verse or selecting text   | the verse containing the selection anchor                |
+| Keyboard verse movement              | the focused verse                                        |
+| Opening or remounting a linked panel | nothing; the panel adopts the set's current verse        |
 
 **Anchor by verse key, never by pixel ratio.** Proportional scrolling breaks
 immediately across heterogeneous resources: a commentary entry on Romans 9 may
 run for pages while the verse itself is two lines, and a notes panel may hold
 one paragraph for a whole chapter. Percentage-based sync would drift apart
-within a screen.
+within a single screen.
 
-The algorithm:
+The panel contract:
 
-1. Each linkable panel exposes `getAnchorAtViewportTop(): VerseKey` and
-   `scrollToVerse(key: VerseKey, options): void`.
-2. On scroll, the origin panel reads its top anchor and publishes
-   `{ setId, verseKey, originTabId }`, throttled to animation frames.
-3. Each other member maps the key into its own versification and calls
-   `scrollToVerse`. Panels whose content does not cover that verse scroll to
-   the nearest covered verse and show a subtle "nearest match" affordance
-   rather than jumping somewhere misleading.
-4. Sync is **suppressed on the origin** for the duration of the gesture plus a
-   short tail, so an echo cannot fight the user's own scrolling (FR-WS-14).
-5. A panel may follow references but opt out of scroll sync (FR-WS-15).
+```ts
+interface SyncablePanel {
+  /** Verse currently at the top of this panel's viewport. */
+  getAnchorVerse(): VerseKey | null;
+  /** Move to a verse. `origin` lets the panel suppress its own echo. */
+  scrollToVerse(key: VerseKey, options: { origin: TabId; smooth: boolean }): void;
+  /** False when this panel holds no content for that verse. */
+  covers(key: VerseKey): boolean;
+}
+```
 
-Correctness rules that fall out of this:
+Correctness rules:
 
-- Programmatic scrolls must be tagged so they do not re-publish.
-- The publisher is whichever panel the user last interacted with; hover alone
-  does not transfer origin.
-- Sync must survive a panel being LRU-unmounted and remounted (D-14): the
-  panel re-joins its set and jumps to the set's current reference on mount.
+1. The publisher is whichever panel the user last interacted with; hover alone
+   does not transfer origin.
+2. Publishing is throttled to animation frames and loop-guarded by originator
+   id. Programmatic scrolls are tagged so they never re-publish.
+3. Sync is suppressed on the origin for the gesture plus a short tail, so an
+   echo cannot fight the user's own scrolling (FR-WS-15).
+4. A panel that does not cover the target verse moves to the nearest covered
+   verse and shows a subtle "nearest match" affordance, rather than jumping
+   somewhere misleading.
+5. Versification differences are resolved by the mapping layer (doc 06) before
+   `scrollToVerse`.
+6. Sync must survive LRU unmount and remount (D-14): on mount a panel re-joins
+   its set and adopts the set's current verse.
 
 ## Persistence
 

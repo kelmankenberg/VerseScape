@@ -11,7 +11,7 @@ Settled items are struck through and recorded in [13-decision-log.md](13-decisio
 | ~~A2~~ | ~~Personal, open-source, or commercial?~~                | **Resolved D-02:** open source, free forever.                                            |
 | A3     | Which Bible translations must ship in v1?                | Default: KJV, ASV, WEB, YLT (all public domain). Which are _bundled_ vs downloaded?      |
 | ~~A4~~ | ~~Commentaries in v1 or v2?~~                            | **Resolved D-01:** v1, via Resource Reader. Which commentaries? (see E7)                 |
-| A5     | Is cloud sync ever planned?                              | Default: design the schema for it, ship nothing in v1.                                   |
+| ~~A5~~ | ~~Is cloud sync ever planned?~~                          | **Resolved D-22:** no. Local-first; backups go to a user-chosen folder.                  |
 | A6     | Is macOS a future target?                                | Default: keep the code portable, do not build/test it.                                   |
 | A7     | **New** — Which open-source licence?                     | **Resolved D-08:** GPL-3.0-or-later.                                                     |
 | A8     | **New** — Do you want public contributions from day one? | Drives CONTRIBUTING.md, issue templates, code of conduct, and how strict the PR gate is. |
@@ -34,7 +34,7 @@ Settled items are struck through and recorded in [13-decision-log.md](13-decisio
 | ~~C2~~ | ~~Do background tabs stay mounted?~~                                            | **Resolved D-14:** mounted, LRU cap of 8.                                    |
 | ~~C3~~ | ~~Floating/detached panels in v1 or v2?~~                                       | **Resolved D-15:** v2.                                                       |
 | C4     | Max split depth?                                                                | Default: unlimited by model, minimum-size constraint limits it in practice.  |
-| C5     | Are link sets user-visible colours (A–F) or implicit?                           | Default: explicit colours, Logos-style.                                      |
+| ~~C5~~ | ~~Are link sets user-visible colours (A–F) or implicit?~~                       | **Resolved D-23:** four explicit sets A–D, Logos-style, chosen per tab.      |
 | C6     | Should each panel have its own toolbar, or use the global toolbar contextually? | Default: slim per-panel header + global toolbar for workspace-level actions. |
 
 ## D. Reading experience
@@ -78,16 +78,20 @@ Settled items are struck through and recorded in [13-decision-log.md](13-decisio
 | G2     | Linux app id and desktop entry name (`app.versescape.VerseScape`?).                           |
 | ~~G3~~ | ~~Accent colour and visual tone?~~ **Resolved D-11:** modern dark-first, VS Code/Linear feel. |
 
-## H. Accounts and sync (v2, D-21)
+## H. Accounts and sync (deferred — D-22)
 
-None of these block v1, but they shape whether v2 is feasible for a free
-GPL project with no revenue (D-02).
+D-22 settled the shape of this: **no web sync, local-first, backups to a
+user-chosen folder.** Most of these questions are therefore closed. They stay
+recorded because they become live again if a first-party service is ever
+considered.
 
-| #   | Question                                                                            | Notes                                                                                                                        |
-| --- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| H1  | Who pays for and operates the sync server?                                          | The unsolved problem. Options: self-hostable server, a BYO-storage model (user's own Dropbox/WebDAV/S3), or a funded service. |
-| H2  | Self-hosted / BYO-storage instead of a first-party service?                         | Fits the GPL and privacy stance far better and removes hosting cost; worse onboarding for non-technical users.                |
-| H3  | End-to-end encryption of note content — and if so, how is key recovery handled?     | E2EE plus "I forgot my password" is a genuine tension; losing a decade of sermon notes is unacceptable.                       |
-| H4  | Auth mechanism: email + password, magic link, or OAuth via an existing provider?    | Device-code flow keeps credentials out of the app.                                                                           |
-| H5  | Conflict resolution beyond last-writer-wins for long-form note bodies?              | Two devices editing the same note offline is the realistic bad case; consider CRDT or per-field merge.                        |
-| H6  | Does an account ever gate any non-sync feature?                                     | Strong default: **no**, per FR-AC-02.                                                                                        |
+| #      | Question                                                                         | Notes                                                                                                                       |
+| ------ | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| ~~H1~~ | ~~Who pays for and operates the sync server?~~                                    | **Closed by D-22:** there is no sync server.                                                                                |
+| ~~H2~~ | ~~Self-hosted / BYO-storage instead of a first-party service?~~                   | **Closed by D-22:** effectively BYO-storage — backups go to the user's own cloud-synced folder.                             |
+| H3     | End-to-end encryption of note content — and if so, how is key recovery handled?  | **Deliberately postponed.** Only becomes relevant if a service is ever built. Note: backups sitting in a cloud folder are readable by that provider today — see H7. |
+| ~~H4~~ | ~~Auth mechanism?~~                                                              | **Moot** while accounts are deferred.                                                                                       |
+| ~~H5~~ | ~~Conflict resolution beyond last-writer-wins?~~                                  | **Moot** while there is no sync. Relevant again if two machines ever share one backup folder — see H8.                       |
+| ~~H6~~ | ~~Does an account ever gate any non-sync feature?~~                               | **Closed:** no. There is no account.                                                                                        |
+| H7     | Should the backup archive be optionally encrypted with a user passphrase?         | Backups in a Dropbox/Drive folder are plainly readable by that provider. Sermon notes may be personal. Cheap to add.         |
+| H8     | What happens if two machines back up to, and restore from, the same folder?        | Not sync, but users will try it. At minimum, name archives per-device and never auto-restore.                               |

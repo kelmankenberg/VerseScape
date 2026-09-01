@@ -71,26 +71,26 @@ interface PanelDescriptor<TState = unknown> {
   createState: (init?: Partial<TState>) => TState;
   serialize: (s: TState) => JsonValue; // for layout persistence
   deserialize: (j: JsonValue) => TState;
-  linkable?: boolean; // participates in reference link sets
+  linkable?: boolean; // participates in verse sync sets
   commands?: PanelCommand[]; // contributed to command palette + toolbar
 }
 ```
 
 Adding a panel type = one folder + one registry entry. No shell changes.
 
-## Reference link sets
+## Sync sets
 
-- A link set has an id, a colour, and a current `ReferenceRange`.
-- A panel opts in to at most one link set.
-- When a linkable panel navigates, it publishes to its set; other members
-  resolve that reference into their own versification and navigate.
-- Scrolling publishes the same way, anchored on the verse at the viewport top
-  rather than a scroll percentage (FR-WS-13). Panel types therefore implement
-  `getAnchorAtViewportTop()` and `scrollToVerse()` as part of the panel
+- Four sets, A/B/C/D, each with a colour. A panel opts in to at most one.
+- When a linkable panel moves to a verse — by scrolling, navigating, clicking
+  or selecting — it publishes to its set; other members resolve the verse into
+  their own versification and move to it.
+- Anchoring is on the verse at the viewport top rather than a scroll
+  percentage (FR-WS-14). Linkable panel types therefore implement
+  `getAnchorVerse()`, `scrollToVerse()` and `covers()` as part of the panel
   contract.
 - Publishing is throttled to animation frames and loop-guarded by originator
   id; programmatic scrolls are tagged so they never re-publish.
-- Link sets live entirely in the renderer. They are view state, not user data,
+- Sync sets live entirely in the renderer. They are view state, not user data,
   and are persisted only as part of the workspace layout.
 
 ## Custom protocol
