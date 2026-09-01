@@ -19,15 +19,15 @@ such rather than resolved.
 
 ## Summary
 
-| Resource                          | Licence                   | Status                      | Obligation                                 |
-| --------------------------------- | ------------------------- | --------------------------- | ------------------------------------------ |
-| Berean Standard Bible (BSB)       | CC0 1.0 / public domain   | **Verified**                | None required; naming limit on derivatives |
-| King James Version (KJV)          | Public domain by age      | **Verified (with caveat)**  | None; UK Crown copyright caveat            |
-| World English Bible (WEB)         | Public domain             | **Verified**                | Trademark limit on the name                |
-| STEPBible **TVTMS** versification | CC BY 4.0                 | **Verified**                | Credit "STEP Bible" + link; record changes |
-| openbible.info cross-references   | CC BY 4.0                 | **Verified**                | Attribution                                |
-| CCEL (as a source)                | Non-commercial by default | **Permission being sought** | Blocked until the grant is recorded        |
-| Matthew Henry / JFB (the works)   | Public domain by age      | Source pending permission   | See **E11**                                |
+| Resource                          | Licence                 | Status                     | Obligation                                                     |
+| --------------------------------- | ----------------------- | -------------------------- | -------------------------------------------------------------- |
+| Berean Standard Bible (BSB)       | CC0 1.0 / public domain | **Verified**               | None required; naming limit on derivatives                     |
+| King James Version (KJV)          | Public domain by age    | **Verified (with caveat)** | None; UK Crown copyright caveat                                |
+| World English Bible (WEB)         | Public domain           | **Verified**               | Trademark limit on the name                                    |
+| STEPBible **TVTMS** versification | CC BY 4.0               | **Verified**               | Credit "STEP Bible" + link; record changes                     |
+| openbible.info cross-references   | CC BY 4.0               | **Verified**               | Attribution                                                    |
+| CCEL (as a source)                | Text is public domain   | **Verified**               | Attribution (courtesy); take text only, never their formatting |
+| Matthew Henry / JFB (the works)   | Public domain by age    | **Verified**               | Confirm the edition is not a CCEL exception                    |
 
 ---
 
@@ -180,73 +180,69 @@ Scripture text, so that copyright is not engaged.
 
 ---
 
-## CCEL — PERMISSION BEING SOUGHT
+## CCEL — CLEARED (text is public domain; their files are not)
 
-- **Source:** https://www.ccel.org/about/copyright.html (linked only from the
-  site footer)
-- **Retrieved:** 2026-09-01
-- **Status:** **Blocked pending written permission.** Do not compile until the
-  grant is recorded below.
+- **Source:** https://www.ccel.org/about/copyright.html
+- **Clarification received:** 2026-09-01, by email from Quincy at CCEL
+- **Status:** **Verified.** Redistributable, because the basis is the public
+  domain status of the works — not a licence grant from CCEL.
 
-> CCEL.org website and special contents copyright 1993-2020 Harry Plantinga.
->
-> Most of the editions at the Christian Classics Ethereal library are based on
-> books that are public domain in the United States. However, they may have
-> copyrighted introductions, cover art, and other special contents. A few books
-> are under another publisher's copyright and are used by permission; these are
-> noted on the book information page.
->
+The published policy reads:
+
 > These books may be used for personal, educational, or non-profit purposes.
 > Contact us for permission to republish CCEL works or to use them commercially.
 
-### Why the default terms are not enough
+CCEL clarified what that covers, verbatim:
 
-"Non-profit purposes" plus "contact us for permission to republish" restricts
-redistribution. VerseScape is GPL-3.0-or-later (D-08), so everyone who receives
-the app may redistribute it. A grant covering only this project would leave the
-resource non-redistributable by its recipients.
+> That being said, the texts of nearly all of the works on CCEL.org are public
+> domain; CCEL.org claims copyright on the _files_ we create and distribute. In
+> other words, quoting or translating books on our site is generally fine; the
+> most important thing we restrict is selling our files, the formatting
+> contained within those files, or some derivative thereof.
+>
+> Of course, when using our works, mentioning our site somewhere in your
+> publication is always deeply appreciated by us, as is any donation from your
+> proceeds.
 
-That is survivable — resource databases are **mere aggregation**, delivered as
-separate catalogue downloads (D-04) rather than linked into the program — but a
-non-redistributable resource has real consequences: it cannot be bundled in an
-installer, and Linux packagers must be able to exclude it.
+### What this means
 
-### What the permission needs to say
+Their claim is over **the files and the formatting**, not the text. Since
+Matthew Henry (d. 1714) and Jamieson-Fausset-Brown (1871) are public domain, we
+may use the text freely and our recipients may redistribute it. `redistributable`
+is therefore `true`, and the resource licence is **PublicDomain** — CCEL is
+recorded as the _source_, not the licensor.
 
-**Preferred.** Ask CCEL to license their transcriptions of _Matthew Henry's
-Commentary_ and _Jamieson-Fausset-Brown_ under **CC BY 4.0**, or to release them
-to the public domain. Both underlying works are already public domain, so this
-grants away nothing beyond CCEL's own transcription and markup. A public licence
-travels with the file and needs no follow-up.
+### Binding constraint on the compiler
 
-**Acceptable fallback.** Permission for VerseScape to distribute the texts, _and_
-for recipients of VerseScape to redistribute them unmodified. The second half
-matters more than the first.
+We must take **text only** and discard CCEL's formatting. Their restriction
+covers "the formatting contained within those files, or some derivative
+thereof", so a compiled resource must not reproduce their ThML structure or
+presentational choices.
 
-**Insufficient.** Permission for this project alone. The resource would then be
-marked `redistributable: false`, excluded from any bundled installer, and
-flagged in the Library so users know they may not pass it on.
+The pipeline already satisfies this: doc 07 reduces every source to our own
+restricted inline markup (`wj`, `i`, `sc`, `n`, `q`) at compile time. That rule
+was written for security reasons, and it happens to be exactly what is required
+here. **It must not be relaxed for ThML input.**
 
-### Record the grant here when it arrives
+### Obligation
 
-| Field                         | Value     |
-| ----------------------------- | --------- |
-| Date granted                  | _pending_ |
-| Granted by                    | _pending_ |
-| Scope                         | _pending_ |
-| Redistributable by recipients | _pending_ |
-| Verbatim wording              | _pending_ |
+Attribution is _appreciated but not required_. We do it anyway: CCEL is credited
+in the About dialog alongside the other resource sources.
 
-The underlying works remain public domain regardless: Matthew Henry (d. 1714)
-and Jamieson-Fausset-Brown (1871). If permission does not arrive, **E11** lists
-alternative transcriptions with open terms.
+### Still to confirm
+
+CCEL says "nearly all" works are public domain, and their policy notes that a
+few titles are used under another publisher's copyright, "noted on the book
+information page". Before compiling, check the book information page for the
+specific Matthew Henry and JFB editions used and confirm neither is one of the
+exceptions.
 
 ---
 
 ## Outstanding
 
-| Item                                    | Why it matters                                        |
-| --------------------------------------- | ----------------------------------------------------- |
-| Commentary source to replace CCEL (E11) | Blocks compiling Matthew Henry and JFB (M6)           |
-| Per-translation eBible rows             | Each text needs its own verified row before compiling |
-| E9 — UK Crown copyright on the KJV      | Accepted risk; non-commercial distribution only       |
+| Item                                                   | Why it matters                                        |
+| ------------------------------------------------------ | ----------------------------------------------------- |
+| Confirm the Henry/JFB editions are not CCEL exceptions | "Nearly all" works are public domain; a few are not   |
+| Per-translation eBible rows                            | Each text needs its own verified row before compiling |
+| E9 — UK Crown copyright on the KJV                     | Accepted risk; non-commercial distribution only       |

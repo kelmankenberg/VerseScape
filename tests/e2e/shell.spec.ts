@@ -87,3 +87,29 @@ test('theme changes apply and survive a restart', async () => {
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await expect(page.getByRole('main')).toHaveAttribute('data-page', 'settings');
 });
+
+test('the About dialog credits the sources we are obliged to credit', async () => {
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByRole('button', { name: 'About VerseScape' }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'VerseScape' });
+  await expect(dialog).toBeVisible();
+
+  // CC BY 4.0 makes these two attributions a licence obligation, not a courtesy.
+  await expect(dialog.getByRole('link', { name: 'STEP Bible' })).toHaveAttribute(
+    'href',
+    'https://www.STEPBible.org',
+  );
+  await expect(dialog.getByRole('link', { name: 'OpenBible.info' })).toBeVisible();
+  await expect(
+    dialog.getByRole('link', { name: 'Christian Classics Ethereal Library' }),
+  ).toHaveAttribute('href', 'https://www.ccel.org');
+
+  // External links must open in the browser, never in the app window.
+  for (const link of await dialog.getByRole('link').all()) {
+    await expect(link).toHaveAttribute('target', '_blank');
+  }
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+});

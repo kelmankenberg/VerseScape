@@ -76,8 +76,8 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 - Library page: list, enable/disable, delete, resource info with licence
 - `.vsres` import with full validation and sandboxed extraction
 - Signed catalogue fetch, resumable download, atomic install
-- Resource Reader panel; compile Matthew Henry and JFB commentaries from CCEL,
-  gated on the written permission recorded in `LICENSES.md` (E11, D-29)
+- Resource Reader panel; compile Matthew Henry and JFB commentaries from CCEL
+  (D-29 — text only, never their formatting)
 - Commentary follows its sync set alongside Bible panels
 - Personal commentaries listed in the Library and exportable as `.vsres`
   (FR-NT-13)

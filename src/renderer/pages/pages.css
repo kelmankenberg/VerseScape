@@ -203,6 +203,21 @@
   cursor: pointer;
 }
 
+.button {
+  padding: 5px 12px;
+  color: var(--vs-fg-primary);
+  background: var(--vs-bg-elevated);
+  border: 1px solid var(--vs-border);
+  border-radius: var(--vs-radius-sm);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.button:hover {
+  border-color: var(--vs-accent);
+}
+
 .switch input {
   position: absolute;
   opacity: 0;

@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { themePreference } from '@shared/settings.js';
 import type { ThemePreference } from '@shared/settings.js';
 import { useSettings } from '../stores/settings.js';
+import { AboutDialog } from '../components/AboutDialog.js';
 
 const themeLabels: Record<ThemePreference, string> = {
   dark: 'Dark',
@@ -12,6 +14,7 @@ export function SettingsPage(): React.JSX.Element {
   const settings = useSettings((state) => state.settings);
   const setTheme = useSettings((state) => state.setTheme);
   const patch = useSettings((state) => state.patch);
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   return (
     <div className="settings">
@@ -79,6 +82,23 @@ export function SettingsPage(): React.JSX.Element {
           <li>Data, backup and export — M8</li>
         </ul>
       </section>
+
+      <section className="settings__section" aria-labelledby="about-heading">
+        <h2 id="about-heading" className="settings__section-title">
+          About
+        </h2>
+        <div className="settings__row">
+          <div className="settings__label">
+            <span>About VerseScape</span>
+            <span className="settings__hint">Version details and resource acknowledgements.</span>
+          </div>
+          <button type="button" className="button" onClick={() => setAboutOpen(true)}>
+            About VerseScape
+          </button>
+        </div>
+      </section>
+
+      {aboutOpen && <AboutDialog onClose={() => setAboutOpen(false)} />}
     </div>
   );
 }

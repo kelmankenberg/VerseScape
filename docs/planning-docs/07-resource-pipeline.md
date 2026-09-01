@@ -28,8 +28,8 @@ APIs. It is a directory, not a source — licences still apply per resource.
 | ASV                             | openbibleinfo ASV repo (USX)    | Public domain         | Catalogue |
 | YLT, Darby, Webster, Geneva 1599 | eBible.org                     | Public domain         | Catalogue |
 | Douay-Rheims, Catholic PD Version | GitHub USFM repos             | Public domain         | Catalogue |
-| Matthew Henry (Concise)         | CCEL (permission pending, D-29) | Work is PD; transcription needs a grant | Catalogue |
-| Jamieson-Fausset-Brown          | CCEL (permission pending, D-29) | Work is PD; transcription needs a grant | Catalogue |
+| Matthew Henry (Concise)         | CCEL                            | Public domain (text)  | Catalogue |
+| Jamieson-Fausset-Brown          | CCEL                            | Public domain (text)  | Catalogue |
 | **Cross-references**            | openbible.info (TSK-derived)    | Verify                | Bundled   |
 | **Versification mapping**       | STEPBible **TVTMS**             | CC BY 4.0 — verify    | Bundled   |
 
@@ -52,12 +52,12 @@ letters patent); public domain elsewhere. Flagged, not resolved.
 - **Bible Hub, StudyLight, Blue Letter Bible** — the underlying texts are public
   domain, but their site terms forbid scraping and their compilations are their
   own work. Use the original transcriptions instead.
-- **CCEL** — verified 2026-09-01. Their published terms permit "personal,
-  educational, or non-profit purposes" and require permission to republish, so
-  they do not by themselves allow redistribution by the app's recipients.
-  **Written permission is being sought (D-29);** compilation is blocked until
-  the grant is recorded in `LICENSES.md`. The underlying commentaries remain
-  public domain — only CCEL's own transcriptions and ThML markup are at issue.
+- **CCEL** — cleared 2026-09-01. CCEL confirmed that the **texts** are public
+  domain and that their copyright claim covers **the files and formatting** they
+  produce, not the works. We may therefore take the text; we must not reproduce
+  their ThML structure or presentation. The compile-time reduction to our own
+  restricted inline markup already guarantees this and **must not be relaxed for
+  ThML input**. Attribution is a courtesy, and we give it in the About dialog.
 - **CrossWire / SWORD modules** — distribution permission is frequently granted
   to CrossWire specifically and is not transferable. Also raises a GPL-2.0 vs
   GPL-3.0 question if the library were linked. Excluded for v1 (**E2**).

@@ -1,0 +1,121 @@
+.about__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--vs-space-5);
+  background: rgb(0 0 0 / 55%);
+}
+
+.about {
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 100%);
+  max-height: min(640px, 100%);
+  background: var(--vs-bg-surface);
+  border: 1px solid var(--vs-border);
+  border-radius: var(--vs-radius-lg);
+  box-shadow: 0 24px 64px rgb(0 0 0 / 45%);
+}
+
+.about__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--vs-space-4) var(--vs-space-4) var(--vs-space-3);
+  border-bottom: 1px solid var(--vs-border);
+}
+
+.about__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.about__body {
+  padding: var(--vs-space-4);
+  overflow-y: auto;
+}
+
+.about__lead {
+  margin: 0 0 var(--vs-space-4);
+  color: var(--vs-fg-muted);
+  font-size: 13px;
+}
+
+.about__facts {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: start;
+  gap: var(--vs-space-1) var(--vs-space-4);
+  margin: 0 0 var(--vs-space-5);
+  font-family: var(--vs-font-mono);
+  font-size: 11px;
+}
+
+.about__facts dt {
+  color: var(--vs-fg-muted);
+}
+
+.about__facts dd {
+  margin: 0;
+}
+
+.about__section-title {
+  margin: 0 0 var(--vs-space-2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.about__note {
+  margin: 0 0 var(--vs-space-3);
+  color: var(--vs-fg-muted);
+  font-size: 12px;
+}
+
+.about__note code {
+  font-family: var(--vs-font-mono);
+}
+
+.about__attributions {
+  margin: 0 0 var(--vs-space-4);
+  padding: 0;
+  list-style: none;
+}
+
+.about__attribution {
+  padding: var(--vs-space-3) 0;
+  border-top: 1px solid var(--vs-border);
+}
+
+.about__attribution-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--vs-space-3);
+}
+
+.about__link {
+  color: var(--vs-accent);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.about__link:hover {
+  text-decoration: underline;
+}
+
+.about__licence {
+  color: var(--vs-fg-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.about__attribution-what {
+  margin: 4px 0 0;
+  color: var(--vs-fg-muted);
+  font-size: 12px;
+}
