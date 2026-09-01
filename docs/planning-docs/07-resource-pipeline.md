@@ -60,10 +60,19 @@ letters patent); public domain elsewhere. Flagged, not resolved.
 
 ### Provenance record
 
-The compiler maintains `tools/resource-compiler/LICENSES.md` recording, per
-resource: source URL, retrieval date, stated licence, full licence text, and
-any attribution string the terms require. `manifest.json` carries the same
-licence text so it ships with the resource (FR-LB-05).
+`packages/resource-compiler/LICENSES.md` records, per resource: source URL,
+retrieval date, the licence statement **quoted verbatim**, and any attribution
+the terms require. `manifest.json` carries the same licence text so it ships
+with the resource (FR-LB-05).
+
+**A resource may not be compiled into a shipped `.vsres` until its row in that
+file is marked Verified.** eBible.org in particular hosts both public-domain and
+licensed texts, and its policy puts the burden of checking on us — so each
+translation needs its own row, not a blanket "from eBible".
+
+Two naming constraints found during verification: both the **Berean Standard
+Bible** and the **World English Bible** permit their names only on verbatim
+copies. The compiler may normalise markup but must not alter wording.
 
 ## Source formats
 
@@ -142,10 +151,12 @@ stripped at compile time.
 
 - Mapping data ships as a compiled table: `(schemeA, keyA) → (schemeB, keyB)`.
 - **Source: STEPBible `TVTMS`** — "Versification Traditions with Methodology for
-  Standardisation: Eng+Heb+Lat+Grk+Others" from Tyndale House. Covers OT
-  differences across Hebrew, Latin and Greek traditions plus NT versification,
-  compared against an English standard. Licence CC BY 4.0 — **verify before
-  shipping**, and carry the attribution string. Resolves **E4**.
+  Standardisation: Eng+Heb+Lat+Grk+Others", from
+  [STEPBible/STEPBible-Data](https://github.com/STEPBible/STEPBible-Data).
+  Covers OT differences across Hebrew, Latin and Greek traditions plus NT
+  versification, compared against an English standard. **Licence CC BY 4.0,
+  verified 2026-09-01** — we must credit "STEP Bible" with a link to
+  www.STEPBible.org, and record any changes we make to the data. Resolves **E4**.
 - Unmappable references degrade to chapter-level with a UI indicator.
 
 ## Cross-references
@@ -155,7 +166,8 @@ stripped at compile time.
   principally the Treasury of Scripture Knowledge.
 - Compiled into the `cross_ref` table (doc 06) keyed by verse key, so a Bible
   panel can offer them inline without a separate resource.
-- Licence terms need verification before shipping.
+- **Licence CC BY 4.0, verified 2026-09-01.** We take reference data only, no
+  Scripture text, so the ESV quotations on that page are not engaged.
 
 ## Online-delivered resources (deferred — D-27)
 

@@ -58,8 +58,8 @@ Settled items are struck through and recorded in [13-decision-log.md](13-decisio
 | E6     | Notes stored as Markdown text vs ProseMirror JSON?              | Default: Markdown for portability; accept minor fidelity loss.                       |
 | ~~E7~~ | ~~Which public-domain commentaries for v1?~~                    | **Resolved D-26:** Matthew Henry (Concise) + JFB, from CCEL / htmlbible.com.         |
 | E8     | **New** — Who signs and hosts the catalogue for an OSS project? | GitHub Releases + a project key committed to the repo; key custody matters.          |
-| E9     | **New** — Does UK Crown copyright on the KJV affect distributing a bundled KJV? | Public domain outside the UK; perpetual letters patent within it. Probably fine in practice, but unverified. |
-| E10    | **New** — Confirm licences at source for BSB, STEPBible TVTMS, openbible.info cross-references, and each CCEL commentary. | Blocks M3/M6, not M2. Record each in `LICENSES.md` with a retrieval date (NFR-14). |
+| E9     | **New** — Does UK Crown copyright on the KJV affect distributing a bundled KJV? | **Accepted risk.** Public domain outside the UK; perpetual letters patent within it. Distribution is non-commercial (D-02). Recorded in `LICENSES.md`, not formally resolved. |
+| E10    | **New** — Confirm licences at source for BSB, STEPBible TVTMS, openbible.info cross-references, and each CCEL commentary. | **Mostly closed 2026-09-01.** Verified with quoted statements: BSB (CC0), WEB/eBible (PD, per-translation check required), STEPBible TVTMS (CC BY 4.0), openbible.info (CC BY 4.0). **CCEL remains unverified and blocks M6.** See `packages/resource-compiler/LICENSES.md`. |
 
 ## F. Engineering
 
