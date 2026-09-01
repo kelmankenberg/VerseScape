@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { formatReference, fromVerseKey, getBook, parseReference } from '@shared/reference/index.js';
 import type { ChapterData, ResourceSummary } from '@shared/ipc/contracts.js';
@@ -192,7 +192,7 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
     return () => cancelAnimationFrame(frame);
   }, [verses, resourceId, anchor.book, anchor.chapter, anchor.verse, scrollToVerse]);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const restore = pendingRestore.current;
     if (!restore || !containerRef.current) return;
     const index = verses.findIndex((verse) => verse.key === restore.verseKey);
@@ -201,15 +201,21 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
       return;
     }
 
-    virtualizer.scrollToIndex(index, { align: 'start' });
-    const frame = requestAnimationFrame(() => {
-      if (containerRef.current) containerRef.current.scrollTop += restore.offset;
-      const restoredVerse = verses[index];
-      if (restoredVerse) updateLiveReference(restoredVerse);
-      pendingRestore.current = null;
-      setRestoring(false);
+    let offsetFrame: number | null = null;
+    const positionFrame = requestAnimationFrame(() => {
+      virtualizer.scrollToIndex(index, { align: 'start' });
+      offsetFrame = requestAnimationFrame(() => {
+        if (containerRef.current) containerRef.current.scrollTop += restore.offset;
+        const restoredVerse = verses[index];
+        if (restoredVerse) updateLiveReference(restoredVerse);
+        pendingRestore.current = null;
+        setRestoring(false);
+      });
     });
-    return () => cancelAnimationFrame(frame);
+    return () => {
+      cancelAnimationFrame(positionFrame);
+      if (offsetFrame !== null) cancelAnimationFrame(offsetFrame);
+    };
   }, [updateLiveReference, verses, virtualizer]);
 
   const headings = new Map<number, ChapterData['headings']>();

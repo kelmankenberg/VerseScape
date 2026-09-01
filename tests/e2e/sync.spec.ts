@@ -183,6 +183,10 @@ test('virtualizes a long chapter and scrolls directly to an unmounted verse', as
 });
 
 test('scrolling forward automatically appends the next chapter', async () => {
+  const consoleErrors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
   await openReader();
   const scroll = page.getByTestId('bible-scroll');
 
@@ -202,9 +206,14 @@ test('scrolling forward automatically appends the next chapter', async () => {
   await expect(page.locator('.bible-panel__heading')).toHaveText('John 5');
   await expect(page.locator('.reference__input')).toHaveValue(/John 5:/);
   expect(await page.locator('.bible-panel__verse').count()).toBeLessThan(40);
+  expect(consoleErrors).toEqual([]);
 });
 
 test('scrolling backward prepends a chapter without losing the visible anchor', async () => {
+  const consoleErrors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
   await openReader();
   const scroll = page.getByTestId('bible-scroll');
 
@@ -226,6 +235,7 @@ test('scrolling backward prepends a chapter without losing the visible anchor', 
   await expect(page.locator('.bible-panel__heading')).toHaveText('John 1');
   await expect(page.locator('.reference__input')).toHaveValue(/John 1:/);
   expect(await page.locator('.bible-panel__verse').count()).toBeLessThan(40);
+  expect(consoleErrors).toEqual([]);
 });
 
 test('continuous reading stops at book boundaries', async () => {
