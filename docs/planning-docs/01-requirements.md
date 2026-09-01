@@ -41,6 +41,9 @@ See [05-workspace-panel-system.md](05-workspace-panel-system.md) for the model.
 | FR-WS-14 | M   | Sync anchors on **verse keys, not scroll percentage**, so a Bible, a commentary and a notes panel stay aligned despite content of wildly different lengths. Panels not covering the target verse move to the nearest covered verse and indicate the near miss. |
 | FR-WS-15 | M   | Sync is loop-guarded and throttled; the panel the user is actively driving is never moved by its own echo.                                          |
 | FR-WS-16 | S   | A panel may follow a set for reference but opt out of scroll-following, to hold still while the user reads elsewhere.                              |
+| FR-WS-17 | M   | **Every syncable panel has its own reference input** in a slim panel header — Bible, commentary, personal commentary and Notes alike. Entering a reference navigates that panel and publishes to its sync set, so any panel can drive the others. |
+| FR-WS-18 | M   | The reference input accepts a single verse or a range (`Ezra 1:7`, `Ezra 1:1-11`, `Ezra 1`). On a range, followers move to the **range start**; the origin panel may render the whole range. |
+| FR-WS-19 | M   | Each tab displays its sync set as a coloured letter badge (A–D), and the set is changed from the tab context menu, the badge itself, and the toolbar. |
 
 ### Panel types (v1)
 
@@ -53,7 +56,7 @@ See [05-workspace-panel-system.md](05-workspace-panel-system.md) for the model.
 | ID       | Pri | Requirement                                                                                                                                                                 |
 | -------- | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | FR-RD-01 | M   | Render a chapter or arbitrary passage range with verse numbers.                                                                                                             |
-| FR-RD-02 | M   | Reference navigation bar with parser accepting `Jn 3:16`, `John 3:16-18`, `Ps 23`, etc.                                                                                     |
+| FR-RD-02 | M   | Reference parser accepting `Jn 3:16`, `John 3:16-18`, `Ps 23`, `Ezra 1:1-11`, with abbreviations and punctuation variants. Shared by every panel's reference input (FR-WS-17). |
 | FR-RD-03 | M   | Virtualised continuous scrolling across chapter boundaries within a book.                                                                                                   |
 | FR-RD-04 | M   | Switch translation in-place, preserving current reference.                                                                                                                  |
 | FR-RD-05 | M   | Per-panel display options: verse-per-line vs paragraph, red letter, footnotes, headings, cross-refs. Default is **verse-per-line** (D-10); the global default is a setting. |

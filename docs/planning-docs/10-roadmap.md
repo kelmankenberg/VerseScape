@@ -29,19 +29,24 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 - Tab strip, activation, close, reorder
 - Drag/drop between groups and edge-split drop zones
 - Panel registry + two trivial panel types for testing
+- Panel header shell: reference input, resource selector slot, sync badge
+- Reference model, parser, formatter and book-name autocomplete (shared
+  infrastructure, needed by every panel header — D-25)
+- Sync set plumbing A–D: membership, badges, publish/subscribe, loop guard
 - LRU mount manager (cap 8) and the unmount/remount panel contract
 - Layout persistence and restore
-- **Exit:** FR-WS-01..07, FR-WS-12; a user can build a 2×3 layout and it survives restart
+- **Exit:** FR-WS-01..07, FR-WS-12, FR-WS-17..19; a user can build a 2×3 layout and it survives restart
 
 ## M3 — Bible reading
 
 - Resource compiler tool; compile KJV + one modern public-domain text
 - Resource DB access layer, `versescape://` protocol
-- Reference model, parser, formatter (heavily unit-tested)
-- Bible panel: chapter render, virtualised scroll, nav bar, translation switch
+- Verse-key indexed virtualisation: the renderer must name the verse at the
+  viewport top cheaply, every frame, or sync cannot work (D-23)
+- Bible panel: chapter render, virtualised scroll, translation switch
 - Display options; Passage Compare panel
-- Sync sets A–D with verse-anchored following on scroll, click and navigation
-- **Exit:** FR-RD-01..05, FR-WS-08, FR-WS-13..15; three linked panels scroll together
+- Verse sync made real across Bible panels: scroll, click, selection, keyboard
+- **Exit:** FR-RD-01..05, FR-WS-08, FR-WS-13..16; three synced panels track together
 
 ## M4 — Search
 

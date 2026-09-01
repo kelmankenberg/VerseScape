@@ -35,7 +35,7 @@ Settled items are struck through and recorded in [13-decision-log.md](13-decisio
 | ~~C3~~ | ~~Floating/detached panels in v1 or v2?~~                                       | **Resolved D-15:** v2.                                                       |
 | C4     | Max split depth?                                                                | Default: unlimited by model, minimum-size constraint limits it in practice.  |
 | ~~C5~~ | ~~Are link sets user-visible colours (A–F) or implicit?~~                       | **Resolved D-23:** four explicit sets A–D, Logos-style, chosen per tab.      |
-| C6     | Should each panel have its own toolbar, or use the global toolbar contextually? | Default: slim per-panel header + global toolbar for workspace-level actions. |
+| ~~C6~~ | ~~Should each panel have its own toolbar, or use the global toolbar contextually?~~ | **Resolved D-25:** slim per-panel header carrying the reference input and sync badge; the global toolbar keeps workspace-level actions. |
 
 ## D. Reading experience
 

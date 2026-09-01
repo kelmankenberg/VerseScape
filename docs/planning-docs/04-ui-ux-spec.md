@@ -78,6 +78,30 @@ Left → right:
 
 Toolbar collapses overflow actions into a `⋯` menu below 900 px width.
 
+## Panel header (D-25)
+
+Distinct from the global toolbar. Each syncable panel owns a 28 px header:
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ [ Ezra 1:1-11      ▾ ] [ KJV ▾ ]            (ᴀ)  [⋯]     │
+└──────────────────────────────────────────────────────────┘
+```
+
+- **Reference input** on every syncable panel, not only the Bible (FR-WS-17).
+  Autocompletes book names, accepts abbreviations and ranges, and keeps a
+  per-panel history in the dropdown. `Ctrl+G` focuses the active panel's input.
+- **Resource selector** where applicable — translation for a Bible panel,
+  commentary for a Resource Reader.
+- **Sync set badge** — a coloured `A`–`D`, or an outline when unlinked.
+  Clicking opens the set picker. Colours are shared with the tab badge so a
+  glance across the workspace shows which panels move together.
+- **Overflow** for display options specific to the panel type.
+
+Rationale for putting the reference input here rather than only in the global
+toolbar: any panel can drive the sync set, so any panel needs its own way to
+say where it is going. A single global input would imply one privileged panel.
+
 ## Page area
 
 Exactly one active page. Pages:

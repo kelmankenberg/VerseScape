@@ -110,18 +110,50 @@ Four sets, **A, B, C and D**, each with a colour — the Logos model.
 - Linkable panel types: Bible, Passage Compare, Resource Reader (published and
   personal commentaries), and Notes.
 
-## Verse sync (FR-WS-13..16)
+## Panel header
+
+Every syncable panel carries a slim header (28 px), independent of the global
+toolbar:
+
+```
+┌────────────────────────────────────────────────────────────┐
+│ [ Ezra 1:1-11        ▾ ] [KJV ▾]              (ᴀ) [⋯]      │  panel header
+├────────────────────────────────────────────────────────────┤
+│  1 In the first year of Cyrus king of Persia…              │
+```
+
+- **Reference input** (FR-WS-17) — present on Bible, commentary, personal
+  commentary and Notes panels alike. Typing a reference navigates that panel
+  *and* publishes to its sync set, so any panel can drive the others. A
+  commentary panel is not a passive follower.
+- **Resource selector** where the panel type has one (translation, commentary).
+- **Sync set badge** (FR-WS-19) — coloured letter A–D, or blank when unlinked.
+  Click to change set.
+- **Overflow menu** for panel-specific options.
+
+## Verse sync (FR-WS-13..19)
 
 Members of a set stay on the same verse. Sync fires whenever a verse **comes
 into focus**, not only on explicit navigation:
 
-| Trigger                              | Publishes                                                |
-| ------------------------------------ | -------------------------------------------------------- |
-| Scrolling                            | verse at the viewport top, throttled to animation frames |
-| Reference navigation                 | the target reference                                     |
-| Clicking a verse or selecting text   | the verse containing the selection anchor                |
-| Keyboard verse movement              | the focused verse                                        |
-| Opening or remounting a linked panel | nothing; the panel adopts the set's current verse        |
+| Trigger                                  | Publishes                                                |
+| ---------------------------------------- | -------------------------------------------------------- |
+| Scrolling                                | verse at the viewport top, throttled to animation frames |
+| Reference typed into **any** panel header | the parsed reference; a range publishes its start        |
+| Clicking a verse or selecting text       | the verse containing the selection anchor                |
+| Keyboard verse movement                  | the focused verse                                        |
+| Opening or remounting a linked panel     | nothing; the panel adopts the set's current verse        |
+
+Worked example — three panels in set A, a KJV Bible, Matthew Henry, and a
+personal notes panel:
+
+1. The user scrolls the Bible to Ezra 1:7.
+2. The Bible publishes `{ set: 'A', verseKey: EZR.1.7, origin: bibleTab }`.
+3. Matthew Henry scrolls its entry covering Ezra 1:5–11 into view.
+4. The notes panel scrolls to the user's note anchored at Ezra 1:7, or to the
+   nearest anchored note if none exists for that verse.
+5. Typing `Ezra 3:2` into the *commentary* panel's own header reverses the
+   direction: the Bible and notes panels follow it.
 
 **Anchor by verse key, never by pixel ratio.** Proportional scrolling breaks
 immediately across heterogeneous resources: a commentary entry on Romans 9 may
@@ -157,6 +189,14 @@ Correctness rules:
    `scrollToVerse`.
 6. Sync must survive LRU unmount and remount (D-14): on mount a panel re-joins
    its set and adopts the set's current verse.
+7. "Into view" for a follower means the target verse is scrolled to the top of
+   its viewport, not merely made visible somewhere on screen. Consistency
+   matters more than minimal movement: a follower that only scrolls when the
+   verse would otherwise be off-screen looks broken next to one that always
+   aligns.
+8. Followers move without animation by default. Smooth scrolling across four
+   panels at once reads as lag, and `prefers-reduced-motion` must disable it
+   regardless.
 
 ## Persistence
 
