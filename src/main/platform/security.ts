@@ -1,29 +1,8 @@
 import { app, session, shell } from 'electron';
 import { URL } from 'node:url';
+import { contentSecurityPolicy } from './csp.js';
 
 const ALLOWED_EXTERNAL_PROTOCOLS = new Set(['https:']);
-
-/**
- * Content Security Policy. No inline or eval'd script anywhere.
- * `style-src` allows inline styles because Vite injects them in dev; this is
- * tightened to `'self'` for production builds below.
- */
-function contentSecurityPolicy(isDev: boolean): string {
-  const styleSrc = isDev ? "'self' 'unsafe-inline'" : "'self'";
-  const connectSrc = isDev ? "'self' ws: http://localhost:*" : "'self'";
-  return [
-    "default-src 'none'",
-    "script-src 'self'",
-    `style-src ${styleSrc}`,
-    "img-src 'self' data: versescape:",
-    "font-src 'self'",
-    `connect-src ${connectSrc}`,
-    "object-src 'none'",
-    "frame-src 'none'",
-    "base-uri 'none'",
-    "form-action 'none'",
-  ].join('; ');
-}
 
 /**
  * Enables the Chromium sandbox for every renderer. Must be called at module
