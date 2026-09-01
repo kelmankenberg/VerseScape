@@ -152,6 +152,7 @@ function extractNotes(input: string): { text: string; notes: NoteCapture } {
 function cleanNoteBody(body: string): string {
   return (
     body
+      .replace(/\\ref\s+([^|\\]+)\|[^\\]+\\ref\*/gu, '$1')
       // \fr and \xo carry the origin reference, which the UI supplies itself.
       .replace(/\\(?:fr|xo)\s+[^\\]*/gu, ' ')
       .replace(/\\[a-z]+\d*\*?/gu, ' ')

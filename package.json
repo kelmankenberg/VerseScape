@@ -65,6 +65,7 @@
   },
   "dependencies": {
     "@electron-toolkit/utils": "^4.0.0",
+    "@tanstack/react-virtual": "^3.14.10",
     "better-sqlite3": "^13.0.3",
     "zod": "^4.5.4"
   }

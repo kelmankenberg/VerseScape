@@ -34,10 +34,14 @@ export function useVerseSync({
   tabId,
   containerRef,
   onNavigate,
+  getAnchorVerse,
+  scrollToVerse: scrollToVerseOverride,
 }: {
   tabId: TabId;
   containerRef: React.RefObject<HTMLElement | null>;
   onNavigate?: (verseKey: number) => void;
+  getAnchorVerse?: () => number | null;
+  scrollToVerse?: (verseKey: number) => boolean;
 }): void {
   const syncSet = useWorkspace((state) => state.workspace.tabs[tabId]?.syncSet ?? null);
   const setVerse = useWorkspace((state) =>
@@ -52,6 +56,12 @@ export function useVerseSync({
 
   const scrollToVerse = useCallback(
     (verseKey: number): boolean => {
+      if (scrollToVerseOverride) {
+        suppressUntil.current = Date.now() + ECHO_GUARD_MS;
+        const moved = scrollToVerseOverride(verseKey);
+        if (!moved) suppressUntil.current = 0;
+        return moved;
+      }
       const container = containerRef.current;
       if (!container) return false;
 
@@ -64,7 +74,7 @@ export function useVerseSync({
         target.getBoundingClientRect().top - container.getBoundingClientRect().top;
       return true;
     },
-    [containerRef],
+    [containerRef, scrollToVerseOverride],
   );
 
   // Follow the set.
@@ -73,8 +83,10 @@ export function useVerseSync({
     if (origin?.tabId === tabId) return;
 
     if (!scrollToVerse(setVerse)) {
-      pending.current = setVerse;
-      onNavigate?.(setVerse);
+      if (pending.current !== setVerse) {
+        pending.current = setVerse;
+        onNavigate?.(setVerse);
+      }
     } else {
       pending.current = null;
     }
@@ -98,7 +110,7 @@ export function useVerseSync({
 
       frame.current = requestAnimationFrame(() => {
         frame.current = null;
-        const verse = verseAtViewportTop(container);
+        const verse = getAnchorVerse ? getAnchorVerse() : verseAtViewportTop(container);
         if (verse !== null) publishVerse(tabId, verse);
       });
     };
@@ -109,5 +121,5 @@ export function useVerseSync({
       if (frame.current !== null) cancelAnimationFrame(frame.current);
       frame.current = null;
     };
-  }, [containerRef, syncSet, tabId, publishVerse]);
+  }, [containerRef, syncSet, tabId, publishVerse, getAnchorVerse]);
 }

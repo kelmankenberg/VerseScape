@@ -28,7 +28,7 @@ test.afterEach(async () => {
   rmSync(userDataDir, { recursive: true, force: true });
 });
 
-const readers = () => page.locator('.sample-panel');
+const readers = () => page.locator('.bible-panel');
 
 async function openReader(): Promise<void> {
   await page.getByRole('button', { name: 'Open a reader' }).click();
@@ -41,7 +41,7 @@ test('typing a reference navigates the panel', async () => {
   await page.locator('.reference__input').fill('Ezra 1:5');
   await page.locator('.reference__input').press('Enter');
 
-  await expect(page.locator('.sample-panel__heading')).toHaveText('Ezra 1');
+  await expect(page.locator('.bible-panel__heading')).toHaveText('Ezra 1');
   await expect(page.locator('.reference__input')).toHaveValue('Ezra 1:5');
 });
 
@@ -56,13 +56,13 @@ test('an abbreviation is expanded to the full book name', async () => {
 
 test('an invalid reference is rejected without navigating', async () => {
   await openReader();
-  await expect(page.locator('.sample-panel__heading')).toHaveText('John 3');
+  await expect(page.locator('.bible-panel__heading')).toHaveText('John 3');
 
   await page.locator('.reference__input').fill('Hezekiah 3:1');
   await page.locator('.reference__input').press('Enter');
 
   await expect(page.locator('.reference__input')).toHaveAttribute('aria-invalid', 'true');
-  await expect(page.locator('.sample-panel__heading')).toHaveText('John 3');
+  await expect(page.locator('.bible-panel__heading')).toHaveText('John 3');
 });
 
 test('the book autocomplete suggests matches', async () => {
@@ -90,7 +90,7 @@ test('navigating one panel moves its sync partner', async () => {
   await first.press('Enter');
 
   // The partner follows into the same chapter.
-  await expect(page.locator('.sample-panel__heading').nth(1)).toHaveText('Ezra 1');
+  await expect(page.locator('.bible-panel__heading').nth(1)).toHaveText('Ezra 1');
 });
 
 test('an unsynced panel does not follow', async () => {
@@ -107,8 +107,8 @@ test('an unsynced panel does not follow', async () => {
   await first.fill('Ezra 1:5');
   await first.press('Enter');
 
-  await expect(page.locator('.sample-panel__heading').first()).toHaveText('Ezra 1');
-  await expect(page.locator('.sample-panel__heading').nth(1)).toHaveText('John 3');
+  await expect(page.locator('.bible-panel__heading').first()).toHaveText('Ezra 1');
+  await expect(page.locator('.bible-panel__heading').nth(1)).toHaveText('John 3');
 });
 
 test('panels in different sets stay independent', async () => {
@@ -125,7 +125,7 @@ test('panels in different sets stay independent', async () => {
   await first.fill('Ezra 1:5');
   await first.press('Enter');
 
-  await expect(page.locator('.sample-panel__heading').nth(1)).toHaveText('John 3');
+  await expect(page.locator('.bible-panel__heading').nth(1)).toHaveText('John 3');
 });
 
 test('the layout survives a restart', async () => {
@@ -155,5 +155,29 @@ test('a reference survives a restart', async () => {
   await app.close();
   await launch();
 
-  await expect(page.locator('.sample-panel__heading')).toHaveText('Ezra 1');
+  await expect(page.locator('.bible-panel__heading')).toHaveText('Ezra 1');
+});
+
+test('renders real Scripture and switches translation', async () => {
+  await openReader();
+  const reference = page.locator('.reference__input');
+  await reference.fill('John 3:16');
+  await reference.press('Enter');
+
+  const current = page.locator('.bible-panel__verse--current');
+  await expect(current).toContainText('For God so loved the world');
+  await expect(current).toContainText('one and only');
+
+  await page.getByLabel('Translation').selectOption('kjv');
+  await expect(current).toContainText('whosoever believeth in him');
+});
+
+test('virtualizes a long chapter and scrolls directly to an unmounted verse', async () => {
+  await openReader();
+  const reference = page.locator('.reference__input');
+  await reference.fill('Psalm 119:176');
+  await reference.press('Enter');
+
+  await expect(page.locator('[data-verse="19119176"]')).toBeVisible();
+  expect(await page.locator('.bible-panel__verse').count()).toBeLessThan(40);
 });

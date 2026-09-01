@@ -52,6 +52,7 @@ interface WorkspaceStore {
   toggleMaximize: (groupId: NodeId) => void;
   publishVerse: (tabId: TabId, verseKey: number) => void;
   navigateTab: (tabId: TabId, verseKey: number, reference: string) => void;
+  followTab: (tabId: TabId, verseKey: number, reference: string) => void;
   replaceWorkspace: (workspace: Workspace) => void;
 }
 
@@ -126,10 +127,36 @@ export const useWorkspace = create<WorkspaceStore>((set) => {
           ctx,
         );
 
-        if (tab.syncSet) next = setSyncSetVerse(next, tab.syncSet, verseKey, ctx);
+        if (tab.syncSet) {
+          next = setSyncSetVerse(next, tab.syncSet, verseKey, ctx);
+          for (const partner of Object.values(next.tabs)) {
+            if (partner.id === tabId || partner.syncSet !== tab.syncSet) continue;
+            const partnerState =
+              typeof partner.state === 'object' && partner.state !== null ? partner.state : {};
+            next = setTabState(
+              next,
+              partner.id,
+              { ...(partnerState as Record<string, JsonValue>), reference, verseKey },
+              ctx,
+            );
+          }
+        }
         if (import.meta.env.DEV) assertValid(next, 'navigateTab');
 
         return { workspace: next, syncOrigin: { tabId, at: Date.now() } };
+      }),
+
+    followTab: (tabId, verseKey, reference) =>
+      apply('followTab', (workspace) => {
+        const tab = workspace.tabs[tabId];
+        if (!tab) return workspace;
+        const base = typeof tab.state === 'object' && tab.state !== null ? tab.state : {};
+        return setTabState(
+          workspace,
+          tabId,
+          { ...(base as Record<string, JsonValue>), reference, verseKey },
+          ctx,
+        );
       }),
 
     replaceWorkspace: (workspace) => set({ workspace, syncOrigin: null, mounted: [] }),

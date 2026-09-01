@@ -45,6 +45,9 @@ jobs:
       - name: Unit tests
         run: pnpm test
 
+      - name: Build pinned Bible resources
+        run: pnpm resources:build
+
       - name: Build
         run: pnpm exec electron-vite build
 

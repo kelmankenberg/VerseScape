@@ -31,11 +31,11 @@ export function registerBuiltInPanels(): void {
 
   registerPanel({
     type: 'sample',
-    title: 'Sample Reader',
+    title: 'Bible',
     icon: BookOpen,
     linkable: true,
     hasReferenceInput: true,
-    createState: () => ({ scrollVerse: 1 }),
+    createState: () => ({ reference: 'John 3', verseKey: 43_003_001, resourceId: 'bsb' }),
     component: SamplePanel,
   });
 }

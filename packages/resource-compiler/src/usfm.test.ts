@@ -134,6 +134,16 @@ of the same verse.
     expect(book!.verses[0]!.text).toBe('Jude wrote.');
   });
 
+  it('keeps only the visible label from USFM reference fields', () => {
+    const { book } = parse(String.raw`
+\id JUD
+\c 1
+\r (\ref Genesis 22:1–10|GEN 22:1-10\ref*)
+\v 1 Text.
+`);
+    expect(book!.headings[0]!.text).toBe('(Genesis 22:1–10)');
+  });
+
   it('records poetry indent level', () => {
     const { book } = parse(String.raw`
 \id JUD

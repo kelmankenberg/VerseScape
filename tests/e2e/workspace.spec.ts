@@ -37,8 +37,8 @@ test('the empty state replaces itself with a real panel', async () => {
   await page.getByRole('button', { name: 'Open a reader' }).click();
 
   await expect(tabs()).toHaveCount(1);
-  await expect(tabs().first()).toContainText('Sample Reader');
-  await expect(page.locator('.sample-panel')).toBeVisible();
+  await expect(tabs().first()).toContainText('Bible');
+  await expect(page.locator('.bible-panel')).toBeVisible();
 });
 
 test('New Panel adds a tab to the focused group', async () => {
