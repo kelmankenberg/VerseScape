@@ -181,3 +181,64 @@ test('virtualizes a long chapter and scrolls directly to an unmounted verse', as
   await expect(page.locator('[data-verse="19119176"]')).toBeVisible();
   expect(await page.locator('.bible-panel__verse').count()).toBeLessThan(40);
 });
+
+test('scrolling forward automatically appends the next chapter', async () => {
+  await openReader();
+  const scroll = page.getByTestId('bible-scroll');
+
+  await scroll.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await expect(page.locator('.bible-panel__virtual')).toHaveAttribute(
+    'data-loaded-chapters',
+    '3,4,5',
+  );
+  await expect(page.locator('.bible-panel__virtual')).toHaveAttribute('data-restoring', 'false');
+  await scroll.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+
+  await expect(page.locator('[data-verse^="43005"]').first()).toBeVisible();
+  await expect(page.locator('.bible-panel__heading')).toHaveText('John 5');
+  await expect(page.locator('.reference__input')).toHaveValue(/John 5:/);
+  expect(await page.locator('.bible-panel__verse').count()).toBeLessThan(40);
+});
+
+test('scrolling backward prepends a chapter without losing the visible anchor', async () => {
+  await openReader();
+  const scroll = page.getByTestId('bible-scroll');
+
+  await scroll.evaluate((element) => {
+    element.scrollTop = 0;
+  });
+  await expect(page.locator('.bible-panel__virtual')).toHaveAttribute(
+    'data-loaded-chapters',
+    '1,2,3',
+  );
+  await expect(page.locator('.bible-panel__virtual')).toHaveAttribute('data-restoring', 'false');
+
+  // Chapter 1 was prepended, but the reader remains anchored in chapter 2.
+  await expect(page.locator('.bible-panel__heading')).toHaveText('John 2');
+  await scroll.evaluate((element) => {
+    element.scrollTop = 0;
+  });
+  await expect(page.locator('[data-verse="43001001"]')).toBeVisible();
+  await expect(page.locator('.bible-panel__heading')).toHaveText('John 1');
+  await expect(page.locator('.reference__input')).toHaveValue(/John 1:/);
+  expect(await page.locator('.bible-panel__verse').count()).toBeLessThan(40);
+});
+
+test('continuous reading stops at book boundaries', async () => {
+  await openReader();
+  const reference = page.locator('.reference__input');
+  await reference.fill('Jude 1');
+  await reference.press('Enter');
+
+  const scroll = page.getByTestId('bible-scroll');
+  await expect(page.locator('.bible-panel__virtual')).toHaveAttribute('data-loaded-chapters', '1');
+  await scroll.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await expect(page.locator('.bible-panel__heading')).toHaveText('Jude 1');
+  await expect(page.locator('.bible-panel__virtual')).toHaveAttribute('data-loaded-chapters', '1');
+});

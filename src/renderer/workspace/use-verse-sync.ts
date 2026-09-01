@@ -36,12 +36,14 @@ export function useVerseSync({
   onNavigate,
   getAnchorVerse,
   scrollToVerse: scrollToVerseOverride,
+  onAnchorVerse,
 }: {
   tabId: TabId;
   containerRef: React.RefObject<HTMLElement | null>;
   onNavigate?: (verseKey: number) => void;
   getAnchorVerse?: () => number | null;
   scrollToVerse?: (verseKey: number) => boolean;
+  onAnchorVerse?: (verseKey: number) => void;
 }): void {
   const syncSet = useWorkspace((state) => state.workspace.tabs[tabId]?.syncSet ?? null);
   const setVerse = useWorkspace((state) =>
@@ -102,7 +104,7 @@ export function useVerseSync({
   // Publish while scrolling.
   useEffect(() => {
     const container = containerRef.current;
-    if (!container || !syncSet) return;
+    if (!container) return;
 
     const onScroll = (): void => {
       if (Date.now() < suppressUntil.current) return;
@@ -111,7 +113,10 @@ export function useVerseSync({
       frame.current = requestAnimationFrame(() => {
         frame.current = null;
         const verse = getAnchorVerse ? getAnchorVerse() : verseAtViewportTop(container);
-        if (verse !== null) publishVerse(tabId, verse);
+        if (verse !== null) {
+          onAnchorVerse?.(verse);
+          if (syncSet) publishVerse(tabId, verse);
+        }
       });
     };
 
@@ -121,5 +126,5 @@ export function useVerseSync({
       if (frame.current !== null) cancelAnimationFrame(frame.current);
       frame.current = null;
     };
-  }, [containerRef, syncSet, tabId, publishVerse, getAnchorVerse]);
+  }, [containerRef, syncSet, tabId, publishVerse, getAnchorVerse, onAnchorVerse]);
 }

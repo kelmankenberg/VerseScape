@@ -587,6 +587,15 @@
   font-weight: 600;
 }
 
+.bible-panel__chapter-marker {
+  margin: var(--vs-space-6) 0 var(--vs-space-3);
+  padding-top: var(--vs-space-4);
+  border-top: 1px solid var(--vs-border);
+  font-family: var(--vs-font-ui);
+  font-size: 15px;
+  font-weight: 600;
+}
+
 .bible-panel__number {
   margin-right: 6px;
   color: var(--vs-fg-muted);
