@@ -41,7 +41,9 @@ Linux `.desktop` entry with categories `Education;Literature;Viewer;`.
 2. install (pnpm cache) → typecheck → lint → unit tests → build
 3. Playwright e2e on Linux (headless via xvfb) and Windows
 4. `pnpm audit --prod` and a **GPL-3.0 compatibility licence check** on all
-   production dependencies (D-08) — the build fails on an incompatible licence
+   production dependencies and bundled fonts (D-08, NFR-12) — the build fails on
+   an incompatible licence. Resource data is checked separately for
+   redistribution permission (NFR-13), not GPL compatibility.
 
 `release.yml` on tag `v*`:
 

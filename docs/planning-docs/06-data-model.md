@@ -187,16 +187,27 @@ Every resource directory contains `manifest.json`, Zod-validated on import:
 ```json
 {
   "schemaVersion": 1,
-  "id": "kjv",
-  "title": "King James Version",
-  "abbreviation": "KJV",
+  "id": "bsb",
+  "title": "Berean Standard Bible",
+  "abbreviation": "BSB",
   "type": "bible",
   "language": "en",
   "versification": "kjv",
-  "licence": { "spdx": "PublicDomain", "text": "…" },
-  "files": [{ "path": "kjv.db", "sha256": "…" }]
+  "deliveryMode": "local",
+  "licence": {
+    "spdx": "PublicDomain",
+    "text": "…",
+    "attribution": null,
+    "source": "https://berean.bible/",
+    "retrieved": "2026-08-31"
+  },
+  "files": [{ "path": "bsb.db", "sha256": "…" }]
 }
 ```
+
+`deliveryMode` is `local` for every v1 resource. `online` is reserved for
+API-delivered texts, which are deferred (D-27) and would be excluded from
+full-text search.
 
 ## Personal commentary
 

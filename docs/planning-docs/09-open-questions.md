@@ -9,7 +9,7 @@ Settled items are struck through and recorded in [13-decision-log.md](13-decisio
 | ------ | -------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | ~~A1~~ | ~~Who is the primary v1 user?~~                          | **Resolved D-01:** lay reader + group leader + pastor. Academic → v2.                    |
 | ~~A2~~ | ~~Personal, open-source, or commercial?~~                | **Resolved D-02:** open source, free forever.                                            |
-| A3     | Which Bible translations must ship in v1?                | Default: KJV, ASV, WEB, YLT (all public domain). Which are _bundled_ vs downloaded?      |
+| A3     | Which Bible translations must ship in v1?                | **Resolved D-26:** bundled KJV + Berean Standard Bible; WEB/ASV/YLT/Darby/Geneva via catalogue. |
 | ~~A4~~ | ~~Commentaries in v1 or v2?~~                            | **Resolved D-01:** v1, via Resource Reader. Which commentaries? (see E7)                 |
 | ~~A5~~ | ~~Is cloud sync ever planned?~~                          | **Resolved D-22:** no. Local-first; backups go to a user-chosen folder.                  |
 | A6     | Is macOS a future target?                                | Default: keep the code portable, do not build/test it.                                   |
@@ -51,13 +51,15 @@ Settled items are struck through and recorded in [13-decision-log.md](13-decisio
 | #      | Question                                                        | Options / default                                                                    |
 | ------ | --------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | E1     | Confirm one-DB-per-resource over one monolithic DB.             | Default: per-resource.                                                               |
-| E2     | Is SWORD module support worth the licence review?               | Default: no for v1; USFM/OSIS only.                                                  |
+| ~~E2~~ | ~~Is SWORD module support worth the licence review?~~           | **Resolved D-26:** no. Distribution permission is granted to CrossWire and is not transferable. |
 | E3     | Where is the resource catalogue hosted?                         | Default: GitHub Releases + signed `catalog.json`.                                    |
-| E4     | Which versification mapping dataset, and under what licence?    | Needs research.                                                                      |
+| ~~E4~~ | ~~Which versification mapping dataset, and under what licence?~~ | **Resolved D-26:** STEPBible **TVTMS** (CC BY 4.0 — verify).                        |
 | ~~E5~~ | ~~Bundle resources vs fetch on first run?~~                     | **Resolved D-04:** bundle a small PD set, download the rest from a signed catalogue. |
 | E6     | Notes stored as Markdown text vs ProseMirror JSON?              | Default: Markdown for portability; accept minor fidelity loss.                       |
-| E7     | **New** — Which public-domain commentaries for v1?              | **Resolved D-16:** Matthew Henry + JFB. Source data still to be located.             |
+| ~~E7~~ | ~~Which public-domain commentaries for v1?~~                    | **Resolved D-26:** Matthew Henry (Concise) + JFB, from CCEL / htmlbible.com.         |
 | E8     | **New** — Who signs and hosts the catalogue for an OSS project? | GitHub Releases + a project key committed to the repo; key custody matters.          |
+| E9     | **New** — Does UK Crown copyright on the KJV affect distributing a bundled KJV? | Public domain outside the UK; perpetual letters patent within it. Probably fine in practice, but unverified. |
+| E10    | **New** — Confirm licences at source for BSB, STEPBible TVTMS, openbible.info cross-references, and each CCEL commentary. | Blocks M3/M6, not M2. Record each in `LICENSES.md` with a retrieval date (NFR-14). |
 
 ## F. Engineering
 

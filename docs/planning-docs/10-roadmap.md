@@ -39,7 +39,9 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 
 ## M3 — Bible reading
 
-- Resource compiler tool; compile KJV + one modern public-domain text
+- Resource compiler tool; compile KJV + **Berean Standard Bible** (D-26)
+- Compile the STEPBible TVTMS versification map and openbible.info cross-references
+- `LICENSES.md` provenance record started (NFR-14)
 - Resource DB access layer, `versescape://` protocol
 - Verse-key indexed virtualisation: the renderer must name the verse at the
   viewport top cheaply, every frame, or sync cannot work (D-23)
@@ -116,7 +118,7 @@ collaborative features
 | Custom docking engine is the largest unknown (D-03, no fallback) | Build the reducer layer first with exhaustive unit tests before any UI; invariant checker in dev builds |
 | Public-domain commentary source data quality varies wildly       | Pick 1–2 well-structured sources; the compiler fails loudly on malformed input                          |
 | Unsigned Windows installer deters users (F3)                     | Decide early; document SmartScreen bypass in release notes if unsigned                                  |
-| Resource licensing ambiguity                                     | Public domain only for v1; licence recorded per resource                                                |
+| Resource licensing ambiguity                                     | Public domain only for v1; licence read at source, recorded per resource with retrieval date (NFR-14) |
 | better-sqlite3 native rebuilds across platforms                  | Pin versions, build in CI matrix, cache prebuilds                                                       |
 | Scroll sync feels laggy or fights the user (D-19)                | Verse-key anchoring, rAF throttling, origin suppression; measure against NFR-02 with 6 linked panels    |
 | User puts the live database in a cloud-synced folder (D-24)      | Refuse for the user DB, warn for the library; document why in Settings and the user guide              |

@@ -2,12 +2,68 @@
 
 ## Principles
 
-- **Only open or licensed content.** Public-domain texts (KJV, ASV, WEB, YLT,
-  Darby) and openly licensed texts where terms permit redistribution.
+- **Only open or licensed content.** Public-domain texts and openly licensed
+  texts where terms permit redistribution.
 - **No proprietary format reverse-engineering.** We do not read Logos, Accordance,
   or any encrypted/DRM resource format.
 - Ingestion happens **offline in a build tool**, not in the shipped app. The app
   only consumes the compiled resource DB format from doc 06.
+- **Licence terms are read at the source and recorded before anything ships.**
+  Nothing below is authoritative; every entry needs verification against the
+  publisher's current terms.
+
+## Where resources come from
+
+[get.bible/bible-data-sets](https://get.bible/bible-data-sets/) (American Bible
+Society, `.BIBLE` registry) is a useful **discovery index** of data sets and
+APIs. It is a directory, not a source — licences still apply per resource.
+
+### v1 shortlist (D-26)
+
+| Resource                        | Source                          | Licence               | Delivery  |
+| ------------------------------- | ------------------------------- | --------------------- | --------- |
+| KJV                             | eBible.org / Project Gutenberg  | Public domain\*       | Bundled   |
+| **Berean Standard Bible (BSB)** | berean.bible                    | **Public domain** (30 Apr 2023, confirmed) | Bundled   |
+| WEB / WEB British               | eBible.org, worldenglish.bible  | Public domain         | Catalogue |
+| ASV                             | openbibleinfo ASV repo (USX)    | Public domain         | Catalogue |
+| YLT, Darby, Webster, Geneva 1599 | eBible.org                     | Public domain         | Catalogue |
+| Douay-Rheims, Catholic PD Version | GitHub USFM repos             | Public domain         | Catalogue |
+| Matthew Henry (Concise)         | CCEL, htmlbible.com             | Public domain         | Catalogue |
+| Jamieson-Fausset-Brown          | CCEL                            | Public domain         | Catalogue |
+| **Cross-references**            | openbible.info (TSK-derived)    | Verify                | Bundled   |
+| **Versification mapping**       | STEPBible **TVTMS**             | CC BY 4.0 — verify    | Bundled   |
+
+\* The KJV is under **perpetual Crown copyright in the UK** (Cambridge/Oxford
+letters patent); public domain elsewhere. Flagged, not resolved.
+
+### Bulk sources worth preferring over raw scraping
+
+| Source           | What it gives                                              |
+| ---------------- | ---------------------------------------------------------- |
+| **fetch.bible**  | 1,100+ translations, normalised USX 3+/USFM — least cleanup |
+| **eBible.org**   | Hundreds of translations in USFM, per-translation licence pages |
+| **open.bible**   | Biblica's CC-licensed texts, 700+ languages, USX/USFM      |
+| **CCEL**         | Public-domain commentaries in ThML                          |
+| **openbible.info** | Cross-references and place geocoding (atlas, v2)          |
+| **STEPBible**    | Versification, tagged texts, lexicons (originals are v2)    |
+
+### Deliberately not used
+
+- **Bible Hub, StudyLight, Blue Letter Bible** — the underlying texts are public
+  domain, but their site terms forbid scraping and their compilations are their
+  own work. Use the original transcriptions instead.
+- **CrossWire / SWORD modules** — distribution permission is frequently granted
+  to CrossWire specifically and is not transferable. Also raises a GPL-2.0 vs
+  GPL-3.0 question if the library were linked. Excluded for v1 (**E2**).
+- **NET Bible, ESV, NIV, NASB, CSB, NKJV, NLT, LSB** — commercially licensed.
+  See D-27 for why the online-API route is not taken either.
+
+### Provenance record
+
+The compiler maintains `tools/resource-compiler/LICENSES.md` recording, per
+resource: source URL, retrieval date, stated licence, full licence text, and
+any attribution string the terms require. `manifest.json` carries the same
+licence text so it ships with the resource (FR-LB-05).
 
 ## Source formats
 
@@ -15,8 +71,8 @@
 | --------------- | ------------------------------------ | ------------------------------------------------------------- |
 | USFM / USX      | Primary import for Bibles            | Industry standard from Paratext/DBL                           |
 | OSIS XML        | Secondary                            | Common for public-domain texts                                |
-| Zefania / ThML  | Best-effort                          | Widely available legacy XML                                   |
-| SWORD modules   | **TBD**                              | GPL tooling; licence implications need review before adoption |
+| Zefania / ThML  | Best-effort                          | Widely available legacy XML; CCEL commentaries are ThML        |
+| SWORD modules   | **Excluded**                         | Licence chain not transferable — see above                    |
 | Markdown / HTML | Commentaries and user-supplied books | Sanitised                                                     |
 
 ## Compiler tool (`tools/resource-compiler`)
@@ -85,6 +141,37 @@ stripped at compile time.
 ## Versification mapping
 
 - Mapping data ships as a compiled table: `(schemeA, keyA) → (schemeB, keyB)`.
-- Source: an openly licensed mapping dataset (**TBD** — evaluate the
-  `versification-mappings` / Copenhagen Alliance data and its licence).
+- **Source: STEPBible `TVTMS`** — "Versification Traditions with Methodology for
+  Standardisation: Eng+Heb+Lat+Grk+Others" from Tyndale House. Covers OT
+  differences across Hebrew, Latin and Greek traditions plus NT versification,
+  compared against an English standard. Licence CC BY 4.0 — **verify before
+  shipping**, and carry the attribution string. Resolves **E4**.
 - Unmappable references degrade to chapter-level with a UI indicator.
+
+## Cross-references
+
+- Source: [openbible.info](https://www.openbible.info/labs/cross-references/) —
+  roughly 340,000 cross-references compiled from public-domain sources,
+  principally the Treasury of Scripture Knowledge.
+- Compiled into the `cross_ref` table (doc 06) keyed by verse key, so a Bible
+  panel can offer them inline without a separate resource.
+- Licence terms need verification before shipping.
+
+## Online-delivered resources (deferred — D-27)
+
+Commercially licensed translations (ESV, LSB, NIV, NASB, CSB, NKJV, NLT) offer
+free non-commercial **APIs**, but VerseScape does not use them in v1.
+
+The model stays open: `manifest.json` carries
+`deliveryMode: 'local' | 'online'`, defaulting to `local`. If an online resource
+is ever added, these rules apply and are non-negotiable:
+
+- It is **excluded from full-text search**, because a reference API cannot serve
+  ranked full-text results. The UI must say so explicitly at the point of
+  search — silent omission from results is a wrong answer, not a limitation.
+- It is badged "online" in the Library and on its tab, and is unavailable in
+  offline mode by design rather than by failure.
+- It cannot be a member of a sync set unless the network is available, or the
+  set breaks in a way that reads as a bug.
+- Any API key is **supplied by the user**, never shipped. An open-source binary
+  cannot hold a secret.

@@ -106,6 +106,8 @@ See [05-workspace-panel-system.md](05-workspace-panel-system.md) for the model.
 | FR-LB-07 | M   | Commentaries and reference works are supported resource types, openable in a Resource Reader panel and linkable by reference. |
 | FR-LB-08 | M   | The library location is user-configurable — another drive, an external disk or a network share. Changing it moves the existing library with progress and rollback on failure. |
 | FR-LB-09 | M   | If the configured library path is unavailable at startup, the app launches in a degraded state with a clear banner rather than failing or re-downloading. |
+| FR-LB-10 | M   | Resources declare `deliveryMode: 'local' \| 'online'`. v1 ships only `local` resources (D-27); the field exists so online delivery is not foreclosed. |
+| FR-LB-11 | M   | If an online resource is ever supported it must be badged as such, excluded from full-text search **with an explicit notice in the search UI**, and use a user-supplied API key. |
 
 ## 7. Reading plans
 
@@ -173,4 +175,6 @@ option later. See decision D-22, which supersedes D-21.
 | NFR-09 | S   | Crash-safe: user data writes are transactional; no data loss on hard kill.                                       |
 | NFR-10 | S   | i18n-ready string extraction from day one; English only at v1.                                                   |
 | NFR-11 | M   | HiDPI and fractional scaling correct on Windows and on Linux/X11 (including XWayland). Native Wayland fidelity is a v2 goal (D-18).                                                         |
-| NFR-12 | M   | All bundled dependencies, fonts and resources must be GPL-3.0-compatible (D-08); enforced by a CI licence check. |
+| NFR-12 | M   | All bundled **code dependencies and fonts** must be GPL-3.0-compatible (D-08); enforced by a CI licence check.                                                                                                                            |
+| NFR-13 | M   | All bundled or catalogue-distributed **resources** must carry verified redistribution permission. Resource data is mere aggregation, so it need not be GPL-compatible — but it must be redistributable, and its licence text and attribution must ship with it. |
+| NFR-14 | M   | Every resource's licence is read at its source and recorded with a retrieval date before it ships. No resource ships on an assumed licence.                                                                                                |
