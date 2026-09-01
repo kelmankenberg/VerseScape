@@ -17,6 +17,7 @@ VerseScape/
 │  │  └─ src/
 │  │     ├─ reference/           # Reference, parser, formatter, verse keys
 │  │     ├─ canon/               # OSIS book list, versification schemes
+│  │     ├─ workspace/           # layout tree, reducers, invariants, schema
 │  │     ├─ ipc/                 # channel names + Zod schemas + result types
 │  │     └─ types/
 │  └─ resource-compiler/         # CLI: USFM/OSIS -> .vsres
@@ -58,6 +59,10 @@ VerseScape/
 ## Conventions
 
 - **Path aliases:** `@shared/*`, `@main/*`, `@renderer/*`. No deep relative imports.
+- **The workspace layout model lives in `packages/shared/src/workspace`,** not in
+  the renderer, because the main process validates persisted layouts against the
+  same Zod schema. `src/renderer/workspace` holds only the React components that
+  render the tree and the drag-and-drop glue.
 - **No cross-layer imports.** Renderer may import `@shared` but never `@main`.
   Enforced with an ESLint `no-restricted-imports` rule.
 - **Files:** components `PascalCase.tsx`, everything else `kebab-case.ts`.
