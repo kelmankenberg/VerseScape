@@ -110,6 +110,19 @@ Stages:
 Output is deterministic: same input → byte-identical DB (fixed page size, no
 timestamps in content).
 
+### Reproducing bundled resources
+
+Pinned recipes live in `resources/recipes/`; source archives and compiled DBs
+are gitignored. `pnpm resources:build` downloads the official BSB and KJV USFM
+archives, rejects any SHA-256 mismatch, extracts them, and compiles both under
+Electron's Node ABI (D-28). A changed upstream archive requires licence and text
+review before its recipe hash is updated. See `resources/README.md`.
+
+The KJV recipe deliberately uses eBible's `eng-kjv2006` archive: standardized
+1769 text, protocanon only. The compiler strips its Strong attributes while
+retaining the exact display words. The BSB parser supports character markup
+that spans verse markers and emits balanced markup in every verse.
+
 ## Inline text markup
 
 Verse text uses a minimal, safe inline format (not raw HTML) so the renderer

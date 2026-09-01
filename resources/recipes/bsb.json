@@ -1,0 +1,22 @@
+{
+  "archive": {
+    "url": "https://bereanbible.com/bsb_usfm.zip",
+    "sha256": "a91f7b674487981410a9235d8ca8702507b3e1ec39c1f143a0952fde675eed0a",
+    "root": "bsb_usfm"
+  },
+  "meta": {
+    "id": "bsb",
+    "title": "Berean Standard Bible",
+    "abbreviation": "BSB",
+    "type": "bible",
+    "language": "en",
+    "versification": "kjv",
+    "licence": "CC0 1.0 Universal public domain dedication; all uses are freely permitted.",
+    "licenceSpdx": "CC0-1.0",
+    "source": "https://bereanbible.com/bsb_usfm.zip",
+    "retrieved": "2026-09-01",
+    "attribution": "The Holy Bible, Berean Standard Bible, BSB is produced in cooperation with Bible Hub, Discovery Bible, OpenBible.com, and the Berean Bible Translation Committee.",
+    "redistributable": true,
+    "restrictions": "The Berean name may be used only for the verbatim official text."
+  }
+}

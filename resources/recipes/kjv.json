@@ -1,0 +1,22 @@
+{
+  "archive": {
+    "url": "https://ebible.org/Scriptures/eng-kjv2006_usfm.zip",
+    "sha256": "aec1b3b26c622fd3d963d2bbac963016b9513246ffbfa20da00bb100372ea007",
+    "root": "."
+  },
+  "meta": {
+    "id": "kjv",
+    "title": "King James Version",
+    "abbreviation": "KJV",
+    "type": "bible",
+    "language": "en",
+    "versification": "kjv",
+    "licence": "Public domain outside the United Kingdom.",
+    "licenceSpdx": "PublicDomain",
+    "source": "https://ebible.org/Scriptures/eng-kjv2006_usfm.zip",
+    "retrieved": "2026-09-01",
+    "attribution": "Standardized 1769 text, protocanon only, brought courtesy of the CrossWire Bible Society and eBible.org.",
+    "redistributable": true,
+    "restrictions": "Perpetual Crown copyright applies in the United Kingdom."
+  }
+}

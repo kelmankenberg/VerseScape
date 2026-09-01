@@ -1,28 +1,25 @@
 import Database from 'better-sqlite3';
+import { z } from 'zod';
 import { getBook, toVerseKey } from '@shared/reference/index.js';
 import type { ParsedBook } from './types.js';
 
-export interface ResourceMeta {
-  id: string;
-  title: string;
-  abbreviation: string;
-  type: 'bible' | 'commentary';
-  language: string;
-  versification: string;
-  licence: string;
-  licenceSpdx: string;
-  source: string;
-  retrieved: string;
-  attribution?: string;
-  /**
-   * Whether recipients may redistribute this resource. False means the grant
-   * covers this project only, so the resource must not be bundled in an
-   * installer and packagers must be able to exclude it.
-   */
-  redistributable: boolean;
-  /** Human-readable summary of any restriction, shown in the Library. */
-  restrictions?: string;
-}
+export const resourceMeta = z.object({
+  id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u),
+  title: z.string().min(1),
+  abbreviation: z.string().min(1),
+  type: z.enum(['bible', 'commentary']),
+  language: z.string().min(2),
+  versification: z.string().min(1),
+  licence: z.string().min(1),
+  licenceSpdx: z.string().min(1),
+  source: z.url(),
+  retrieved: z.iso.date(),
+  attribution: z.string().min(1).optional(),
+  redistributable: z.boolean(),
+  restrictions: z.string().min(1).optional(),
+});
+
+export type ResourceMeta = z.infer<typeof resourceMeta>;
 
 export const RESOURCE_SCHEMA_VERSION = 1;
 

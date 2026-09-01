@@ -70,9 +70,15 @@ renamed.
 
 ## King James Version (KJV)
 
-- **Source:** No licence document exists; public domain by age.
+- **Source:** https://ebible.org/find/details.php?id=eng-kjv2006
+- **Data:** https://ebible.org/Scriptures/eng-kjv2006_usfm.zip
 - **Retrieved:** 2026-09-01
 - **Licence:** Public domain outside the United Kingdom.
+
+The selected archive is eBible's standardized 1769 text, **protocanon only**,
+with Strong's numbers added. The compiler discards the Strong attributes and
+retains the display text. The similarly named `eng-kjv` archive includes the
+Apocrypha and is not used.
 
 **Caveat (open question E9):** within the UK the KJV is under perpetual Crown
 copyright, administered through letters patent held by Cambridge University

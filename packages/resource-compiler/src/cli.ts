@@ -3,9 +3,10 @@ import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSyn
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import Database from 'better-sqlite3';
+import { z } from 'zod';
 import { parseUsfm } from './usfm.js';
 import { hasErrors, validateBook } from './validate.js';
-import { emitResource, RESOURCE_SCHEMA_VERSION } from './emit.js';
+import { emitResource, resourceMeta, RESOURCE_SCHEMA_VERSION } from './emit.js';
 import type { ResourceMeta } from './emit.js';
 import type { ParsedBook, ParseDiagnostic } from './types.js';
 
@@ -155,7 +156,7 @@ export function selfTest(): number {
       versification: 'kjv',
       licence: 'Public domain test fixture.',
       licenceSpdx: 'PublicDomain',
-      source: 'built-in fixture',
+      source: 'https://example.invalid/fixture',
       retrieved: '2026-09-01',
       redistributable: true,
     };
@@ -248,8 +249,18 @@ function main(): void {
     process.exit(1);
   }
 
-  const meta = JSON.parse(readFileSync(metaPath, 'utf8')) as ResourceMeta;
-  process.exit(compileDirectory(sourceDir, outputDir, meta));
+  const document: unknown = JSON.parse(readFileSync(metaPath, 'utf8'));
+  const metadata =
+    typeof document === 'object' && document !== null && 'meta' in document
+      ? document.meta
+      : document;
+  const parsed = resourceMeta.safeParse(metadata);
+  if (!parsed.success) {
+    console.error(`Invalid resource metadata in ${metaPath}:`);
+    console.error(z.prettifyError(parsed.error));
+    process.exit(1);
+  }
+  process.exit(compileDirectory(sourceDir, outputDir, parsed.data));
 }
 
 main();

@@ -32,7 +32,21 @@ const INLINE_TAGS: Record<string, string> = {
 const TRANSPARENT_MARKERS = new Set(['k', 'w', 'pn', 'sls', 'tl', 'ord', 'no', 'sc', 'lit', 'rq']);
 
 /** Paragraph markers that begin prose. */
-const PROSE_PARAGRAPHS = new Set(['p', 'm', 'pi', 'pi1', 'pi2', 'nb', 'pc', 'pr', 'cls', 'po']);
+const PROSE_PARAGRAPHS = new Set([
+  'p',
+  'm',
+  'pi',
+  'pi1',
+  'pi2',
+  'nb',
+  'pc',
+  'pr',
+  'cls',
+  'po',
+  'pmo',
+  'li1',
+  'li2',
+]);
 
 /** Markers whose entire line is dropped. */
 const IGNORED_LINES = new Set([
@@ -69,7 +83,33 @@ function splitLines(source: string): Line[] {
 
     const match = /^\\(\S+)\s?([\s\S]*)$/u.exec(trimmed);
     if (match) {
-      lines.push({ marker: match[1]!.toLowerCase(), content: match[2] ?? '', number: index + 1 });
+      const marker = match[1]!.toLowerCase();
+      const content = match[2] ?? '';
+      const embeddedVerses = [...content.matchAll(/\\v\s+(?=\d)/gu)];
+
+      if (embeddedVerses.length === 0) {
+        lines.push({ marker, content, number: index + 1 });
+        return;
+      }
+
+      const prefix = content.slice(0, embeddedVerses[0]!.index).trim();
+      const leadingCharacterMarkup = /^\\[a-z0-9]+(?:\s+\\[a-z0-9]+)*\s*$/iu.test(prefix)
+        ? prefix
+        : '';
+      lines.push({ marker, content: leadingCharacterMarkup ? '' : prefix, number: index + 1 });
+      embeddedVerses.forEach((verse, verseIndex) => {
+        const start = verse.index + verse[0].length;
+        const end = embeddedVerses[verseIndex + 1]?.index ?? content.length;
+        const verseContent = content.slice(start, end).trim();
+        lines.push({
+          marker: 'v',
+          content:
+            verseIndex === 0 && leadingCharacterMarkup
+              ? verseContent.replace(/^(\d+[a-z]?\s*)/u, `$1${leadingCharacterMarkup} `)
+              : verseContent,
+          number: index + 1,
+        });
+      });
     } else {
       // Continuation of the previous marker's content.
       const previous = lines[lines.length - 1];
@@ -125,21 +165,25 @@ function escapeText(value: string): string {
 }
 
 /** Converts surviving USFM character markers into our restricted tag set. */
-function toInlineMarkup(input: string, noteIds: string[]): string {
-  let output = '';
+function toInlineMarkup(input: string, noteIds: string[], activeTags: string[]): string {
+  const displayText = input.replace(
+    /\\\+?w\s+([^|\\]+?)(?:\|[^\\]*?)?\\\+?w\*/gu,
+    (_field, word: string) => word,
+  );
+  let output = activeTags.map((tag) => `<${tag}>`).join('');
   let index = 0;
-  const open: string[] = [];
+  const open = [...activeTags];
 
-  while (index < input.length) {
-    const next = input.indexOf('\\', index);
+  while (index < displayText.length) {
+    const next = displayText.indexOf('\\', index);
     if (next === -1) {
-      output += escapeText(input.slice(index));
+      output += escapeText(displayText.slice(index));
       break;
     }
 
-    output += escapeText(input.slice(index, next));
+    output += escapeText(displayText.slice(index, next));
 
-    const match = /^\\([a-z0-9]+)(\*?)/iu.exec(input.slice(next));
+    const match = /^\\([a-z0-9]+)(\*?)/iu.exec(displayText.slice(next));
     if (!match) {
       index = next + 1;
       continue;
@@ -151,13 +195,14 @@ function toInlineMarkup(input: string, noteIds: string[]): string {
 
     // Only an opening marker is followed by a delimiting space; a closing
     // marker is not, and swallowing it would join words together.
-    if (!closing && input[index] === ' ') index += 1;
+    if (!closing && displayText[index] === ' ') index += 1;
 
     if (closing) {
       const tag = INLINE_TAGS[marker];
       if (tag && open[open.length - 1] === tag) {
         output += `</${tag}>`;
         open.pop();
+        activeTags.pop();
       }
       continue;
     }
@@ -166,13 +211,16 @@ function toInlineMarkup(input: string, noteIds: string[]): string {
     if (tag) {
       output += `<${tag}>`;
       open.push(tag);
+      activeTags.push(tag);
     } else if (!TRANSPARENT_MARKERS.has(marker)) {
       // Unknown marker: drop the marker, keep any text that follows.
       continue;
     }
   }
 
-  while (open.length > 0) output += `</${open.pop()!}>`;
+  for (let position = open.length - 1; position >= 0; position -= 1) {
+    output += `</${open[position]}>`;
+  }
 
   // Restore footnote markers as self-closing references.
   return output
@@ -181,6 +229,8 @@ function toInlineMarkup(input: string, noteIds: string[]): string {
       return noteId ? `<n id="${noteId}"/>` : '';
     })
     .replace(/\s+/gu, ' ')
+    .replace(/(<(?:wj|i|sc)>)\s+/gu, '$1')
+    .replace(/\s+(<\/(?:wj|i|sc)>)/gu, '$1')
     .trim();
 }
 
@@ -201,6 +251,7 @@ export function parseUsfm(source: string): ParseOutcome {
   let pendingPoetry = 0;
   let pendingHeadings: Array<{ level: number; text: string }> = [];
   let footnoteCounter = 0;
+  const activeInlineTags: string[] = [];
 
   const flush = (): void => {
     if (current && current.text.length > 0) verses.push(current);
@@ -238,7 +289,7 @@ export function parseUsfm(source: string): ParseOutcome {
       crossRefs.push({ chapter: current.chapter, verse: current.verse, text: reference });
     }
 
-    const markup = toInlineMarkup(text, noteIds);
+    const markup = toInlineMarkup(text, noteIds, activeInlineTags);
     current.text = current.text ? `${current.text} ${markup}`.trim() : markup;
   };
 
@@ -345,8 +396,8 @@ export function parseUsfm(source: string): ParseOutcome {
       continue;
     }
 
-    if (/^q\d?$/u.test(marker)) {
-      pendingPoetry = Number(marker.slice(1) || '1');
+    if (/^q\d?$/u.test(marker) || marker === 'qr') {
+      pendingPoetry = marker === 'qr' ? 1 : Number(marker.slice(1) || '1');
       pendingParagraph = true;
       if (line.content.trim()) {
         if (current) current.poetry = pendingPoetry;
@@ -362,10 +413,16 @@ export function parseUsfm(source: string): ParseOutcome {
       continue;
     }
 
-    if (marker === 'd' || marker === 'r' || marker === 'sp') {
+    if (marker === 'd' || marker === 'r' || marker === 'sp' || marker === 'qa') {
       // Psalm ascriptions and parallel references become headings.
       const text = cleanNoteBody(line.content);
       if (text) pendingHeadings.push({ level: 4, text });
+      continue;
+    }
+
+    if (marker === 'ms' || marker === 'mr') {
+      const text = cleanNoteBody(line.content);
+      if (text) pendingHeadings.push({ level: 3, text });
       continue;
     }
 

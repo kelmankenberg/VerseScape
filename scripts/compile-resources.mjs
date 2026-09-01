@@ -1,0 +1,31 @@
+import { existsSync } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import electron from 'electron';
+import './build-compiler.mjs';
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const compiler = join(root, 'packages', 'resource-compiler', 'dist', 'cli.cjs');
+const requested = process.argv.slice(2).filter((argument) => argument !== '--');
+const ids = requested.length > 0 ? requested : ['bsb', 'kjv'];
+
+for (const id of ids) {
+  const source = join(root, 'resources', 'sources', id, 'usfm');
+  const output = join(root, 'resources', 'compiled', id);
+  const recipe = join(root, 'resources', 'recipes', `${id}.json`);
+
+  if (!existsSync(source)) {
+    throw new Error(`Source files for ${id} are missing; run pnpm resources:fetch first.`);
+  }
+  await mkdir(output, { recursive: true });
+
+  const result = spawnSync(electron, [compiler, source, output, recipe], {
+    cwd: root,
+    env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
+    stdio: 'inherit',
+  });
+  if (result.error) throw result.error;
+  if (result.status !== 0) process.exit(result.status ?? 1);
+}

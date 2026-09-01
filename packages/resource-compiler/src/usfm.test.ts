@@ -56,6 +56,28 @@ of the same verse.
     expect(book!.verses[0]!.text).toBe('First part of the same verse.');
   });
 
+  it('splits paragraph and multiple verse markers on one line', () => {
+    const { book } = parse(String.raw`
+\id JUD
+\c 1
+\p \v 1 First verse. \v 2 Second verse.
+`);
+    expect(book!.verses).toMatchObject([
+      { verse: 1, text: 'First verse.', paraStart: true },
+      { verse: 2, text: 'Second verse.', paraStart: false },
+    ]);
+  });
+
+  it('balances character markup that spans verse markers', () => {
+    const { book } = parse(String.raw`
+\id JUD
+\c 1
+\p \wj \v 1 First saying. \v 2 Second saying.\wj*
+`);
+    expect(book!.verses[0]!.text).toBe('<wj>First saying.</wj>');
+    expect(book!.verses[1]!.text).toBe('<wj>Second saying.</wj>');
+  });
+
   it('maps character markers to the restricted tag set', () => {
     const { book } = parse(String.raw`
 \id JUD
@@ -76,6 +98,16 @@ of the same verse.
 \v 1 Text with \xyz odd\xyz* markup.
 `);
     expect(book!.verses[0]!.text).toBe('Text with odd markup.');
+  });
+
+  it('keeps word-field text and drops Strong attributes', () => {
+    const { book } = parse(String.raw`
+\id JUD
+\c 1
+\p
+\v 1 \wj  \+w Let|strong="G5015"\+w* not your \w heart|strong="G2588"\w* be troubled.\wj*
+`);
+    expect(book!.verses[0]!.text).toBe('<wj>Let not your heart be troubled.</wj>');
   });
 
   it('extracts footnotes and leaves a marker behind', () => {
