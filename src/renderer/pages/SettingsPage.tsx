@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { themePreference } from '@shared/settings.js';
-import type { ThemePreference } from '@shared/settings.js';
+import type { AppSettings, ThemePreference } from '@shared/settings.js';
 import { useSettings } from '../stores/settings.js';
 import { AboutDialog } from '../components/AboutDialog.js';
 
@@ -9,6 +9,30 @@ const themeLabels: Record<ThemePreference, string> = {
   light: 'Light',
   system: 'Follow system',
 };
+
+const readingToggles: Array<{
+  key: keyof AppSettings['reading'];
+  label: string;
+  hint: string;
+}> = [
+  {
+    key: 'versePerLine',
+    label: 'Verse per line',
+    hint: 'Off groups same-paragraph verses together.',
+  },
+  { key: 'redLetter', label: 'Red letter', hint: 'Colour the words of Christ.' },
+  { key: 'showFootnotes', label: 'Footnotes', hint: 'Show footnote markers.' },
+  {
+    key: 'showHeadings',
+    label: 'Section headings',
+    hint: "Show the resource's section headings.",
+  },
+  {
+    key: 'showCrossReferences',
+    label: 'Cross references',
+    hint: 'Show the cross-reference button on each verse.',
+  },
+];
 
 export function SettingsPage(): React.JSX.Element {
   const settings = useSettings((state) => state.settings);
@@ -71,12 +95,39 @@ export function SettingsPage(): React.JSX.Element {
         </div>
       </section>
 
+      <section className="settings__section" aria-labelledby="reading-heading">
+        <h2 id="reading-heading" className="settings__section-title">
+          Reading
+        </h2>
+        <p className="settings__subtitle">
+          Global defaults for Bible and commentary panels; each panel can override them from its own
+          display options menu.
+        </p>
+
+        {readingToggles.map(({ key, label, hint }) => (
+          <div className="settings__row" key={key}>
+            <div className="settings__label">
+              <span>{label}</span>
+              <span className="settings__hint">{hint}</span>
+            </div>
+            <label className="switch">
+              <input
+                type="checkbox"
+                aria-label={label}
+                checked={settings.reading[key]}
+                onChange={(event) => void patch({ reading: { [key]: event.target.checked } })}
+              />
+              <span className="switch__track" aria-hidden />
+            </label>
+          </div>
+        ))}
+      </section>
+
       <section className="settings__section" aria-labelledby="pending-heading">
         <h2 id="pending-heading" className="settings__section-title">
           Coming later
         </h2>
         <ul className="settings__pending">
-          <li>Reading typography and display defaults — M3</li>
           <li>Keyboard shortcuts and rebinding — M7</li>
           <li>Library and resource locations — M6</li>
           <li>Data, backup and export — M8</li>

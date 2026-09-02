@@ -31,6 +31,10 @@ describe('app settings schema', () => {
     expect(appSettings.shape.shell.safeParse(within).success).toBe(true);
     expect(appSettings.shape.shell.safeParse(beyond).success).toBe(false);
   });
+
+  it('defaults to verse-per-line, per D-10', () => {
+    expect(defaultSettings.reading.versePerLine).toBe(true);
+  });
 });
 
 describe('settings patch schema', () => {
@@ -49,5 +53,9 @@ describe('settings patch schema', () => {
 
   it('rejects an invalid value inside a known section', () => {
     expect(settingsPatch.safeParse({ appearance: { theme: 'sepia' } }).success).toBe(false);
+  });
+
+  it('accepts a partial reading patch', () => {
+    expect(settingsPatch.safeParse({ reading: { redLetter: false } }).success).toBe(true);
   });
 });

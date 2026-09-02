@@ -50,6 +50,7 @@ export const useSettings = create<SettingsStore>((set, get) => ({
         appearance: mergeDefined(previous.appearance, patch.appearance),
         shell: mergeDefined(previous.shell, patch.shell),
         window: mergeDefined(previous.window, patch.window),
+        reading: mergeDefined(previous.reading, patch.reading),
       },
     });
 

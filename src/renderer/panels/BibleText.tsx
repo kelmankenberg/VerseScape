@@ -11,6 +11,7 @@ function renderMarkup(
   value: string,
   footnotes: ReadonlyMap<string, Footnote>,
   keyPrefix: string,
+  showFootnotes: boolean,
 ): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
   const marker = /<(wj|i|sc)>|<n id="([^"]+)"\/>/gu;
@@ -23,18 +24,20 @@ function renderMarkup(
     const tag = match[1];
     const noteId = match[2];
     if (noteId) {
-      const note = footnotes.get(noteId);
-      nodes.push(
-        <button
-          key={`${keyPrefix}-note-${noteId}`}
-          type="button"
-          className="bible-text__note"
-          aria-label={note ? `Footnote: ${note.text}` : 'Footnote'}
-          title={note?.text}
-        >
-          {note?.marker && note.marker !== '+' ? note.marker : '*'}
-        </button>,
-      );
+      if (showFootnotes) {
+        const note = footnotes.get(noteId);
+        nodes.push(
+          <button
+            key={`${keyPrefix}-note-${noteId}`}
+            type="button"
+            className="bible-text__note"
+            aria-label={note ? `Footnote: ${note.text}` : 'Footnote'}
+            title={note?.text}
+          >
+            {note?.marker && note.marker !== '+' ? note.marker : '*'}
+          </button>,
+        );
+      }
       cursor = marker.lastIndex;
       continue;
     }
@@ -50,6 +53,7 @@ function renderMarkup(
       value.slice(marker.lastIndex, closeAt),
       footnotes,
       `${keyPrefix}-${nodes.length}`,
+      showFootnotes,
     );
     const key = `${keyPrefix}-${tag}-${match.index}`;
     if (tag === 'wj')
@@ -78,10 +82,12 @@ export function BibleText({
   text,
   footnotes,
   verseKey,
+  showFootnotes = true,
 }: {
   text: string;
   footnotes: ReadonlyMap<string, Footnote>;
   verseKey: number;
+  showFootnotes?: boolean;
 }): React.JSX.Element {
-  return <Fragment>{renderMarkup(text, footnotes, String(verseKey))}</Fragment>;
+  return <Fragment>{renderMarkup(text, footnotes, String(verseKey), showFootnotes)}</Fragment>;
 }

@@ -2,11 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { formatReference, fromVerseKey, getBook, parseReference } from '@shared/reference/index.js';
 import type { ChapterData, ResourceSummary } from '@shared/ipc/contracts.js';
+import type { BibleDisplayOptions } from '@shared/settings.js';
 import type { JsonValue } from '@shared/workspace/index.js';
 import { useVerseSync } from '../workspace/use-verse-sync.js';
 import { useWorkspace } from '../workspace/store.js';
+import { useSettings } from '../stores/settings.js';
 import { BibleText } from './BibleText.js';
 import { CrossReferencesButton } from './CrossReferencesButton.js';
+import { DisplayOptionsButton } from './DisplayOptionsButton.js';
 import { useBibleChapterWindow } from './use-bible-chapter-window.js';
 import type { PanelProps } from './registry.js';
 
@@ -27,6 +30,14 @@ function patchState(state: JsonValue, patch: Record<string, JsonValue>): JsonVal
   return { ...current, ...patch };
 }
 
+function panelDisplayOverride(state: JsonValue): Partial<BibleDisplayOptions> {
+  if (typeof state !== 'object' || state === null || Array.isArray(state)) return {};
+  const value = (state as Record<string, JsonValue>)['displayOptions'];
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Partial<BibleDisplayOptions>)
+    : {};
+}
+
 export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const initialScrollKey = useRef('');
@@ -37,6 +48,9 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
   const [resources, setResources] = useState<ResourceSummary[]>([]);
   const [resourceError, setResourceError] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
+  const globalDisplayOptions = useSettings((store) => store.settings.reading);
+  const displayOverride = panelDisplayOverride(state);
+  const displayOptions: BibleDisplayOptions = { ...globalDisplayOptions, ...displayOverride };
 
   const reference = panelValue(state, 'reference', DEFAULT_REFERENCE);
   const resourceId = panelValue(state, 'resourceId', DEFAULT_RESOURCE);
@@ -261,7 +275,11 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
   const error = resourceError ?? chapterError;
 
   return (
-    <div className="bible-panel">
+    <div
+      className={`bible-panel${displayOptions.redLetter ? ' bible-panel--red-letter' : ''}${
+        displayOptions.versePerLine ? '' : ' bible-panel--paragraph'
+      }`}
+    >
       <div className="bible-panel__toolbar">
         <h2 className="bible-panel__heading">
           {book?.name ?? anchor.book} {visibleChapter}
@@ -278,6 +296,18 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
             </option>
           ))}
         </select>
+        <DisplayOptionsButton
+          options={displayOptions}
+          overridden={Object.keys(displayOverride).length > 0}
+          onChange={(patch) =>
+            setState(
+              patchState(state, {
+                displayOptions: { ...displayOverride, ...patch } as JsonValue,
+              }),
+            )
+          }
+          onReset={() => setState(patchState(state, { displayOptions: {} }))}
+        />
       </div>
 
       {error ? (
@@ -306,7 +336,9 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
                     verse.chapter === anchor.chapter && verse.verse === anchor.verse
                       ? ' bible-panel__verse--current'
                       : ''
-                  }${verse.poetry > 0 ? ' bible-panel__verse--poetry' : ''}`}
+                  }${verse.poetry > 0 ? ' bible-panel__verse--poetry' : ''}${
+                    verse.paragraphStart ? ' bible-panel__verse--para-start' : ''
+                  }`}
                   style={{ transform: `translateY(${virtualRow.start}px)` }}
                   onClick={() => navigateToVerse(verse.key)}
                 >
@@ -315,22 +347,30 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
                       {book?.name ?? anchor.book} {verse.chapter}
                     </h3>
                   )}
-                  {headings.get(verse.key)?.map((heading) => (
-                    <h3
-                      key={`${heading.key}-${heading.level}-${heading.text}`}
-                      className="bible-panel__section"
-                    >
-                      {heading.text}
-                    </h3>
-                  ))}
+                  {displayOptions.showHeadings &&
+                    headings.get(verse.key)?.map((heading) => (
+                      <h3
+                        key={`${heading.key}-${heading.level}-${heading.text}`}
+                        className="bible-panel__section"
+                      >
+                        {heading.text}
+                      </h3>
+                    ))}
                   <p
                     className={
                       verse.paragraphStart ? 'bible-panel__paragraph' : 'bible-panel__line'
                     }
                   >
                     <span className="bible-panel__number">{verse.verse}</span>
-                    <CrossReferencesButton verseKey={verse.key} onNavigate={navigateToVerse} />
-                    <BibleText text={verse.text} footnotes={footnotes} verseKey={verse.key} />
+                    {displayOptions.showCrossReferences && (
+                      <CrossReferencesButton verseKey={verse.key} onNavigate={navigateToVerse} />
+                    )}
+                    <BibleText
+                      text={verse.text}
+                      footnotes={footnotes}
+                      verseKey={verse.key}
+                      showFootnotes={displayOptions.showFootnotes}
+                    />
                   </p>
                 </div>
               );

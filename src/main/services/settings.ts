@@ -33,6 +33,7 @@ function coerce(raw: unknown): AppSettings {
     appearance: { ...defaultSettings.appearance, ...(candidate['appearance'] as object) },
     shell: { ...defaultSettings.shell, ...(candidate['shell'] as object) },
     window: { ...defaultSettings.window, ...(candidate['window'] as object) },
+    reading: { ...defaultSettings.reading, ...(candidate['reading'] as object) },
   };
 
   const parsed = appSettings.safeParse(merged);
@@ -97,6 +98,7 @@ export function patchSettings(patch: SettingsPatch): AppSettings {
     appearance: { ...current.appearance, ...validated.appearance },
     shell: { ...current.shell, ...validated.shell },
     window: { ...current.window, ...validated.window },
+    reading: { ...current.reading, ...validated.reading },
   });
 
   scheduleFlush();

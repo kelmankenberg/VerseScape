@@ -34,6 +34,25 @@ export const windowStateSettings = z.object({
 });
 export type WindowStateSettings = z.infer<typeof windowStateSettings>;
 
+/** Per-panel overridable Bible/commentary display options (FR-RD-05). */
+export const bibleDisplayOptions = z.object({
+  /** Verse-per-line is the D-10 default; false groups same-paragraph verses. */
+  versePerLine: z.boolean(),
+  redLetter: z.boolean(),
+  showFootnotes: z.boolean(),
+  showHeadings: z.boolean(),
+  showCrossReferences: z.boolean(),
+});
+export type BibleDisplayOptions = z.infer<typeof bibleDisplayOptions>;
+
+export const defaultBibleDisplayOptions: BibleDisplayOptions = {
+  versePerLine: true,
+  redLetter: true,
+  showFootnotes: true,
+  showHeadings: true,
+  showCrossReferences: true,
+};
+
 export const appSettings = z.object({
   version: z.literal(1),
   appearance: z.object({
@@ -47,6 +66,7 @@ export const appSettings = z.object({
     activePage: pageId,
   }),
   window: windowStateSettings,
+  reading: bibleDisplayOptions,
 });
 export type AppSettings = z.infer<typeof appSettings>;
 
@@ -61,6 +81,7 @@ export const defaultSettings: AppSettings = {
     activePage: 'dashboard',
   },
   window: { width: 1360, height: 900, x: null, y: null, maximized: false },
+  reading: defaultBibleDisplayOptions,
 };
 
 /** Patches are section-wise partials so a caller can update one field safely. */
@@ -69,6 +90,7 @@ export const settingsPatch = z
     appearance: appSettings.shape.appearance.partial(),
     shell: appSettings.shape.shell.partial(),
     window: windowStateSettings.partial(),
+    reading: bibleDisplayOptions.partial(),
   })
   .partial()
   .strict();

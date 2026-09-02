@@ -271,3 +271,53 @@ test('continuous reading stops at book boundaries', async () => {
   await expect(page.locator('.bible-panel__heading')).toHaveText('Jude 1');
   await expect(page.locator('.bible-panel__virtual')).toHaveAttribute('data-loaded-chapters', '1');
 });
+
+test('per-panel display options override the global default without affecting other panels', async () => {
+  await openReader();
+  await page.getByTitle('Split right (Ctrl+\\)').click();
+  await page.getByRole('button', { name: 'Open a reader' }).click();
+  await expect(readers()).toHaveCount(2);
+
+  for (const index of [0, 1]) {
+    const referenceInput = page.locator('.reference__input').nth(index);
+    await referenceInput.fill('John 3:16');
+    await referenceInput.press('Enter');
+  }
+
+  const first = readers().first();
+  const second = readers().nth(1);
+
+  // Words of Christ are red by default.
+  await expect(first.locator('.bible-text__words').first()).toBeVisible();
+  await expect(first).toHaveClass(/bible-panel--red-letter/);
+
+  await first.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('checkbox', { name: 'Red letter' }).uncheck({ force: true });
+  await page.getByRole('checkbox', { name: 'Section headings' }).uncheck({ force: true });
+  await page.getByRole('checkbox', { name: 'Cross references' }).uncheck({ force: true });
+  await page.getByRole('checkbox', { name: 'Verse per line' }).uncheck({ force: true });
+  await page.keyboard.press('Escape');
+
+  await expect(first).not.toHaveClass(/bible-panel--red-letter/);
+  await expect(first).toHaveClass(/bible-panel--paragraph/);
+  await expect(first.locator('.bible-panel__section')).toHaveCount(0);
+  await expect(first.getByRole('button', { name: 'Cross references' })).toHaveCount(0);
+
+  // The second panel, and the global default, are untouched.
+  await expect(second).toHaveClass(/bible-panel--red-letter/);
+  await expect(second).not.toHaveClass(/bible-panel--paragraph/);
+  await expect(second.getByRole('button', { name: 'Cross references' }).first()).toBeVisible();
+});
+
+test('the Settings reading defaults apply to newly opened panels', async () => {
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByRole('checkbox', { name: 'Footnotes' }).uncheck({ force: true });
+  await page.getByRole('button', { name: 'Study' }).click();
+  await page.waitForSelector('.tabgroup');
+
+  await openReader();
+  await page.locator('.reference__input').fill('Jude 1:1');
+  await page.locator('.reference__input').press('Enter');
+
+  await expect(page.locator('.bible-text__note')).toHaveCount(0);
+});
