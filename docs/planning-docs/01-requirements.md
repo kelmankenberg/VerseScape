@@ -49,7 +49,8 @@ See [05-workspace-panel-system.md](05-workspace-panel-system.md) for the model.
 
 `Bible` · `Notes` · `Search Results` · `Passage Compare` · `Reading Plan` ·
 `Resource Reader` (published commentaries and reference works) ·
-`Personal Commentary` · `Web Article` (sandboxed) · `Timeline` (C)
+`Personal Commentary` · `Web Article` (sandboxed) · `Timeline` (C) ·
+`Strong's Concordance`
 
 ## 3. Reading
 
@@ -60,9 +61,11 @@ See [05-workspace-panel-system.md](05-workspace-panel-system.md) for the model.
 | FR-RD-03 | M   | **Seamless bidirectional reading across chapter boundaries.** When the viewport approaches the end or beginning of the loaded chapter, Bible and commentary panels automatically load and append/prepend the next or previous chapter within the current book. No button or explicit navigation is required, and prepending content must preserve the visible verse/entry without a scroll jump. At book boundaries the panel stops cleanly; it never silently crosses into another book. Sparse commentaries advance through adjacent chapter coverage without inventing empty entries. The reference header and sync anchor follow the verse at the viewport top throughout. |
 | FR-RD-04 | M   | Switch translation in-place, preserving current reference.                                                                                                                  |
 | FR-RD-05 | M   | Per-panel display options: verse-per-line vs paragraph, red letter, footnotes, headings, cross-refs. Default is **verse-per-line** (D-10); the global default is a setting. |
-| FR-RD-06 | S   | Text selection → context actions: highlight, note, copy with citation, search, compare.                                                                                     |
-| FR-RD-07 | S   | Copy with configurable citation format.                                                                                                                                     |
+| FR-RD-06 | M   | **Selection toolbar.** Selecting text with the primary mouse button in a Bible or Resource Reader (commentary) panel shows a toolbar anchored to the selection on mouse-up, distinct from the right-click context menu. Row 1: Copy, Search, Strong's Number (single-word selections only, only where the source carries per-word Strong's data — links to the Strong's Concordance panel, FR-RD-09/10), More (opens the equivalent right-click menu). Row 2: Note (anchored to the containing verse, title pre-filled from the selection — FR-NT-14), highlight colour swatches, Colour Text (sets foreground colour). Row 3: copy the verse Styled / Lines / Text Only (FR-RD-07). Dismisses on click elsewhere, `Escape`, scrolling, or any keypress. Scoped to Bible and Resource Reader panels; the Notes panel has its own selection handling. No keyboard trigger in v1. See doc 04 and **D-31**. |
+| FR-RD-07 | S   | Copy with configurable citation format — satisfied by the selection toolbar's Styled/Lines copy modes (FR-RD-06).                                                            |
 | FR-RD-08 | C   | Text-to-speech read-aloud.                                                                                                                                                  |
+| FR-RD-09 | M   | **Strong's Number lookup.** For a single-word selection in a resource whose source carries per-word Strong's numbers, show the number and link to its entry in the Strong's Concordance panel. A v1 carve-out from the academic/original-language deferral (D-01, D-31); lookup only, no morphology or parsing. |
+| FR-RD-10 | M   | **Strong's Concordance panel.** A non-linkable panel showing one Strong's-number entry: headword, a brief definition (STEPBible TBESH/TBESG, CC BY 4.0), and every verse in the current translation tagged with that number. Opened from the selection toolbar or its More menu. |
 
 ## 4. Search
 
@@ -92,6 +95,7 @@ See [05-workspace-panel-system.md](05-workspace-panel-system.md) for the model.
 | FR-NT-11 | M   | Entries may anchor to a single verse or an arbitrary verse range, and more than one entry may cover the same verse. The panel shows every entry covering the current reference, in canonical order. |
 | FR-NT-12 | M   | Creating or editing an entry is possible directly from the commentary panel and from a Bible panel's selection context menu.                       |
 | FR-NT-13 | S   | A personal commentary can be exported as a whole to Markdown/HTML/PDF, and shared as a `.vsres` resource file others can import.                    |
+| FR-NT-14 | M   | Creating a note from the selection toolbar (FR-RD-06) anchors it to the containing verse, not the word, and pre-fills the note's title from the selected text; the user may edit or clear it. |
 
 ## 6. Library and resources
 

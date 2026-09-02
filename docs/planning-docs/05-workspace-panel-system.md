@@ -109,6 +109,9 @@ Four sets, **A, B, C and D**, each with a colour — the Logos model.
 - Sets are workspace state, saved with the layout.
 - Linkable panel types: Bible, Passage Compare, Resource Reader (published and
   personal commentaries), and Notes.
+- The Strong's Concordance panel does **not** join sync sets: it is scoped to
+  one word, not a reference, and is opened explicitly from the selection
+  toolbar or its More menu (D-31).
 
 ## Panel header
 
@@ -212,5 +215,5 @@ Correctness rules:
 | -------------------- | ------------------------------------------------------- |
 | Sermon Prep          | Row: [Bible ‖ Notes], bottom row: [Commentary ‖ Search] |
 | Compare Translations | Row of 3–4 linked Bible panels                          |
-| Word Study           | Bible ‖ (Lexicon over Search)                           |
+| Word Study           | Bible ‖ (Strong's Concordance over Search)              |
 | Reading              | Single maximised Bible panel                            |

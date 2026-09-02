@@ -49,8 +49,14 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
   chapter window that automatically prepends/appends adjacent chapters without
   jumping the viewport (FR-RD-03, D-30)
 - Display options; Passage Compare panel
+- Selection toolbar on Bible/Resource Reader panels: copy, search, Strong's
+  Number + Concordance link, note, highlight, text colour, copy-verse
+  Styled/Lines/Text Only (FR-RD-06, D-31)
+- Compile the STEPBible TBESH/TBESG Strong's lexicon; extend the USFM parser
+  to retain per-word Strong's numbers as `<s>` markup; Strong's Concordance
+  panel (FR-RD-09/10, D-31)
 - Verse sync made real across Bible panels: scroll, click, selection, keyboard
-- **Exit:** FR-RD-01..05, FR-WS-08, FR-WS-13..16; three synced panels track together
+- **Exit:** FR-RD-01..10, FR-WS-08, FR-WS-13..16, FR-NT-14; three synced panels track together
 
 ## M4 — Search
 
@@ -109,9 +115,10 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 
 ## Deferred to v2
 
-Original languages and lexicons · multi-window and floating panels (D-15) ·
-native Wayland (D-18) · timeline/atlas panels · plugin API · macOS ·
-collaborative features
+Original-language morphology, parsing and full lexicon integration (the v1
+Strong's-number lookup and Concordance panel are a narrow carve-out, D-31) ·
+multi-window and floating panels (D-15) · native Wayland (D-18) ·
+timeline/atlas panels · plugin API · macOS · collaborative features
 
 **Deferred indefinitely:** accounts, sign-in and cloud database sync (D-22).
 

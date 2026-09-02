@@ -44,7 +44,7 @@ letters patent); public domain elsewhere. Flagged, not resolved.
 | **eBible.org**   | Hundreds of translations in USFM, per-translation licence pages |
 | **open.bible**   | Biblica's CC-licensed texts, 700+ languages, USX/USFM      |
 | **openbible.info** | Cross-references and place geocoding (atlas, v2)          |
-| **STEPBible**    | Versification, tagged texts, lexicons (originals are v2)    |
+| **STEPBible**    | Versification, tagged texts; TBESH/TBESG Strong's lexicon is v1 (D-31), full original-language tagging remains v2 |
 | **Wikisource / Project Gutenberg** | Public-domain commentaries with explicit terms |
 
 ### Deliberately not used
@@ -119,9 +119,11 @@ Electron's Node ABI (D-28). A changed upstream archive requires licence and text
 review before its recipe hash is updated. See `resources/README.md`.
 
 The KJV recipe deliberately uses eBible's `eng-kjv2006` archive: standardized
-1769 text, protocanon only. The compiler strips its Strong attributes while
-retaining the exact display words. The BSB parser supports character markup
-that spans verse markers and emits balanced markup in every verse.
+1769 text, protocanon only. The compiler currently strips its Strong
+attributes while retaining the exact display words; **D-31** plans to retain
+them instead, as inline `<s>` markup, once the parser is extended — not yet
+implemented. The BSB parser supports character markup that spans verse
+markers and emits balanced markup in every verse.
 
 ## Inline text markup
 
@@ -134,8 +136,9 @@ The <wj>Son of Man</wj> came, <i>added word</i>, <n id="fn1"/> and said
 
 Allowed tags: `wj` (words of Christ), `i` (translator-supplied), `sc` (small
 caps / divine name), `n` (footnote marker), `q` (poetry indent level attr),
-`b` (line break). The renderer maps these to components; anything else is
-stripped at compile time.
+`b` (line break), `s` (Strong's number, e.g. `<s n="G26">word</s>` — D-31,
+only for sources that carry it). The renderer maps these to components;
+anything else is stripped at compile time.
 
 ## Import at runtime (FR-LB-02)
 
@@ -187,6 +190,19 @@ stripped at compile time.
   panel can offer them inline without a separate resource.
 - **Licence CC BY 4.0, verified 2026-09-01.** We take reference data only, no
   Scripture text, so the ESV quotations on that page are not engaged.
+
+## Strong's lexicon (D-31)
+
+- **Source:** STEPBible `TBESH`/`TBESG` (Translators Brief lexicon of Extended
+  Strongs, Hebrew/Greek) — [STEPBible/STEPBible-Data](https://github.com/STEPBible/STEPBible-Data),
+  the same repository already pinned for TVTMS.
+- **Licence:** CC BY 4.0 — same obligation as TVTMS: credit "STEP Bible"
+  linked to www.STEPBible.org.
+- Compiled into `lexicon.db` (doc 06: `strong_entry`), its own pinned recipe
+  and retrieval record like the other STEPBible data.
+- Only resources whose source USFM carries per-word Strong's tagging can
+  populate a Bible's own `strong_ref` occurrence index — confirmed today only
+  for the pinned eBible KJV archive; unconfirmed for BSB.
 
 ## Online-delivered resources (deferred — D-27)
 

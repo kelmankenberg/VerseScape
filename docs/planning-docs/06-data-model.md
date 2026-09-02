@@ -164,13 +164,18 @@ CREATE TABLE book (id TEXT PRIMARY KEY, ordinal INTEGER, name TEXT, short_name T
 CREATE TABLE verse (
   verse_key INTEGER PRIMARY KEY,
   book_id TEXT NOT NULL, chapter INTEGER NOT NULL, verse INTEGER NOT NULL,
-  text TEXT NOT NULL,      -- lightly marked-up inline format
+  text TEXT NOT NULL,      -- lightly marked-up inline format; `<s n="G26">word</s>`
+                           -- carries a Strong's number where the source has one (D-31)
   para_start INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE heading (verse_key INTEGER, level INTEGER, text TEXT);
 CREATE TABLE footnote (id TEXT PRIMARY KEY, verse_key INTEGER, marker TEXT, text TEXT);
 CREATE TABLE cross_ref (from_key INTEGER, to_start INTEGER, to_end INTEGER);
+-- Populated only for resources whose source carries per-word Strong's
+-- tagging (D-31); absent entirely for resources that do not.
+CREATE TABLE strong_ref (number TEXT NOT NULL, verse_key INTEGER NOT NULL);
+CREATE INDEX idx_strong_ref_number ON strong_ref(number);
 
 CREATE VIRTUAL TABLE verse_fts USING fts5(
   text, content='verse', content_rowid='verse_key', tokenize='unicode61 remove_diacritics 2'
@@ -208,6 +213,25 @@ Every resource directory contains `manifest.json`, Zod-validated on import:
 `deliveryMode` is `local` for every v1 resource. `online` is reserved for
 API-delivered texts, which are deferred (D-27) and would be excluded from
 full-text search.
+
+## Strong's lexicon database (auxiliary, read-only)
+
+A separate compiled database, alongside `versification.db` and
+`cross-references.db` (doc 07), not part of any Bible resource:
+
+```sql
+CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+CREATE TABLE strong_entry (
+  number TEXT PRIMARY KEY,   -- e.g. 'G26', 'H430'
+  language TEXT NOT NULL,    -- 'greek' | 'hebrew'
+  headword TEXT NOT NULL,
+  definition TEXT NOT NULL
+);
+```
+
+The Concordance panel joins `strong_entry` (definition) with the active
+translation's own `strong_ref` table (occurrences), so "used elsewhere" is
+always scoped to the translation currently open, not a fixed reference table.
 
 ## Personal commentary
 

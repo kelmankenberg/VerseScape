@@ -23,7 +23,9 @@ Existing serious Bible study software is either expensive and heavyweight
 
 Decision D-01: the first three personas define v1. Original-language study is
 deliberately deferred so that reading, notes, commentaries and the workspace can
-be excellent rather than broad.
+be excellent rather than broad. **Carve-out (D-31):** a narrow Strong's-number
+lookup and Concordance panel are v1; full morphology, parsing and
+original-language display remain v2.
 
 ## Product pillars
 
@@ -52,13 +54,17 @@ be excellent rather than broad.
 - Local resource library management + import + catalogue download
 - Reading plans (basic)
 - Light/dark theming, keyboard shortcuts, command palette
+- Strong's-number lookup and a Strong's Concordance panel (v1 carve-out from
+  original-language scope — D-31)
 
 ## Out of scope (v1)
 
 - Mobile / web clients
 - Accounts, sign-in and cloud database sync — deferred indefinitely (D-22).
   Off-device continuity is a backup folder the user's own cloud client syncs.
-- Original-language morphology and lexicon integration (v2)
+- Original-language morphology, parsing and full lexicon integration (v2) —
+  except the narrow Strong's-number lookup and Concordance panel, which are
+  v1 (D-31)
 - Commercial resource store / DRM — the app is free and open source
 - Collaborative real-time editing
 - macOS packaging (build should not preclude it)

@@ -163,7 +163,9 @@ Deferred with original languages to v2.
 ## Interaction principles
 
 - Every action reachable from the command palette.
-- Right-click context menus everywhere (tabs, verses, notes, resources).
+- Right-click context menus everywhere (tabs, verses, notes, resources). The
+  verse right-click menu is separate from the primary-click selection toolbar
+  below and is specified later.
 - Hover reveals affordances; nothing important is hover-only.
 - Destructive actions confirm, and are undoable where feasible.
 
@@ -184,6 +186,44 @@ Deferred with original languages to v2.
 - Commentaries may have sparse coverage. Their reader moves through available
   entries for the adjacent chapter and shows a quiet no-coverage state where
   appropriate; it does not fabricate blank entries.
+
+## Selection toolbar (primary click)
+
+A floating toolbar appears when the user releases the **primary** mouse button
+after selecting text in a **Bible or Resource Reader (commentary) panel**. It
+is not a context menu — no button is held, and it never appears from a bare
+click. Notes panel selection, and any other selectable text, keeps its own
+separate handling; this toolbar is scoped to Bible and commentary text only.
+
+**Anchoring:** appears below the selection by default; flips to appear above
+if it would overflow the bottom of the panel or window. Stays clamped within
+the panel horizontally.
+
+**Dismissal:** click elsewhere, `Escape`, scrolling, or any keypress — inert on
+Bible/commentary text either way, but still closes the toolbar.
+
+Three rows:
+
+1. **Copy** · **Search** (the selection, in the Search Results panel) ·
+   **Strong's Number** — shown only for a single-word selection in a resource
+   whose source carries per-word Strong's data (v1: the pinned KJV archive;
+   unconfirmed for BSB). Shows the number and links to that entry in the
+   Strong's Concordance panel (FR-RD-09/10). A multi-word selection omits this
+   button rather than guessing which word it refers to. · **More** — opens the
+   same context menu the right-click gesture would show for this selection.
+2. **Note** — creates a note anchored to the containing verse (not the word;
+   see D-31), with the note's title pre-filled from the selected text ·
+   highlight colour swatches, applied immediately on click · **Colour Text** —
+   opens a picker and sets the selection's foreground colour.
+3. **Copy verse** as **Styled**, **Lines**, or **Text Only**:
+   - *Styled* — reference header (`Book Chapter:Verse (Translation)`) plus the
+     verse text with all inline formatting preserved (bold, italics, small
+     caps, colour).
+   - *Lines* — the same reference header and verse text, without formatting.
+   - *Text Only* — just the selected text; no reference, no formatting.
+
+No keyboard trigger in v1 — an accepted gap against NFR-06 for this feature
+specifically, revisited if it proves to matter.
 
 ## Core keyboard map (draft)
 
