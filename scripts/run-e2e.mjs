@@ -1,4 +1,4 @@
-import { mkdtemp, rm, stat } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
@@ -35,21 +35,41 @@ async function waitForSocket(socketPath, compositor) {
   throw new Error('Timed out waiting for Weston to create its Wayland socket.');
 }
 
+async function waitForXwaylandDisplay(logPath, compositor) {
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    if (compositor.exitCode !== null) throw new Error('Weston exited before Xwayland was ready.');
+    try {
+      const log = await readFile(logPath, 'utf8');
+      const display = /xserver listening on display :(\d+)/.exec(log)?.[1];
+      if (display) return `:${display}`;
+    } catch {
+      // Weston has not created the log file yet.
+    }
+    await sleep(20);
+  }
+  throw new Error('Timed out waiting for Weston to start its nested Xwayland server.');
+}
+
 async function runHeadlessLinuxTests() {
   const runtimeDirectory = await mkdtemp(join(tmpdir(), 'versescape-e2e-'));
   const socket = 'versescape-e2e';
-  const compositor = spawn('weston', ['--backend=headless', `--socket=${socket}`], {
-    env: { ...process.env, XDG_RUNTIME_DIR: runtimeDirectory },
-    stdio: 'ignore',
-  });
+  const logPath = join(runtimeDirectory, 'weston.log');
+  const compositor = spawn(
+    'weston',
+    ['--backend=headless', `--socket=${socket}`, '--xwayland', `--log=${logPath}`],
+    {
+      env: { ...process.env, XDG_RUNTIME_DIR: runtimeDirectory },
+      stdio: 'ignore',
+    },
+  );
 
   try {
     await waitForSocket(join(runtimeDirectory, socket), compositor);
+    const display = await waitForXwaylandDisplay(logPath, compositor);
     return await runPlaywright({
       ...process.env,
       XDG_RUNTIME_DIR: runtimeDirectory,
-      WAYLAND_DISPLAY: socket,
-      ELECTRON_OZONE_PLATFORM_HINT: 'wayland',
+      DISPLAY: display,
     });
   } finally {
     compositor.kill();
