@@ -1,0 +1,14 @@
+{
+  "file": {
+    "url": "https://raw.githubusercontent.com/STEPBible/STEPBible-Data/master/Lexicons/TBESG%20-%20Translators%20Brief%20lexicon%20of%20Extended%20Strongs%20for%20Greek%20-%20STEPBible.org%20CC%20BY.txt",
+    "name": "tbesg.txt",
+    "sha256": "312f723d7b8ef263bbdfb0451c9b8057125804dfff390b6f8544cff2a84b57f4"
+  },
+  "meta": {
+    "id": "tbesg",
+    "title": "STEPBible Brief Greek Strong's Lexicon",
+    "source": "https://github.com/STEPBible/STEPBible-Data/tree/master/Lexicons",
+    "retrieved": "2026-09-02",
+    "licence": "CC BY 4.0"
+  }
+}

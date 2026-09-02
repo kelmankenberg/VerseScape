@@ -8,7 +8,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const recipesDir = join(root, 'resources', 'recipes');
 const sourcesDir = join(root, 'resources', 'sources');
 const requested = process.argv.slice(2).filter((argument) => argument !== '--');
-const ids = requested.length > 0 ? requested : ['bsb', 'kjv', 'tvtms', 'cross-references'];
+const ids = requested.length > 0 ? requested : ['bsb', 'kjv', 'tvtms', 'cross-references', 'tbesh', 'tbesg'];
 
 async function download(url, destination) {
   const response = await fetch(url, { redirect: 'follow' });

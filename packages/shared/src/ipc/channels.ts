@@ -16,6 +16,8 @@ export const IpcChannels = {
   workspaceSave: 'workspace:save',
   resourceList: 'resource:list',
   resourceGetChapter: 'resource:get-chapter',
+  resourceGetConcordance: 'resource:get-concordance',
+  resourceGetLexiconEntry: 'resource:get-lexicon-entry',
   resourceGetCrossReferences: 'resource:get-cross-references',
   clipboardWriteText: 'clipboard:write-text',
 } as const;

@@ -1,4 +1,4 @@
-import { Copy, FileText, X } from 'lucide-react';
+import { Copy, FileText, Search, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { formatReference, fromVerseKey } from '@shared/reference/index.js';
 
@@ -6,6 +6,7 @@ export interface BibleSelection {
   text: string;
   verseKey: number;
   verseText: string;
+  strongNumber?: string;
   reference: string;
   translation: string;
   rect: DOMRect;
@@ -40,9 +41,11 @@ function verseHeader(selection: BibleSelection): string {
 export function SelectionToolbar({
   selection,
   onDismiss,
+  onStrongLookup,
 }: {
   selection: BibleSelection;
   onDismiss: () => void;
+  onStrongLookup?: (strongNumber: string) => void;
 }): React.JSX.Element {
   const [copied, setCopied] = useState(false);
   const target = fromVerseKey(selection.verseKey);
@@ -90,6 +93,17 @@ export function SelectionToolbar({
         <button type="button" disabled title="Search Results is coming in M4.">
           <FileText size={13} aria-hidden />
           Search
+        </button>
+        <button
+          type="button"
+          disabled={!onStrongLookup}
+          title={selection.strongNumber ? "Open Strong's Concordance" : "No Strong's number is available for this selection"}
+          onClick={() => {
+            onStrongLookup?.(selection.strongNumber ?? '');
+          }}
+        >
+          <Search size={13} aria-hidden />
+          Strong's
         </button>
         <button
           type="button"

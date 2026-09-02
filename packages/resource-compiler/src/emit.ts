@@ -67,6 +67,13 @@ CREATE TABLE cross_ref (
 );
 CREATE INDEX idx_cross_ref_from ON cross_ref(from_key);
 
+CREATE TABLE strong_verse (
+  strong_num TEXT NOT NULL,
+  verse_key INTEGER NOT NULL,
+  PRIMARY KEY (strong_num, verse_key)
+);
+CREATE INDEX idx_strong_num ON strong_verse(strong_num);
+
 CREATE VIRTUAL TABLE verse_fts USING fts5(
   text,
   content='verse',
@@ -106,6 +113,9 @@ export function emitResource(
     );
     const insertFootnote = db.prepare(
       'INSERT INTO footnote (id, verse_key, marker, text) VALUES (?, ?, ?, ?)',
+    );
+    const insertStrongVerse = db.prepare(
+      'INSERT OR IGNORE INTO strong_verse (strong_num, verse_key) VALUES (?, ?)',
     );
 
     let verseCount = 0;
@@ -157,6 +167,14 @@ export function emitResource(
             verse.paraStart ? 1 : 0,
             verse.poetry,
           );
+
+          // Extract Strong's numbers and index them for concordance
+          const strongMatches = verse.text.matchAll(/<s>([^<]+)<\/s>/gu);
+          for (const match of strongMatches) {
+            const strongNum = match[1]!;
+            insertStrongVerse.run(strongNum, key);
+          }
+
           verseCount += 1;
         }
 

@@ -90,6 +90,23 @@ export const clipboardWriteRequest = z.object({
 });
 export type ClipboardWriteRequest = z.infer<typeof clipboardWriteRequest>;
 
+export const concordanceRequest = z.object({
+  resourceId: resourceSummary.shape.id,
+  strongNumber: z.string().regex(/^[GH]\d+$/u),
+});
+export type ConcordanceRequest = z.infer<typeof concordanceRequest>;
+
+export const concordanceResult = z.object({
+  verseKey: z.number().int().positive(),
+  text: z.string(),
+});
+
+export const lexiconEntry = z.object({
+  strongNumber: z.string(),
+  definition: z.string(),
+});
+export type LexiconEntry = z.infer<typeof lexiconEntry>;
+
 export const contracts = {
   'app:get-info': { request: emptyRequest, response: appInfo },
   'window:minimize': { request: emptyRequest, response: z.null() },
@@ -105,6 +122,14 @@ export const contracts = {
   'resource:get-cross-references': {
     request: crossReferenceRequest,
     response: z.array(crossReference),
+  },
+  'resource:get-concordance': {
+    request: concordanceRequest,
+    response: z.array(concordanceResult),
+  },
+  'resource:get-lexicon-entry': {
+    request: concordanceRequest,
+    response: lexiconEntry.nullable(),
   },
   'clipboard:write-text': { request: clipboardWriteRequest, response: z.null() },
 } as const;

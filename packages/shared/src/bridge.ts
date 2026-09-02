@@ -2,6 +2,8 @@ import type {
   AppInfo,
   ChapterData,
   ChapterRequest,
+  ConcordanceRequest,
+  LexiconEntry,
   CrossReference,
   CrossReferenceRequest,
   ResourceSummary,
@@ -33,6 +35,8 @@ export interface VerseScapeBridge {
     list(): Promise<IpcResult<ResourceSummary[]>>;
     getChapter(request: ChapterRequest): Promise<IpcResult<ChapterData>>;
     getCrossReferences(request: CrossReferenceRequest): Promise<IpcResult<CrossReference[]>>;
+    getConcordance(request: ConcordanceRequest): Promise<IpcResult<Array<{ verseKey: number; text: string }>>>;
+    getLexiconEntry(request: ConcordanceRequest): Promise<IpcResult<LexiconEntry | null>>;
   };
   readonly clipboard: {
     writeText(payload: { text: string; html?: string }): Promise<IpcResult<null>>;

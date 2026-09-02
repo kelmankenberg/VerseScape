@@ -5,6 +5,7 @@ import type {
   AppInfo,
   ChapterData,
   CrossReference,
+  LexiconEntry,
   ResourceSummary,
   WindowState,
 } from '@shared/ipc/contracts.js';
@@ -41,6 +42,14 @@ const bridge: VerseScapeBridge = {
     getCrossReferences: (request) =>
       ipcRenderer.invoke(IpcChannels.resourceGetCrossReferences, request) as Promise<
         IpcResult<CrossReference[]>
+      >,
+    getConcordance: (request) =>
+      ipcRenderer.invoke(IpcChannels.resourceGetConcordance, request) as Promise<
+        IpcResult<Array<{ verseKey: number; text: string }>>
+      >,
+    getLexiconEntry: (request) =>
+      ipcRenderer.invoke(IpcChannels.resourceGetLexiconEntry, request) as Promise<
+        IpcResult<LexiconEntry | null>
       >,
   },
   clipboard: {

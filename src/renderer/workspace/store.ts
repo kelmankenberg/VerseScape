@@ -38,7 +38,7 @@ interface WorkspaceStore {
   syncOrigin: { tabId: TabId; at: number } | null;
   /** Most-recently-active tabs, capped at MOUNT_LIMIT (D-14). */
   mounted: TabId[];
-  openPanel: (panelType: string, targetGroup?: NodeId) => void;
+  openPanel: (panelType: string, targetGroup?: NodeId, state?: JsonValue) => void;
   closeTab: (tabId: TabId) => void;
   reopenLastClosed: () => void;
   activateTab: (tabId: TabId) => void;
@@ -77,10 +77,27 @@ export const useWorkspace = create<WorkspaceStore>((set) => {
     syncOrigin: null,
     mounted: [],
 
-    openPanel: (panelType, targetGroup) =>
-      apply('openPanel', (w) =>
-        openPanel(w, { panelType, ...(targetGroup ? { targetGroup } : {}) }, ctx),
-      ),
+    openPanel: (panelType, targetGroup, state) =>
+      apply('openPanel', (w) => {
+        if (panelType === 'strongs') {
+          const existing = Object.values(w.tabs).find((tab) => tab.panelType === 'strongs');
+          if (existing) {
+            let next = activateTab(w, existing.id, ctx);
+            if (state !== undefined) next = setTabState(next, existing.id, state, ctx);
+            return next;
+          }
+        }
+
+        return openPanel(
+          w,
+          {
+            panelType,
+            ...(state === undefined ? {} : { state }),
+            ...(targetGroup ? { targetGroup } : {}),
+          },
+          ctx,
+        );
+      }),
     closeTab: (tabId) => apply('closeTab', (w) => closeTab(w, tabId, ctx)),
     reopenLastClosed: () => apply('reopenLastClosed', (w) => reopenLastClosed(w, ctx)),
     activateTab: (tabId) => {

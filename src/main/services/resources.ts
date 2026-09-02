@@ -6,10 +6,22 @@ import { getBook } from '@shared/reference/canon.js';
 import type {
   ChapterData,
   ChapterRequest,
+  ConcordanceRequest,
   CrossReference,
   CrossReferenceRequest,
   ResourceSummary,
 } from '@shared/ipc/contracts.js';
+
+function openLexicon(strongNumber: string): Database.Database | null {
+  const id = strongNumber.startsWith('H') ? 'tbesh' : 'tbesg';
+  const path = join(resourceRoot(), id, `${id}.db`);
+  if (!existsSync(path)) return null;
+  const cached = openDatabases.get(id);
+  if (cached) return cached;
+  const db = new Database(path, { readonly: true, fileMustExist: true });
+  openDatabases.set(id, db);
+  return db;
+}
 
 const RESOURCE_SCHEMA_VERSION = '1';
 const openDatabases = new Map<string, Database.Database>();
@@ -181,6 +193,27 @@ export function getChapter(request: ChapterRequest): ChapterData {
       text: footnote.text,
     })),
   };
+}
+
+export function getConcordance(request: ConcordanceRequest): Array<{ verseKey: number; text: string }> {
+  const db = openResource(request.resourceId);
+  const rows = db
+    .prepare(
+      `SELECT strong_verse.verse_key, verse.text
+       FROM strong_verse JOIN verse ON verse.verse_key = strong_verse.verse_key
+       WHERE strong_verse.strong_num = ? ORDER BY strong_verse.verse_key`,
+    )
+    .all(request.strongNumber) as Array<{ verse_key: number; text: string }>;
+  return rows.map((row) => ({ verseKey: row.verse_key, text: row.text }));
+}
+
+export function getLexiconEntry(request: ConcordanceRequest): { strongNumber: string; definition: string } | null {
+  const db = openLexicon(request.strongNumber);
+  if (!db) return null;
+  const row = db.prepare('SELECT source FROM entry WHERE strong_num = ?').get(request.strongNumber) as
+    | { source: string }
+    | undefined;
+  return row ? { strongNumber: request.strongNumber, definition: row.source } : null;
 }
 
 export function getCrossReferences(request: CrossReferenceRequest): CrossReference[] {

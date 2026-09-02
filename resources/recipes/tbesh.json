@@ -1,0 +1,14 @@
+{
+  "file": {
+    "url": "https://raw.githubusercontent.com/STEPBible/STEPBible-Data/master/Lexicons/TBESH%20-%20Translators%20Brief%20lexicon%20of%20Extended%20Strongs%20for%20Hebrew%20-%20STEPBible.org%20CC%20BY.txt",
+    "name": "tbesh.txt",
+    "sha256": "464dccadd95fd8620dd05fa0d7a4caba58ec3c4d5db3ebf38e43d046ca25b591"
+  },
+  "meta": {
+    "id": "tbesh",
+    "title": "STEPBible Brief Hebrew Strong's Lexicon",
+    "source": "https://github.com/STEPBible/STEPBible-Data/tree/master/Lexicons",
+    "retrieved": "2026-09-02",
+    "licence": "CC BY 4.0"
+  }
+}

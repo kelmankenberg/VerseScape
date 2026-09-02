@@ -12,6 +12,7 @@ import type { ParsedBook, ParseDiagnostic } from './types.js';
 import { emitVersification, parseTvtms, versificationMeta } from './tvtms.js';
 import type { VersificationMeta } from './tvtms.js';
 import { emitCrossReferences, parseCrossReferences } from './cross-references.js';
+import { compileLexicon, lexiconMeta } from './lexicon.js';
 
 /**
  * Runs under Electron's Node (`ELECTRON_RUN_AS_NODE=1`), so better-sqlite3 is
@@ -176,7 +177,7 @@ const FIXTURE = String.raw`
 \s1 Greeting
 \p
 \v 1 Jude, a servant of Jesus Christ\f + \fr 1:1 \ft Or slave.\f*, to those who are called.
-\v 2 Mercy, peace and love be yours in abundance.
+\v 2 \w Mercy|strong="G1656"\w*, peace and love be yours in abundance.
 \q1
 \v 3 Beloved, while I was very diligent to write to you,
 \v 4 For certain men have crept in unnoticed.
@@ -277,6 +278,11 @@ export function selfTest(): number {
       .prepare("SELECT COUNT(*) AS n FROM verse_fts WHERE verse_fts MATCH 'zebra'")
       .get() as { n: number };
     check('FTS does not match absent words', missing.n === 0);
+
+    const strong = db
+      .prepare('SELECT COUNT(*) AS n FROM strong_verse WHERE strong_num = ?')
+      .get('G1656') as { n: number };
+    check('indexes Strong numbers for concordance', strong.n === 1);
 
     db.close();
 
@@ -384,6 +390,28 @@ function main(): void {
       process.exit(1);
     }
     process.exit(compileCrossReferences(sourcePath, outputDir, metaPath));
+  }
+
+  if (args[0] === '--lexicon') {
+    const [, sourcePath, outputDir, metaPath] = args;
+    if (!sourcePath || !outputDir || !metaPath) {
+      console.error('Usage: cli --lexicon <lexicon-file> <output-dir> <meta.json>');
+      process.exit(1);
+    }
+    const document: unknown = JSON.parse(readFileSync(metaPath, 'utf8'));
+    const metadata =
+      typeof document === 'object' && document !== null && 'meta' in document
+        ? document.meta
+        : document;
+    const parsed = lexiconMeta.safeParse(metadata);
+    if (!parsed.success) {
+      console.error(`Invalid lexicon metadata in ${metaPath}:`);
+      console.error(z.prettifyError(parsed.error));
+      process.exit(1);
+    }
+    const count = compileLexicon(sourcePath, outputDir, parsed.data);
+    console.log(`Wrote ${count} lexicon entries to ${outputDir}`);
+    process.exit(count > 0 ? 0 : 1);
   }
 
   const [sourceDir, outputDir, metaPath] = args;

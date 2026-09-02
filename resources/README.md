@@ -20,6 +20,8 @@ pnpm resources:fetch -- tvtms
 pnpm resources:compile -- tvtms
 pnpm resources:fetch -- cross-references
 pnpm resources:compile -- cross-references
+pnpm resources:fetch -- tbesh tbesg
+pnpm resources:compile -- tbesh tbesg
 ```
 
 A checksum mismatch is intentional failure, not a transient warning. It means
@@ -43,3 +45,8 @@ The cross-reference recipe takes only OpenBible.info's reference-pair TSV. Book,
 chapter and verse references become canonical integer keys; ranges and signed
 vote strength are preserved for ranked display. It contains no Scripture text,
 including none of the ESV quotations shown on the source web page.
+
+The TBESH and TBESG recipes fetch STEPBible's brief Hebrew and Greek lexicons.
+Their source records are compiled into separate SQLite databases and queried by
+the Strong's Concordance panel. The KJV source includes per-word Strong's tags;
+the current BSB source does not, so BSB text has no Strong's occurrence links.

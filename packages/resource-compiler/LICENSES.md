@@ -25,6 +25,7 @@ such rather than resolved.
 | King James Version (KJV)          | Public domain by age    | **Verified (with caveat)** | None; UK Crown copyright caveat                                |
 | World English Bible (WEB)         | Public domain           | **Verified**               | Trademark limit on the name                                    |
 | STEPBible **TVTMS** versification | CC BY 4.0               | **Verified**               | Credit "STEP Bible" + link; record changes                     |
+| STEPBible **TBESH/TBESG** lexicons | CC BY 4.0              | **Verified**               | Credit STEPBible; record transformation                         |
 | openbible.info cross-references   | CC BY 4.0               | **Verified**               | Attribution                                                    |
 | CCEL (as a source)                | Text is public domain   | **Verified**               | Attribution (courtesy); take text only, never their formatting |
 | Matthew Henry / JFB (the works)   | Public domain by age    | **Verified**               | Confirm the edition is not a CCEL exception                    |
@@ -76,8 +77,8 @@ renamed.
 - **Licence:** Public domain outside the United Kingdom.
 
 The selected archive is eBible's standardized 1769 text, **protocanon only**,
-with Strong's numbers added. The compiler discards the Strong attributes and
-retains the display text. The similarly named `eng-kjv` archive includes the
+with Strong's numbers added. The compiler retains those per-word Strong's
+attributes as restricted `<s>` metadata alongside the display text. The similarly named `eng-kjv` archive includes the
 Apocrypha and is not used.
 
 **Caveat (open question E9):** within the UK the KJV is under perpetual Crown
@@ -89,6 +90,21 @@ formally eliminate this. Recorded as a known, accepted risk rather than a
 resolved question.
 
 **Obligation:** none.
+
+## STEPBible — TBESH/TBESG Strong's lexicons
+
+- **Source:** https://github.com/STEPBible/STEPBible-Data/tree/master/Lexicons
+- **Data:** TBESH and TBESG tab-separated text files
+- **Retrieved:** 2026-09-02
+- **SHA-256:** TBESH `464dccadd95fd8620dd05fa0d7a4caba58ec3c4d5db3ebf38e43d046ca25b591`; TBESG `312f723d7b8ef263bbdfb0451c9b8057125804dfff390b6f8544cff2a84b57f4`
+- **Licence:** CC BY 4.0
+
+The brief Hebrew and Greek lexicons provide definitions for extended Strong's
+numbers. VerseScape stores the source record in a local SQLite entry table and
+strips its HTML tags for the panel's plain-text definition display. The source
+records are not editorially changed.
+
+**Obligation:** credit STEPBible and retain the source and transformation record.
 
 ---
 

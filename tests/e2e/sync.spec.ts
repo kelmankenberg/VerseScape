@@ -106,6 +106,56 @@ test('a primary-button text selection opens a toolbar that copies and dismisses'
   await expect(toolbar).toHaveCount(0);
 });
 
+test('a selected KJV word opens and reuses the Strong\'s panel', async () => {
+  await openReader();
+  await page.locator('.reference__input').fill('John 3:16');
+  await page.locator('.reference__input').press('Enter');
+  await page.locator('.bible-panel__translation').selectOption('kjv');
+  const targetVerse = page.locator('.bible-panel__verse').filter({ hasText: 'God' }).first();
+  await expect(targetVerse).toContainText('God');
+
+  const selectWord = async (word: string): Promise<void> => {
+    const verse = targetVerse;
+    await verse.evaluate((element, targetWord) => {
+      const walker = element.ownerDocument.createTreeWalker(element, 4);
+      let node;
+      while ((node = walker.nextNode())) {
+        const text = node.textContent ?? '';
+        const start = text.indexOf(targetWord);
+        if (start < 0) continue;
+        const range = element.ownerDocument.createRange();
+        range.setStart(node, start);
+        range.setEnd(node, start + targetWord.length);
+        const selection = element.ownerDocument.defaultView?.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+        const MouseEventConstructor = element.ownerDocument.defaultView?.MouseEvent;
+        if (MouseEventConstructor) {
+          element.dispatchEvent(new MouseEventConstructor('mouseup', { bubbles: true, button: 0 }));
+        }
+        return;
+      }
+      throw new Error(`Could not find ${targetWord}.`);
+    }, word);
+  };
+
+  await selectWord('God');
+  let toolbar = page.getByRole('toolbar', { name: 'Selection actions' });
+  await expect(toolbar.getByRole('button', { name: "Strong's" })).toBeEnabled();
+  await toolbar.getByRole('button', { name: "Strong's" }).click();
+  await expect(page.locator('.strongs-panel__title')).toHaveText("Strong's G2316");
+  await expect(page.locator('.strongs-panel__definition')).toContainText('God');
+  await expect(page.locator('.strongs-panel')).toHaveCount(1);
+
+  await page.getByRole('tab', { name: 'Bible' }).click();
+  await expect(targetVerse).toBeVisible();
+  await selectWord('loved');
+  toolbar = page.getByRole('toolbar', { name: 'Selection actions' });
+  await toolbar.getByRole('button', { name: "Strong's" }).click();
+  await expect(page.locator('.strongs-panel__title')).toHaveText("Strong's G0025");
+  await expect(page.locator('.strongs-panel')).toHaveCount(1);
+});
+
 test('navigating one panel moves its sync partner', async () => {
   // Two readers side by side, both in set A.
   await openReader();

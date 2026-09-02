@@ -58,6 +58,7 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
   const suppressWindowShiftUntil = useRef(0);
   const navigateTab = useWorkspace((store) => store.navigateTab);
   const followTab = useWorkspace((store) => store.followTab);
+  const openPanel = useWorkspace((store) => store.openPanel);
   const [resources, setResources] = useState<ResourceSummary[]>([]);
   const [resourceError, setResourceError] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
@@ -349,16 +350,30 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
     if (!text || !verse || !Number.isInteger(verseKey)) return;
     const source = verses.find((item) => item.key === verseKey);
     if (!source) return;
+    const strongNumber = strongNumberForRange(range, verse);
     setSelection({
       text,
       verseKey,
       verseText: source.text,
+      ...(strongNumber ? { strongNumber } : {}),
       reference: formatReference({ start: fromVerseKey(verseKey)!, end: fromVerseKey(verseKey)! }),
       translation:
         resources.find((resource) => resource.id === resourceId)?.abbreviation ?? resourceId,
       rect: range.getBoundingClientRect(),
     });
   };
+
+  function strongNumberForRange(range: Range, verse: HTMLElement): string | undefined {
+    const markers = [...verse.querySelectorAll<HTMLElement>('[data-strong]')];
+    let nearest: string | undefined;
+    for (const marker of markers) {
+      const relation = marker.compareDocumentPosition(range.startContainer);
+      if (relation & Node.DOCUMENT_POSITION_FOLLOWING) {
+        nearest = marker.dataset['strong'];
+      }
+    }
+    return nearest;
+  }
 
   return (
     <div
@@ -470,7 +485,16 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
           </div>
         </div>
       )}
-      {selection && <SelectionToolbar selection={selection} onDismiss={() => setSelection(null)} />}
+      {selection && (
+        <SelectionToolbar
+          selection={selection}
+          onDismiss={() => setSelection(null)}
+          onStrongLookup={(strongNumber) => {
+            openPanel('strongs', undefined, { strongNumber, resourceId });
+            setSelection(null);
+          }}
+        />
+      )}
     </div>
   );
 }
