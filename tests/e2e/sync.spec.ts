@@ -72,6 +72,40 @@ test('the book autocomplete suggests matches', async () => {
   await expect(page.getByRole('option', { name: /Ezra/ })).toBeVisible();
 });
 
+test('a primary-button text selection opens a toolbar that copies and dismisses', async () => {
+  await openReader();
+
+  const verse = page.locator('.bible-panel__verse').first();
+  const selectedText = await verse.evaluate((element) => {
+    const document = element.ownerDocument;
+    const walker = document.createTreeWalker(element, 4);
+    let text = walker.nextNode();
+    while (text && !text.textContent?.trim()) text = walker.nextNode();
+    if (!text) throw new Error('Expected Scripture text.');
+    const range = element.ownerDocument.createRange();
+    range.selectNodeContents(text);
+    const selection = document.defaultView?.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    return range.toString().trim();
+  });
+  expect(selectedText).not.toBe('');
+  await verse.dispatchEvent('mouseup', { button: 0 });
+
+  const toolbar = page.getByRole('toolbar', { name: 'Selection actions' });
+  await expect(toolbar).toBeVisible();
+  await expect(toolbar.getByRole('button', { name: 'Copy' })).toBeVisible();
+  await expect(toolbar.getByRole('button', { name: 'Styled' })).toBeVisible();
+  await toolbar.getByRole('button', { name: 'Copy' }).click();
+  await expect(toolbar.getByRole('button', { name: 'Copied' })).toBeVisible();
+
+  const copied = await app.evaluate(({ clipboard }) => clipboard.readText());
+  expect(copied.length).toBeGreaterThan(0);
+
+  await page.keyboard.press('Escape');
+  await expect(toolbar).toHaveCount(0);
+});
+
 test('navigating one panel moves its sync partner', async () => {
   // Two readers side by side, both in set A.
   await openReader();

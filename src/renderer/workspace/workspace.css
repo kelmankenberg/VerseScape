@@ -71,6 +71,66 @@
   font-weight: 700;
 }
 
+/* ---------- Text selection ---------- */
+
+.selection-toolbar {
+  position: fixed;
+  z-index: 30;
+  width: 284px;
+  padding: 4px;
+  background: var(--vs-bg-elevated);
+  border: 1px solid var(--vs-border);
+  border-radius: var(--vs-radius-md);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 35%);
+}
+
+.selection-toolbar__row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.selection-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 25px;
+  padding: 3px 7px;
+  color: var(--vs-fg-primary);
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.selection-toolbar button:hover:not(:disabled) {
+  background: var(--vs-bg-surface);
+}
+
+.selection-toolbar button:disabled {
+  color: var(--vs-fg-muted);
+  cursor: not-allowed;
+}
+
+.selection-toolbar__dismiss {
+  margin-left: auto;
+}
+
+.selection-toolbar__row--copy-verse {
+  margin-top: 3px;
+  padding-top: 3px;
+  border-top: 1px solid var(--vs-border);
+}
+
+.selection-toolbar__row--copy-verse span {
+  margin-right: auto;
+  padding-left: 4px;
+  color: var(--vs-fg-muted);
+  font-size: 10px;
+}
+
 /* ---------- Splits ---------- */
 
 .split {

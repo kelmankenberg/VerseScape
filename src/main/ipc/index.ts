@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, clipboard, ClipboardItem } from 'electron';
 import { is } from '@electron-toolkit/utils';
 import { IpcChannels } from '@shared/ipc/channels.js';
 import type { AppInfo, WindowState } from '@shared/ipc/contracts.js';
@@ -72,4 +72,14 @@ export function registerIpcHandlers(): void {
   handle(IpcChannels.resourceGetChapter, (request) => getChapter(request));
 
   handle(IpcChannels.resourceGetCrossReferences, (request) => getCrossReferences(request));
+
+  handle(IpcChannels.clipboardWriteText, async (payload): Promise<null> => {
+    await clipboard.write([
+      new ClipboardItem({
+        'text/plain': payload.text,
+        ...(payload.html ? { 'text/html': payload.html } : {}),
+      }),
+    ]);
+    return null;
+  });
 }

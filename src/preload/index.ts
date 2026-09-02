@@ -43,6 +43,10 @@ const bridge: VerseScapeBridge = {
         IpcResult<CrossReference[]>
       >,
   },
+  clipboard: {
+    writeText: (payload) =>
+      ipcRenderer.invoke(IpcChannels.clipboardWriteText, payload) as Promise<IpcResult<null>>,
+  },
   window: {
     minimize: () => ipcRenderer.invoke(IpcChannels.windowMinimize) as Promise<IpcResult<null>>,
     toggleMaximize: () =>

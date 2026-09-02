@@ -34,6 +34,9 @@ export interface VerseScapeBridge {
     getChapter(request: ChapterRequest): Promise<IpcResult<ChapterData>>;
     getCrossReferences(request: CrossReferenceRequest): Promise<IpcResult<CrossReference[]>>;
   };
+  readonly clipboard: {
+    writeText(payload: { text: string; html?: string }): Promise<IpcResult<null>>;
+  };
   readonly window: {
     minimize(): Promise<IpcResult<null>>;
     toggleMaximize(): Promise<IpcResult<WindowState>>;

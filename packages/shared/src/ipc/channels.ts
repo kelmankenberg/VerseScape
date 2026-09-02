@@ -17,6 +17,7 @@ export const IpcChannels = {
   resourceList: 'resource:list',
   resourceGetChapter: 'resource:get-chapter',
   resourceGetCrossReferences: 'resource:get-cross-references',
+  clipboardWriteText: 'clipboard:write-text',
 } as const;
 
 export type IpcChannel = (typeof IpcChannels)[keyof typeof IpcChannels];

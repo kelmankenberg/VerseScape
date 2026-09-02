@@ -10,6 +10,8 @@ import { useSettings } from '../stores/settings.js';
 import { BibleText } from './BibleText.js';
 import { CrossReferencesButton } from './CrossReferencesButton.js';
 import { DisplayOptionsButton } from './DisplayOptionsButton.js';
+import { SelectionToolbar } from './SelectionToolbar.js';
+import type { BibleSelection } from './SelectionToolbar.js';
 import { useBibleChapterWindow } from './use-bible-chapter-window.js';
 import type { PanelProps } from './registry.js';
 
@@ -49,6 +51,7 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
   const [resources, setResources] = useState<ResourceSummary[]>([]);
   const [resourceError, setResourceError] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
+  const [selection, setSelection] = useState<BibleSelection | null>(null);
   const globalDisplayOptions = useSettings((store) => store.settings.reading);
   const displayOverride = panelDisplayOverride(state);
   const displayOptions: BibleDisplayOptions = { ...globalDisplayOptions, ...displayOverride };
@@ -278,6 +281,30 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
 
   const error = resourceError ?? chapterError;
 
+  const captureSelection = (event: React.MouseEvent<HTMLDivElement>): void => {
+    if (event.button !== 0) return;
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+    const range = selection.getRangeAt(0);
+    const text = range.toString().trim();
+    const common = range.commonAncestorContainer;
+    const element = common instanceof Element ? common : common.parentElement;
+    const verse = element?.closest<HTMLElement>('[data-verse]');
+    const verseKey = Number(verse?.dataset['verse']);
+    if (!text || !verse || !Number.isInteger(verseKey)) return;
+    const source = verses.find((item) => item.key === verseKey);
+    if (!source) return;
+    setSelection({
+      text,
+      verseKey,
+      verseText: source.text,
+      reference: formatReference({ start: fromVerseKey(verseKey)!, end: fromVerseKey(verseKey)! }),
+      translation:
+        resources.find((resource) => resource.id === resourceId)?.abbreviation ?? resourceId,
+      rect: range.getBoundingClientRect(),
+    });
+  };
+
   return (
     <div
       className={`bible-panel${displayOptions.redLetter ? ' bible-panel--red-letter' : ''}${
@@ -321,7 +348,13 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
       ) : loading || verses.length === 0 ? (
         <div className="bible-panel__message">Loading chapter...</div>
       ) : (
-        <div ref={containerRef} className="bible-panel__scroll" data-testid="bible-scroll">
+        <div
+          ref={containerRef}
+          className="bible-panel__scroll"
+          data-testid="bible-scroll"
+          onMouseUp={captureSelection}
+          onScroll={() => setSelection(null)}
+        >
           <div
             className="bible-panel__virtual"
             data-loaded-chapters={chapters.map((loaded) => loaded.chapter).join(',')}
@@ -382,6 +415,7 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
           </div>
         </div>
       )}
+      {selection && <SelectionToolbar selection={selection} onDismiss={() => setSelection(null)} />}
     </div>
   );
 }

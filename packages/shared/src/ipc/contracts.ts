@@ -84,6 +84,12 @@ export const crossReference = z.object({
 });
 export type CrossReference = z.infer<typeof crossReference>;
 
+export const clipboardWriteRequest = z.object({
+  text: z.string().min(1).max(100_000),
+  html: z.string().min(1).max(200_000).optional(),
+});
+export type ClipboardWriteRequest = z.infer<typeof clipboardWriteRequest>;
+
 export const contracts = {
   'app:get-info': { request: emptyRequest, response: appInfo },
   'window:minimize': { request: emptyRequest, response: z.null() },
@@ -100,6 +106,7 @@ export const contracts = {
     request: crossReferenceRequest,
     response: z.array(crossReference),
   },
+  'clipboard:write-text': { request: clipboardWriteRequest, response: z.null() },
 } as const;
 
 export type Contracts = typeof contracts;
