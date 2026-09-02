@@ -43,6 +43,7 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
   const initialScrollKey = useRef('');
   const pendingRestore = useRef<{ verseKey: number; offset: number } | null>(null);
   const positioningTarget = useRef<number | null>(null);
+  const suppressWindowShiftUntil = useRef(0);
   const navigateTab = useWorkspace((store) => store.navigateTab);
   const followTab = useWorkspace((store) => store.followTab);
   const [resources, setResources] = useState<ResourceSummary[]>([]);
@@ -135,6 +136,7 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
         verseKey: verse.key,
         offset: scrollOffset - top.start,
       };
+      suppressWindowShiftUntil.current = Date.now() + 500;
       setRestoring(true);
       if (!(await extend(direction))) {
         pendingRestore.current = null;
@@ -155,6 +157,7 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
         return;
       }
       updateLiveReference(verse);
+      if (Date.now() < suppressWindowShiftUntil.current) return;
       if (index < 8) void shiftWindow('before');
       const last = virtualizer.getVirtualItems().at(-1);
       if (last && last.index >= verses.length - 8) void shiftWindow('after');
@@ -203,6 +206,7 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
     if (!target) return;
 
     positioningTarget.current = target.key;
+    suppressWindowShiftUntil.current = Date.now() + 500;
     let frame: number | null = null;
     let attempts = 0;
     const position = (): void => {

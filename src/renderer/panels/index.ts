@@ -1,8 +1,9 @@
-import { BookOpen, NotebookPen, SquareDashed } from 'lucide-react';
+import { BookOpen, Columns2, NotebookPen, SquareDashed } from 'lucide-react';
 import { registerPanel } from './registry.js';
 import { PlaceholderPanel } from './PlaceholderPanel.js';
 import { ScratchPanel } from './ScratchPanel.js';
 import { SamplePanel } from './SamplePanel.js';
+import { PassageComparePanel } from './PassageComparePanel.js';
 
 /**
  * M2 test panels. Real Bible, Notes and commentary panels replace these in M3
@@ -37,5 +38,15 @@ export function registerBuiltInPanels(): void {
     hasReferenceInput: true,
     createState: () => ({ reference: 'John 3', verseKey: 43_003_001, resourceId: 'bsb' }),
     component: SamplePanel,
+  });
+
+  registerPanel({
+    type: 'passage-compare',
+    title: 'Passage Compare',
+    icon: Columns2,
+    linkable: true,
+    hasReferenceInput: true,
+    createState: () => ({ reference: 'John 3', verseKey: 43_003_001 }),
+    component: PassageComparePanel,
   });
 }

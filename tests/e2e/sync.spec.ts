@@ -208,6 +208,7 @@ test('scrolling forward automatically appends the next chapter', async () => {
   });
   await openReader();
   const scroll = page.getByTestId('bible-scroll');
+  await page.waitForTimeout(550);
 
   await scroll.evaluate((element) => {
     element.scrollTop = element.scrollHeight;
@@ -235,6 +236,7 @@ test('scrolling backward prepends a chapter without losing the visible anchor', 
   });
   await openReader();
   const scroll = page.getByTestId('bible-scroll');
+  await page.waitForTimeout(550);
 
   await scroll.evaluate((element) => {
     element.scrollTop = 0;

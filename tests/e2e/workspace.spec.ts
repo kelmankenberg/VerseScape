@@ -50,6 +50,23 @@ test('New Panel adds a tab to the focused group', async () => {
   await expect(page.locator('.scratch-panel')).toBeVisible();
 });
 
+test('Passage Compare renders installed translations and follows header navigation', async () => {
+  await page.getByRole('button', { name: 'New Panel' }).click();
+  await page.getByRole('menuitem', { name: 'Passage Compare' }).click();
+
+  await expect(page.locator('.compare-panel')).toBeVisible();
+  await expect(page.locator('.compare-panel__column')).toHaveCount(2);
+  await expect(page.locator('.compare-panel__translation')).toContainText(['BSB', 'KJV']);
+  await expect(page.locator('.compare-panel__heading')).toHaveText('John 3');
+
+  const referenceInput = page.getByRole('textbox', { name: 'Go to reference' });
+  await referenceInput.fill('Jude 1:1');
+  await referenceInput.press('Enter');
+
+  await expect(page.locator('.compare-panel__heading')).toHaveText('Jude 1');
+  await expect(page.locator('.compare-panel__column')).toHaveCount(2);
+});
+
 test('splitting creates a second group with a splitter between', async () => {
   await page.getByTitle('Split right (Ctrl+\\)').click();
 
