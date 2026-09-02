@@ -100,14 +100,14 @@ of the same verse.
     expect(book!.verses[0]!.text).toBe('Text with odd markup.');
   });
 
-  it('keeps word-field text and drops Strong attributes', () => {
+  it('preserves Strong numbers and keeps word-field text', () => {
     const { book } = parse(String.raw`
 \id JUD
 \c 1
 \p
 \v 1 \wj  \+w Let|strong="G5015"\+w* not your \w heart|strong="G2588"\w* be troubled.\wj*
 `);
-    expect(book!.verses[0]!.text).toBe('<wj>Let not your heart be troubled.</wj>');
+    expect(book!.verses[0]!.text).toBe('<wj><s>G5015</s>Let not your <s>G2588</s>heart be troubled.</wj>');
   });
 
   it('extracts footnotes and leaves a marker behind', () => {

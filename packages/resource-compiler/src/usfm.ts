@@ -13,8 +13,8 @@ import type {
  * USFM parser.
  *
  * Reduces USFM to the restricted inline markup from doc 07 (`wj`, `i`, `sc`,
- * `n`, `q`, `b`) rather than passing markup through, so the renderer never has
- * to sanitise anything at display time.
+ * `n`, `q`, `b`, `s` for Strong's numbers) rather than passing markup through,
+ * so the renderer never has to sanitise anything at display time.
  */
 
 /** Character markers whose content we keep, mapped to our own tags. */
@@ -26,6 +26,7 @@ const INLINE_TAGS: Record<string, string> = {
   em: 'i',
   bk: 'i',
   qt: 'i',
+  s: 's', // Strong's number
 };
 
 /** Character markers whose content we keep, unwrapped. */
@@ -166,10 +167,18 @@ function escapeText(value: string): string {
 }
 
 /** Converts surviving USFM character markers into our restricted tag set. */
-function toInlineMarkup(input: string, noteIds: string[], activeTags: string[]): string {
+function toInlineMarkup(input: string, noteIds: string[], activeTags: string[], strongNumbers: string[]): string {
+  // Extract Strong's numbers from word fields and replace with placeholders.
+  // USFM word field: \w word|strong="G123"\w* or \+w word|strong="G123"\+w*
   const displayText = input.replace(
-    /\\\+?w\s+([^|\\]+?)(?:\|[^\\]*?)?\\\+?w\*/gu,
-    (_field, word: string) => word,
+    /\\\+?w\s+([^|\\]+)(?:\|strong="([^"]+)")?(?:\|[^\\]*)?\\\+?w\*/gu,
+    (_field, word: string, strong: string | undefined) => {
+      if (strong) {
+        strongNumbers.push(strong);
+        return `\uE000ST${strongNumbers.length - 1}\uE000${word}`;
+      }
+      return word;
+    },
   );
   let output = activeTags.map((tag) => `<${tag}>`).join('');
   let index = 0;
@@ -228,6 +237,10 @@ function toInlineMarkup(input: string, noteIds: string[], activeTags: string[]):
     .replace(/\uE000FN(\d+)\uE000/gu, (_match, id: string) => {
       const noteId = noteIds[Number(id)];
       return noteId ? `<n id="${noteId}"/>` : '';
+    })
+    .replace(/\uE000ST(\d+)\uE000/gu, (_match, id: string) => {
+      const strong = strongNumbers[Number(id)];
+      return strong ? `<s>${strong}</s>` : '';
     })
     .replace(/\s+/gu, ' ')
     .replace(/(<(?:wj|i|sc)>)\s+/gu, '$1')
@@ -290,7 +303,7 @@ export function parseUsfm(source: string): ParseOutcome {
       crossRefs.push({ chapter: current.chapter, verse: current.verse, text: reference });
     }
 
-    const markup = toInlineMarkup(text, noteIds, activeInlineTags);
+    const markup = toInlineMarkup(text, noteIds, activeInlineTags, []);
     current.text = current.text ? `${current.text} ${markup}`.trim() : markup;
   };
 

@@ -829,6 +829,10 @@
   font-variant: small-caps;
 }
 
+.bible-text__strong {
+  display: none;
+}
+
 .bible-text__note {
   margin: 0 1px;
   padding: 0;

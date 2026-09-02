@@ -14,7 +14,8 @@ function renderMarkup(
   showFootnotes: boolean,
 ): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
-  const marker = /<(wj|i|sc)>|<n id="([^"]+)"\/>/gu;
+  // Also capture <s>strong</s> tags for Strong's numbers (rendered as hidden spans)
+  const marker = /<(wj|i|sc)>|<s>([^<]+)<\/s>|<n id="([^"]+)"\/>/gu;
   let cursor = 0;
   let match: RegExpExecArray | null;
 
@@ -22,7 +23,9 @@ function renderMarkup(
     if (match.index > cursor) nodes.push(decodeText(value.slice(cursor, match.index)));
 
     const tag = match[1];
-    const noteId = match[2];
+    const strong = match[2];
+    const noteId = match[3];
+
     if (noteId) {
       if (showFootnotes) {
         const note = footnotes.get(noteId);
@@ -38,6 +41,15 @@ function renderMarkup(
           </button>,
         );
       }
+      cursor = marker.lastIndex;
+      continue;
+    }
+
+    if (strong) {
+      // Render Strong's number as hidden span with data attribute
+      nodes.push(
+        <span key={`${keyPrefix}-strong-${strong}`} data-strong={strong} className="bible-text__strong" />,
+      );
       cursor = marker.lastIndex;
       continue;
     }
