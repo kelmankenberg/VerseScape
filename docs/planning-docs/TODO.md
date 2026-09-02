@@ -1,0 +1,2 @@
+- Create the ability to draw arrows between selections
+- Create the ability to automatically palce a color border around all instances of references to God the Father, God the Son (Jesus, Jesus Christ, Angel of the Lord), and the Holy Spirit. The user should be able to select the colors to use with defaults of Blue for God the Father, Red for Jesus and Green for the Spirit.
