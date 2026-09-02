@@ -33,7 +33,14 @@ pnpm dev          # run the app with HMR
 pnpm typecheck
 pnpm lint
 pnpm test
+pnpm test:e2e      # Linux runs Electron off-screen through headless Weston
 pnpm dist         # package for the current platform
+```
+
+For a visible Linux end-to-end run while debugging, use:
+
+```bash
+VERSESCAPE_E2E_DISPLAY=external pnpm test:e2e
 ```
 
 ## Project layout

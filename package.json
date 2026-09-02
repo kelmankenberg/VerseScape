@@ -28,7 +28,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
+    "test:e2e": "node scripts/run-e2e.mjs",
     "postinstall": "electron-builder install-app-deps",
     "compiler:build": "node scripts/build-compiler.mjs",
     "compiler:check": "pnpm compiler:build && ELECTRON_RUN_AS_NODE=1 electron packages/resource-compiler/dist/cli.cjs --selftest",
