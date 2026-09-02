@@ -357,3 +357,115 @@ test('the Settings reading defaults apply to newly opened panels', async () => {
 
   await expect(page.locator('.bible-text__note')).toHaveCount(0);
 });
+
+test('arrow keys navigate verse by verse', async () => {
+  await openReader();
+  const reference = page.locator('.reference__input');
+
+  await reference.fill('John 3:16');
+  await reference.press('Enter');
+  await expect(reference).toHaveValue('John 3:16');
+
+  // Arrow down should navigate to the next verse
+  await page.keyboard.press('ArrowDown');
+  await expect(reference).toHaveValue('John 3:17', { timeout: 5000 });
+
+  // Arrow down again
+  await page.keyboard.press('ArrowDown');
+  await expect(reference).toHaveValue('John 3:18', { timeout: 5000 });
+
+  // Arrow up should navigate to the previous verse
+  await page.keyboard.press('ArrowUp');
+  await expect(reference).toHaveValue('John 3:17', { timeout: 5000 });
+
+  // Arrow up again
+  await page.keyboard.press('ArrowUp');
+  await expect(reference).toHaveValue('John 3:16', { timeout: 5000 });
+});
+
+test('Page Down/Up navigate chapter by chapter', async () => {
+  await openReader();
+  const reference = page.locator('.reference__input');
+
+  await reference.fill('John 3:16');
+  await reference.press('Enter');
+  await expect(page.locator('.bible-panel__heading')).toHaveText('John 3');
+  await expect(page.locator('[data-verse="43003016"]')).toBeVisible();
+
+  // Page Down should navigate to the first verse of the next chapter
+  await page.keyboard.press('PageDown');
+  await expect(reference).toHaveValue(/John 4:/, { timeout: 5000 });
+  await expect(page.locator('.bible-panel__heading')).toHaveText('John 4', { timeout: 5000 });
+
+  // Wait for the chapter to be fully loaded before next key press
+  await page.waitForTimeout(200);
+
+  // Page Down again
+  await page.keyboard.press('PageDown');
+  await expect(reference).toHaveValue(/John 5:/, { timeout: 5000 });
+  await expect(page.locator('.bible-panel__heading')).toHaveText('John 5', { timeout: 5000 });
+
+  // Wait before Page Up
+  await page.waitForTimeout(200);
+
+  // Page Up should navigate to the first verse of the previous chapter
+  await page.keyboard.press('PageUp');
+  await expect(reference).toHaveValue(/John 4:/, { timeout: 5000 });
+  await expect(page.locator('.bible-panel__heading')).toHaveText('John 4', { timeout: 5000 });
+
+  // Wait before final Page Up
+  await page.waitForTimeout(200);
+
+  // Page Up again
+  await page.keyboard.press('PageUp');
+  await expect(reference).toHaveValue(/John 3:/, { timeout: 5000 });
+  await expect(page.locator('.bible-panel__heading')).toHaveText('John 3', { timeout: 5000 });
+});
+
+test('keyboard navigation handles chapter boundaries', async () => {
+  await openReader();
+  const reference = page.locator('.reference__input');
+
+  // Navigate to the first verse of a chapter
+  await reference.fill('John 3:1');
+  await reference.press('Enter');
+  await expect(reference).toHaveValue('John 3:1');
+
+  // Wait for the verse to be visible (ensures chapter is loaded)
+  await expect(page.locator('[data-verse="43003001"]')).toBeVisible();
+  
+  // Give the chapter data a moment to be processed
+  await page.waitForTimeout(200);
+
+  // Arrow down should navigate forward (should work after chapter is loaded)
+  await page.keyboard.press('ArrowDown');
+  await expect(reference).toHaveValue('John 3:2', { timeout: 5000 });
+
+  // Arrow down again
+  await page.keyboard.press('ArrowDown');
+  await expect(reference).toHaveValue('John 3:3', { timeout: 5000 });
+});
+
+test('keyboard navigation publishes to sync sets', async () => {
+  // Two readers in the same sync set
+  await openReader();
+  await page.getByTitle('Split right (Ctrl+\\)').click();
+  await page.getByRole('button', { name: 'Open a reader' }).click();
+  await expect(readers()).toHaveCount(2);
+
+  for (const index of [0, 1]) {
+    await page.locator('.syncpicker__trigger').nth(index).click();
+    await page.getByRole('menuitem', { name: 'Set A' }).click();
+  }
+  await expect(page.locator('.tab__sync')).toHaveCount(2);
+
+  const scroll = page.getByTestId('bible-scroll').first();
+  await scroll.focus();
+
+  // Arrow down on the first reader
+  await page.keyboard.press('ArrowDown');
+
+  // Both readers should update
+  await expect(page.locator('.reference__input').first()).toHaveValue('John 3:2');
+  await expect(page.locator('.reference__input').nth(1)).toHaveValue('John 3:2');
+});

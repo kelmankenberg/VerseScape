@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { formatReference, fromVerseKey, getBook, parseReference } from '@shared/reference/index.js';
+import {
+  formatReference,
+  fromVerseKey,
+  getBook,
+  nextVerse,
+  previousVerse,
+  nextChapter,
+  previousChapter,
+  toVerseKey,
+  parseReference,
+} from '@shared/reference/index.js';
 import type { ChapterData, ResourceSummary } from '@shared/ipc/contracts.js';
 import type { BibleDisplayOptions } from '@shared/settings.js';
 import type { JsonValue } from '@shared/workspace/index.js';
@@ -76,6 +86,18 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
       ),
     [chapters],
   );
+
+  // Build a map of chapter -> max verse for keyboard navigation
+  const versesByChapter = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const chapter of chapters) {
+      if (chapter.verses.length > 0) {
+        const maxVerse = Math.max(...chapter.verses.map((v) => v.verse));
+        map.set(chapter.chapter, maxVerse);
+      }
+    }
+    return map;
+  }, [chapters]);
 
   useEffect(() => {
     let cancelled = false;
@@ -185,6 +207,39 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
     },
     [navigateTab, tabId],
   );
+
+  // Keyboard navigation: Arrow keys for verse, Page Up/Down for chapter
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      // Don't navigate if focus is on an input or contenteditable element
+      const target = event.target as Element;
+      if (target?.matches('input, textarea, [contenteditable]')) return;
+
+      const anchorKey = toVerseKey(anchor);
+      let nextKey: number | null = null;
+
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        nextKey = nextVerse(anchorKey, versesByChapter) ?? anchorKey;
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        nextKey = previousVerse(anchorKey, versesByChapter) ?? anchorKey;
+      } else if (event.key === 'PageDown') {
+        event.preventDefault();
+        nextKey = nextChapter(anchorKey) ?? anchorKey;
+      } else if (event.key === 'PageUp') {
+        event.preventDefault();
+        nextKey = previousChapter(anchorKey) ?? anchorKey;
+      }
+
+      if (nextKey !== null) {
+        navigateToVerse(nextKey);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [anchor, navigateToVerse, versesByChapter]);
 
   useVerseSync({
     tabId,
