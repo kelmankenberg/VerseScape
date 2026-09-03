@@ -113,6 +113,7 @@ export type HighlightStyle = z.infer<typeof highlightStyle>;
 export const createNoteRequest = z.object({
   verseKey: z.number().int().positive(),
   title: z.string().max(500),
+  resourceId: resourceSummary.shape.id.optional(),
 });
 export type CreateNoteRequest = z.infer<typeof createNoteRequest>;
 
@@ -120,8 +121,38 @@ export const noteRecord = z.object({
   id: z.string().min(1),
   verseKey: z.number().int().positive(),
   title: z.string(),
+  bodyMd: z.string().optional(),
+  resourceId: resourceSummary.shape.id.optional(),
 });
 export type NoteRecord = z.infer<typeof noteRecord>;
+
+export const updateNoteRequest = z.object({
+  id: z.string().min(1),
+  bodyMd: z.string().max(100000),
+});
+export type UpdateNoteRequest = z.infer<typeof updateNoteRequest>;
+
+export const noteAnchorRecord = z.object({
+  noteId: z.string().min(1),
+  startKey: z.number().int().positive(),
+  endKey: z.number().int().positive(),
+  resourceId: resourceSummary.shape.id.optional(),
+});
+export type NoteAnchorRecord = z.infer<typeof noteAnchorRecord>;
+
+export const noteIdRequest = z.object({ id: z.string().min(1) });
+export type NoteIdRequest = z.infer<typeof noteIdRequest>;
+
+export const createNoteAnchorRequest = z.object({
+  noteId: z.string().min(1),
+  startKey: z.number().int().positive(),
+  endKey: z.number().int().positive(),
+  resourceId: resourceSummary.shape.id.optional(),
+});
+export type CreateNoteAnchorRequest = z.infer<typeof createNoteAnchorRequest>;
+
+export const deleteNoteAnchorRequest = createNoteAnchorRequest;
+export type DeleteNoteAnchorRequest = z.infer<typeof deleteNoteAnchorRequest>;
 
 export const createHighlightRequest = z
   .object({
@@ -151,6 +182,12 @@ export const listHighlightsRequest = z.object({
   endKey: z.number().int().positive(),
 });
 export type ListHighlightsRequest = z.infer<typeof listHighlightsRequest>;
+
+export const listNotesRequest = z.object({
+  start: z.number().int().positive().optional(),
+  end: z.number().int().positive().optional(),
+});
+export type ListNotesRequest = z.infer<typeof listNotesRequest>;
 
 const bookIdPattern = /^(?:[1-3])?[A-Z]{3}$/u;
 
@@ -208,6 +245,24 @@ export const contracts = {
     request: listHighlightsRequest,
     response: z.array(highlightRecord),
   },
+  'annotations:list-notes': {
+    request: listNotesRequest,
+    response: z.array(noteRecord),
+  },
+  'annotations:list-note-anchors': {
+    request: noteIdRequest,
+    response: z.array(noteAnchorRecord),
+  },
+  'annotations:add-note-anchor': {
+    request: createNoteAnchorRequest,
+    response: noteAnchorRecord,
+  },
+  'annotations:delete-note-anchor': {
+    request: deleteNoteAnchorRequest,
+    response: z.null(),
+  },
+  'annotations:delete-note': { request: noteIdRequest, response: z.null() },
+  'annotations:update-note': { request: updateNoteRequest, response: noteRecord },
   'search:query': { request: searchRequest, response: z.array(searchHit) },
 } as const;
 

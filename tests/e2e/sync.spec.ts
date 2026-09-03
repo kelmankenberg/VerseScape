@@ -111,7 +111,7 @@ test('a selected KJV word opens and reuses the Strong\'s panel', async () => {
   await openReader();
   await page.locator('.reference__input').fill('John 3:16');
   await page.locator('.reference__input').press('Enter');
-  await page.locator('.bible-panel__translation').selectOption('kjv');
+  await page.locator('.bible-panel__translation').selectOption('bsb');
   const targetVerse = page.locator('.bible-panel__verse').filter({ hasText: 'God' }).first();
   await expect(targetVerse).toContainText('God');
 
@@ -161,7 +161,7 @@ test('a selected BSB word opens the Strong\'s panel using the translation-table 
   await openReader();
   await page.locator('.reference__input').fill('John 3:16');
   await page.locator('.reference__input').press('Enter');
-  await page.locator('.bible-panel__translation').selectOption('bsb');
+  await page.locator('.bible-panel__translation').selectOption('kjv');
   const targetVerse = page.locator('.bible-panel__verse').filter({ hasText: 'God' }).first();
   await expect(targetVerse).toContainText('God');
 
@@ -269,19 +269,121 @@ test('creating a note from the selection toolbar pre-fills the title and anchors
   await noteInput.fill('The whole world');
   await toolbar.getByRole('button', { name: 'Save' }).click();
   await expect(toolbar).toHaveCount(0);
+  const notesPanel = page.locator('.notes-panel');
+  await expect(notesPanel).toBeVisible();
+  await expect(notesPanel.locator('.notes-panel__note-title')).toHaveText('The whole world');
+  await expect(notesPanel.locator('.notes-panel__editor')).toBeVisible();
+  const anchorLink = notesPanel.locator('.notes-panel__anchor a').first();
+  await expect(anchorLink).toHaveAttribute('title', 'John 3:16');
+  await anchorLink.hover();
+  const anchorTooltip = notesPanel.locator('.notes-panel__anchor-tooltip').first();
+  await expect(anchorTooltip).toBeVisible();
+  await expect(anchorTooltip).toContainText('John 3:16');
+  await expect(anchorTooltip).toContainText('God');
+  await anchorLink.click();
+  await expect(page.locator('.bible-panel')).toBeVisible();
+  await expect(page.getByRole('tab', { name: /Bible/ })).toHaveCount(1);
+  await expect(page.locator('.bible-panel__translation')).toHaveValue('bsb');
+  await expect(page.locator('.reference__input')).toHaveValue('John 3:16');
+  await page.getByRole('tab', { name: /Notes/ }).click();
+  const editor = notesPanel.locator('.notes-panel__editor-input .tiptap');
+  await editor.fill('Saved note content');
+  await editor.blur();
+
+  await page.getByRole('tab', { name: /Bible/ }).first().click();
+  await expect(page.locator('.bible-panel')).toBeVisible();
+  const bibleVerse = page.locator('.bible-panel__verse').filter({ hasText: 'God' }).first();
+  await expect(bibleVerse).toBeVisible();
+  await selectWordIn(bibleVerse)('God');
+  const secondToolbar = page.getByRole('toolbar', { name: 'Selection actions' });
+  await expect(secondToolbar).toBeVisible();
+  await secondToolbar.getByRole('button', { name: 'Note' }).click();
+  const secondNoteInput = secondToolbar.locator('.selection-toolbar__note-input');
+  await secondNoteInput.fill('A second note');
+  await secondToolbar.getByRole('button', { name: 'Save' }).click();
+
+  await expect(notesPanel.locator('.notes-panel__note-title')).toHaveText([
+    'A second note',
+    'The whole world',
+  ]);
+  await expect(notesPanel.locator('.notes-panel__editor-input')).toHaveAttribute(
+    'aria-label',
+    'Edit A second note',
+  );
+  const secondAnchor = notesPanel.locator('.notes-panel__anchor').first();
+  await secondAnchor.dispatchEvent('click');
+  const deleteAnchor = secondAnchor.getByRole('button', { name: /Delete anchor/ });
+  await expect(deleteAnchor).toBeVisible();
+  await deleteAnchor.click();
+  await expect(notesPanel.locator('.notes-panel__anchor')).toHaveCount(0);
+  await expect(notesPanel.locator('.notes-panel__editor-input')).toHaveAttribute(
+    'aria-label',
+    'Edit A second note',
+  );
+  await notesPanel.getByRole('button', { name: /The whole world/ }).click();
+  await expect(notesPanel.locator('.notes-panel__editor-input .tiptap')).toHaveText('Saved note content');
+  await notesPanel.getByRole('button', { name: 'Add anchor' }).click();
+  await expect(notesPanel.getByText('Active Reference:', { exact: false })).toBeVisible();
+  await notesPanel.locator('input[type="radio"]').nth(1).check();
+  await notesPanel.getByRole('textbox', { name: 'Anchor reference' }).fill('Galatians 5:5-6');
+  await notesPanel.getByRole('button', { name: 'Done' }).click();
+  await expect(notesPanel.getByRole('link', { name: 'Galatians 5:5-6' })).toBeVisible();
+  await expect(notesPanel.locator('.notes-panel__note-title', { hasText: 'The whole world' })).toHaveCount(1);
+  await notesPanel.getByRole('button', { name: /A second note/ }).click();
+  await expect(notesPanel.locator('.notes-panel__editor-input')).toHaveAttribute(
+    'aria-label',
+    'Edit A second note',
+  );
+  await notesPanel.getByRole('button', { name: 'More note actions' }).click();
+  const moreMenu = notesPanel.getByRole('menu');
+  await expect(moreMenu).toContainText('Close this note');
+  await expect(moreMenu).toContainText('Show full anchor text');
+  await expect(moreMenu).toContainText('Add anchor');
+  await expect(moreMenu).toContainText('Delete this note');
+  await expect(moreMenu).not.toContainText('Send to');
+  await moreMenu
+    .getByRole('menuitem', { name: 'Delete this note' })
+    .click();
+  await expect(notesPanel.locator('.notes-panel__note-title')).toHaveText('The whole world');
+  await notesPanel.getByRole('button', { name: 'More note actions' }).click();
+  await notesPanel
+    .getByRole('menu')
+    .getByRole('menuitem', { name: 'Delete this note' })
+    .click();
+  await expect(notesPanel.locator('.notes-panel__note-title')).toHaveCount(0);
 
   const db = new Database(join(userDataDir, 'versescape.db'), { readonly: true });
   try {
     const rows = db
       .prepare(
-        `SELECT note.title AS title, note_anchor.start_key AS startKey, note_anchor.end_key AS endKey
+        `SELECT note.title AS title, note.body_md AS bodyMd, note_anchor.start_key AS startKey, note_anchor.end_key AS endKey
          FROM note JOIN note_anchor ON note_anchor.note_id = note.id`,
       )
-      .all() as Array<{ title: string; startKey: number; endKey: number }>;
-    expect(rows).toEqual([{ title: 'The whole world', startKey: 43_003_016, endKey: 43_003_016 }]);
+      .all() as Array<{ title: string; bodyMd: string; startKey: number; endKey: number }>;
+    expect(rows).toHaveLength(0);
   } finally {
     db.close();
   }
+});
+
+test('an anchor created in KJV navigates an existing Bible panel without switching versions', async () => {
+  await openReader();
+  await page.locator('.reference__input').fill('John 3:16');
+  await page.locator('.reference__input').press('Enter');
+  await page.locator('.bible-panel__translation').selectOption('kjv');
+  await page.waitForTimeout(550);
+  const targetVerse = page.locator('.bible-panel__verse').filter({ hasText: 'loved' }).first();
+  await expect(targetVerse).toContainText('loved');
+  await selectWordIn(targetVerse)('loved');
+  const toolbar = page.getByRole('toolbar', { name: 'Selection actions' });
+  await toolbar.getByRole('button', { name: 'Note' }).click();
+  const noteInput = toolbar.locator('.selection-toolbar__note-input');
+  await noteInput.fill('KJV note');
+  await toolbar.getByRole('button', { name: 'Save' }).click();
+  const notesPanel = page.locator('.notes-panel');
+  await expect(notesPanel).toBeVisible();
+  await notesPanel.locator('.notes-panel__anchor a').first().click();
+  await expect(page.locator('.bible-panel__translation')).toHaveValue('kjv');
 });
 
 test('clicking a word highlights every visible instance and replaces the previous highlight', async () => {

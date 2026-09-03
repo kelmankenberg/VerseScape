@@ -8,7 +8,17 @@ import { readWindowState } from '../platform/window-manager.js';
 import { loadSettings, patchSettings } from '../services/settings.js';
 import { loadWorkspace, saveWorkspace } from '../services/workspace.js';
 import { getChapter, getConcordance, getCrossReferences, getLexiconEntry, listResources } from '../services/resources.js';
-import { createHighlight, createNote, listHighlights } from '../services/annotations.js';
+import {
+  addNoteAnchor,
+  createHighlight,
+  createNote,
+  deleteNote,
+  deleteNoteAnchor,
+  listHighlights,
+  listNoteAnchors,
+  listNotes,
+  updateNote,
+} from '../services/annotations.js';
 import { runSearch } from '../services/search.js';
 import type { Workspace } from '@shared/workspace/types.js';
 
@@ -95,6 +105,26 @@ export function registerIpcHandlers(): void {
   handle(IpcChannels.annotationsListHighlights, (request) =>
     listHighlights(request.startKey, request.endKey),
   );
+
+  handle(IpcChannels.annotationsListNotes, (request) =>
+    listNotes(request.start, request.end),
+  );
+
+  handle(IpcChannels.annotationsListNoteAnchors, (request) => listNoteAnchors(request.id));
+
+  handle(IpcChannels.annotationsAddNoteAnchor, (request) => addNoteAnchor(request));
+
+  handle(IpcChannels.annotationsDeleteNote, (request) => {
+    deleteNote(request.id);
+    return null;
+  });
+
+  handle(IpcChannels.annotationsDeleteNoteAnchor, (request) => {
+    deleteNoteAnchor(request.noteId, request.startKey, request.endKey);
+    return null;
+  });
+
+  handle(IpcChannels.annotationsUpdateNote, (request) => updateNote(request.id, request.bodyMd));
 
   handle(IpcChannels.searchQuery, (request) => runSearch(request));
 }

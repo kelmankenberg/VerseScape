@@ -8,6 +8,7 @@ import type {
   HighlightRecord,
   LexiconEntry,
   NoteRecord,
+  NoteAnchorRecord,
   ResourceSummary,
   SearchHit,
   WindowState,
@@ -71,6 +72,28 @@ const bridge: VerseScapeBridge = {
     listHighlights: (request) =>
       ipcRenderer.invoke(IpcChannels.annotationsListHighlights, request) as Promise<
         IpcResult<HighlightRecord[]>
+      >,
+    listNotes: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsListNotes, request) as Promise<
+        IpcResult<NoteRecord[]>
+      >,
+    listNoteAnchors: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsListNoteAnchors, request) as Promise<
+        IpcResult<NoteAnchorRecord[]>
+      >,
+    addNoteAnchor: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsAddNoteAnchor, request) as Promise<
+        IpcResult<NoteAnchorRecord>
+      >,
+    deleteNoteAnchor: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsDeleteNoteAnchor, request) as Promise<
+        IpcResult<null>
+      >,
+    deleteNote: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsDeleteNote, request) as Promise<IpcResult<null>>,
+    updateNote: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsUpdateNote, request) as Promise<
+        IpcResult<NoteRecord>
       >,
   },
   search: {

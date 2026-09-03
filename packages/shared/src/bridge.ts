@@ -8,6 +8,12 @@ import type {
   HighlightRecord,
   LexiconEntry,
   ListHighlightsRequest,
+  ListNotesRequest,
+  CreateNoteAnchorRequest,
+  DeleteNoteAnchorRequest,
+  NoteAnchorRecord,
+  NoteIdRequest,
+  UpdateNoteRequest,
   CrossReference,
   CrossReferenceRequest,
   NoteRecord,
@@ -19,7 +25,6 @@ import type {
 import type { AppSettings, SettingsPatch } from './settings.js';
 import type { Workspace } from './workspace/types.js';
 import type { IpcResult } from './ipc/result.js';
-
 /**
  * The complete surface exposed to the renderer via contextBridge.
  *
@@ -52,6 +57,12 @@ export interface VerseScapeBridge {
     createNote(request: CreateNoteRequest): Promise<IpcResult<NoteRecord>>;
     createHighlight(request: CreateHighlightRequest): Promise<IpcResult<HighlightRecord>>;
     listHighlights(request: ListHighlightsRequest): Promise<IpcResult<HighlightRecord[]>>;
+    listNotes(request: ListNotesRequest): Promise<IpcResult<NoteRecord[]>>;
+    listNoteAnchors(request: NoteIdRequest): Promise<IpcResult<NoteAnchorRecord[]>>;
+    addNoteAnchor(request: CreateNoteAnchorRequest): Promise<IpcResult<NoteAnchorRecord>>;
+    deleteNoteAnchor(request: DeleteNoteAnchorRequest): Promise<IpcResult<null>>;
+    deleteNote(request: NoteIdRequest): Promise<IpcResult<null>>;
+    updateNote(request: UpdateNoteRequest): Promise<IpcResult<NoteRecord>>;
   };
   readonly search: {
     query(request: SearchRequest): Promise<IpcResult<SearchHit[]>>;

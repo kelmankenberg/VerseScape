@@ -751,10 +751,25 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
             setSelection(null);
           }}
           onCreateNote={(title) => {
-            void window.versescape.annotations.createNote({
+            openPanel('notes', undefined, {
               verseKey: selection.verseKey,
-              title,
+              resourceId,
             });
+            void window.versescape.annotations
+              .createNote({
+                verseKey: selection.verseKey,
+                title,
+                resourceId,
+              })
+              .then((result) => {
+                if (result.ok) {
+                  openPanel('notes', undefined, {
+                    verseKey: selection.verseKey,
+                    noteId: result.data.id,
+                    resourceId,
+                  });
+                }
+              });
           }}
           onCreateHighlight={(colour, style) => {
             void window.versescape.annotations

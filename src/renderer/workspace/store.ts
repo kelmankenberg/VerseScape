@@ -39,6 +39,7 @@ interface WorkspaceStore {
   /** Most-recently-active tabs, capped at MOUNT_LIMIT (D-14). */
   mounted: TabId[];
   openPanel: (panelType: string, targetGroup?: NodeId, state?: JsonValue) => void;
+  openOrNavigateBible: (state: JsonValue) => void;
   closeTab: (tabId: TabId) => void;
   reopenLastClosed: () => void;
   activateTab: (tabId: TabId) => void;
@@ -79,7 +80,7 @@ export const useWorkspace = create<WorkspaceStore>((set) => {
 
     openPanel: (panelType, targetGroup, state) =>
       apply('openPanel', (w) => {
-        if (panelType === 'strongs' || panelType === 'search-results') {
+        if (panelType === 'strongs' || panelType === 'search-results' || panelType === 'notes') {
           const existing = Object.values(w.tabs).find((tab) => tab.panelType === panelType);
           if (existing) {
             let next = activateTab(w, existing.id, ctx);
@@ -97,6 +98,37 @@ export const useWorkspace = create<WorkspaceStore>((set) => {
           },
           ctx,
         );
+      }),
+    openOrNavigateBible: (state) =>
+      apply('openOrNavigateBible', (w) => {
+        const requestedState =
+          typeof state === 'object' && state !== null && !Array.isArray(state) ? state : {};
+        const requestedResourceId =
+          typeof requestedState['resourceId'] === 'string'
+            ? requestedState['resourceId']
+            : 'bsb';
+        const existing = Object.values(w.tabs).find((tab) => {
+          if (tab.panelType !== 'sample') return false;
+          if (!requestedResourceId) return true;
+          if (typeof tab.state !== 'object' || tab.state === null || Array.isArray(tab.state)) {
+            return requestedResourceId === 'bsb';
+          }
+          const existingResourceId =
+            typeof tab.state['resourceId'] === 'string' ? tab.state['resourceId'] : 'bsb';
+          return existingResourceId === requestedResourceId;
+        });
+        if (existing) {
+          let next = activateTab(w, existing.id, ctx);
+          const existingState =
+            typeof existing.state === 'object' &&
+            existing.state !== null &&
+            !Array.isArray(existing.state)
+              ? existing.state
+              : {};
+          next = setTabState(next, existing.id, { ...existingState, ...requestedState }, ctx);
+          return next;
+        }
+        return openPanel(w, { panelType: 'sample', state }, ctx);
       }),
     closeTab: (tabId) => apply('closeTab', (w) => closeTab(w, tabId, ctx)),
     reopenLastClosed: () => apply('reopenLastClosed', (w) => reopenLastClosed(w, ctx)),

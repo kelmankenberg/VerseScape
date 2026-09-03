@@ -7,6 +7,8 @@ import { PassageComparePanel } from './PassageComparePanel.js';
 import { StrongsPanel, type StrongsPanelState } from './StrongsPanel.js';
 import { SearchResultsPanel } from './SearchResultsPanel.js';
 
+import { NotesPanel } from './NotesPanel.js';
+
 /**
  * M2 test panels. Real Bible, Notes and commentary panels replace these in M3
  * and M5; the shell only ever sees the descriptor.
@@ -70,5 +72,15 @@ export function registerBuiltInPanels(): void {
     hasReferenceInput: false,
     createState: () => ({ query: '', resourceIds: [], testament: '', startBook: '', endBook: '' }),
     component: SearchResultsPanel,
+  });
+
+  registerPanel({
+    type: 'notes',
+    title: 'Notes',
+    icon: NotebookPen,
+    linkable: false,
+    hasReferenceInput: false,
+    createState: () => null,
+    component: NotesPanel,
   });
 }

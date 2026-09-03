@@ -23,6 +23,12 @@ export const IpcChannels = {
   annotationsCreateNote: 'annotations:create-note',
   annotationsCreateHighlight: 'annotations:create-highlight',
   annotationsListHighlights: 'annotations:list-highlights',
+  annotationsListNotes: 'annotations:list-notes',
+  annotationsListNoteAnchors: 'annotations:list-note-anchors',
+  annotationsAddNoteAnchor: 'annotations:add-note-anchor',
+  annotationsDeleteNoteAnchor: 'annotations:delete-note-anchor',
+  annotationsDeleteNote: 'annotations:delete-note',
+  annotationsUpdateNote: 'annotations:update-note',
   searchQuery: 'search:query',
 } as const;
 
