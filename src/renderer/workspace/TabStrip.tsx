@@ -6,6 +6,13 @@ import { DEFAULT_SYNC_SET_COLOURS } from '@shared/workspace/index.js';
 import type { GroupNode, Tab } from '@shared/workspace/index.js';
 
 function tabLabel(tab: Tab): string {
+  if (tab.panelType === 'sample') {
+    const resourceId =
+      typeof tab.state === 'object' && tab.state !== null && !Array.isArray(tab.state)
+        ? tab.state['resourceId']
+        : null;
+    return (typeof resourceId === 'string' && resourceId ? resourceId : 'bsb').toUpperCase();
+  }
   return tab.title ?? getPanel(tab.panelType)?.title ?? tab.panelType;
 }
 

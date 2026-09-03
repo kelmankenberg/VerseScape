@@ -1086,12 +1086,25 @@
 
 .notes-panel__title {
   font-weight: 700;
+  white-space: nowrap;
 }
 
-.notes-panel__verse {
+.notes-panel__search {
   flex: 1;
-  color: var(--vs-fg-muted);
+  min-width: 0;
+  min-height: 26px;
+  padding: 4px 8px;
+  border: 1px solid var(--vs-border);
+  border-radius: 3px;
+  background: var(--vs-bg-app);
+  color: var(--vs-fg-primary);
+  outline: none;
+  font: inherit;
   font-size: 11px;
+}
+
+.notes-panel__search:focus {
+  border-color: var(--vs-accent);
 }
 
 .notes-panel__button {
@@ -1385,9 +1398,27 @@
 }
 
 .notes-panel__anchor a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--vs-accent);
   font-weight: 700;
   text-decoration: none;
+}
+
+.notes-panel__anchor-version {
+  display: inline-flex;
+  align-items: center;
+  min-height: 16px;
+  padding: 1px 5px;
+  border: 1px solid color-mix(in srgb, var(--vs-accent) 35%, transparent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--vs-accent) 10%, transparent);
+  color: var(--vs-accent);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
 }
 
 .notes-panel__anchor a:hover {

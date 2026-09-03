@@ -37,7 +37,7 @@ test('the empty state replaces itself with a real panel', async () => {
   await page.getByRole('button', { name: 'Open a reader' }).click();
 
   await expect(tabs()).toHaveCount(1);
-  await expect(tabs().first()).toContainText('Bible');
+  await expect(tabs().first()).toContainText('BSB');
   await expect(page.locator('.bible-panel')).toBeVisible();
 });
 

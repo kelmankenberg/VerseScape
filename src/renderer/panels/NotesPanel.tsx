@@ -103,6 +103,7 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
   const [showFullAnchorText, setShowFullAnchorText] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [noteSearch, setNoteSearch] = useState('');
 
   // When sync verse changes, refresh notes for that verse
   useEffect(() => {
@@ -214,6 +215,14 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
   };
 
   const selectedNote = notes.find((note) => note.id === selectedNoteId) ?? null;
+  const normalizedNoteSearch = noteSearch.trim().toLowerCase();
+  const visibleNotes = normalizedNoteSearch
+    ? notes.filter(
+        (note) =>
+          note.title.toLowerCase().includes(normalizedNoteSearch) ||
+          (note.bodyMd ?? '').toLowerCase().includes(normalizedNoteSearch),
+      )
+    : notes;
 
   const openAnchor = (anchor: NoteAnchorRecord): void => {
     const start = fromVerseKey(anchor.startKey);
@@ -343,7 +352,14 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
     <div className="notes-panel">
       <div className="notes-panel__toolbar">
         <span className="notes-panel__title">Notes</span>
-        <span className="notes-panel__verse">{currentVerseRef}</span>
+        <input
+          className="notes-panel__search"
+          type="search"
+          aria-label="Search all notes"
+          placeholder="Search all notes"
+          value={noteSearch}
+          onChange={(event) => setNoteSearch(event.target.value)}
+        />
         <button
           type="button"
           className="notes-panel__button"
@@ -359,11 +375,13 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
       <div className="notes-panel__workspace">
         <div ref={containerRef} className="notes-panel__list">
           {loading && <div className="notes-panel__empty">Loading notes…</div>}
-          {!loading && notes.length === 0 && (
-            <div className="notes-panel__empty">No notes for this verse yet.</div>
+          {!loading && visibleNotes.length === 0 && (
+            <div className="notes-panel__empty">
+              {normalizedNoteSearch ? 'No matching notes.' : 'No notes yet.'}
+            </div>
           )}
           {!loading &&
-            notes.map((note) => (
+            visibleNotes.map((note) => (
               <div key={note.id} className="notes-panel__note">
                 <button
                   type="button"
@@ -542,6 +560,7 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
                       const label = start && end
                         ? formatReference({ start, end })
                         : `${anchor.startKey}-${anchor.endKey}`;
+                      const version = (anchor.resourceId ?? 'bsb').toUpperCase();
                       const anchorKey = `${anchor.startKey}-${anchor.endKey}`;
                       const selected = selectedAnchorKey === anchorKey;
                       return (
@@ -559,14 +578,17 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
                               openAnchor(anchor);
                             }}
                           >
-                            {label}
+                            <span>{label}</span>
+                            <span className="notes-panel__anchor-version">{version}</span>
                           </a>
                           <span
                             id={`anchor-tooltip-${anchorKey}`}
                             className="notes-panel__anchor-tooltip"
                             role="tooltip"
                           >
-                            <span className="notes-panel__anchor-tooltip-reference">{label}</span>
+                            <span className="notes-panel__anchor-tooltip-reference">
+                              {label} · {version}
+                            </span>
                             <span className="notes-panel__anchor-tooltip-text">
                               {anchorTexts.get(anchorKey) || 'Loading anchored text...'}
                             </span>

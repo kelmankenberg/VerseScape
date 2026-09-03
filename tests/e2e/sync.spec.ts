@@ -111,7 +111,7 @@ test('a selected KJV word opens and reuses the Strong\'s panel', async () => {
   await openReader();
   await page.locator('.reference__input').fill('John 3:16');
   await page.locator('.reference__input').press('Enter');
-  await page.locator('.bible-panel__translation').selectOption('bsb');
+  await page.locator('.bible-panel__translation').selectOption('kjv');
   const targetVerse = page.locator('.bible-panel__verse').filter({ hasText: 'God' }).first();
   await expect(targetVerse).toContainText('God');
 
@@ -148,7 +148,7 @@ test('a selected KJV word opens and reuses the Strong\'s panel', async () => {
   await expect(page.locator('.strongs-panel__definition')).toContainText('God');
   await expect(page.locator('.strongs-panel')).toHaveCount(1);
 
-  await page.getByRole('tab', { name: 'Bible' }).click();
+  await page.getByRole('tab', { name: 'KJV' }).click();
   await expect(targetVerse).toBeVisible();
   await selectWord('loved');
   toolbar = page.getByRole('toolbar', { name: 'Selection actions' });
@@ -161,7 +161,7 @@ test('a selected BSB word opens the Strong\'s panel using the translation-table 
   await openReader();
   await page.locator('.reference__input').fill('John 3:16');
   await page.locator('.reference__input').press('Enter');
-  await page.locator('.bible-panel__translation').selectOption('kjv');
+  await page.locator('.bible-panel__translation').selectOption('bsb');
   const targetVerse = page.locator('.bible-panel__verse').filter({ hasText: 'God' }).first();
   await expect(targetVerse).toContainText('God');
 
@@ -275,22 +275,30 @@ test('creating a note from the selection toolbar pre-fills the title and anchors
   await expect(notesPanel.locator('.notes-panel__editor')).toBeVisible();
   const anchorLink = notesPanel.locator('.notes-panel__anchor a').first();
   await expect(anchorLink).toHaveAttribute('title', 'John 3:16');
+  await expect(anchorLink.locator('.notes-panel__anchor-version')).toHaveText('BSB');
   await anchorLink.hover();
   const anchorTooltip = notesPanel.locator('.notes-panel__anchor-tooltip').first();
   await expect(anchorTooltip).toBeVisible();
   await expect(anchorTooltip).toContainText('John 3:16');
+  await expect(anchorTooltip).toContainText('BSB');
   await expect(anchorTooltip).toContainText('God');
   await anchorLink.click();
   await expect(page.locator('.bible-panel')).toBeVisible();
-  await expect(page.getByRole('tab', { name: /Bible/ })).toHaveCount(1);
+  await expect(page.getByRole('tab', { name: /BSB/ })).toHaveCount(1);
   await expect(page.locator('.bible-panel__translation')).toHaveValue('bsb');
   await expect(page.locator('.reference__input')).toHaveValue('John 3:16');
   await page.getByRole('tab', { name: /Notes/ }).click();
   const editor = notesPanel.locator('.notes-panel__editor-input .tiptap');
   await editor.fill('Saved note content');
   await editor.blur();
+  const notesSearch = notesPanel.getByRole('searchbox', { name: 'Search all notes' });
+  await notesSearch.fill('Saved note content');
+  await expect(notesPanel.locator('.notes-panel__note-title')).toHaveText('The whole world');
+  await notesSearch.fill('no such note');
+  await expect(notesPanel.getByText('No matching notes.')).toBeVisible();
+  await notesSearch.fill('');
 
-  await page.getByRole('tab', { name: /Bible/ }).first().click();
+  await page.getByRole('tab', { name: /BSB/ }).first().click();
   await expect(page.locator('.bible-panel')).toBeVisible();
   const bibleVerse = page.locator('.bible-panel__verse').filter({ hasText: 'God' }).first();
   await expect(bibleVerse).toBeVisible();
