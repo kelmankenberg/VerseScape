@@ -107,6 +107,51 @@ export const lexiconEntry = z.object({
 });
 export type LexiconEntry = z.infer<typeof lexiconEntry>;
 
+export const highlightStyle = z.enum(['fill', 'text']);
+export type HighlightStyle = z.infer<typeof highlightStyle>;
+
+export const createNoteRequest = z.object({
+  verseKey: z.number().int().positive(),
+  title: z.string().max(500),
+});
+export type CreateNoteRequest = z.infer<typeof createNoteRequest>;
+
+export const noteRecord = z.object({
+  id: z.string().min(1),
+  verseKey: z.number().int().positive(),
+  title: z.string(),
+});
+export type NoteRecord = z.infer<typeof noteRecord>;
+
+export const createHighlightRequest = z
+  .object({
+    verseKey: z.number().int().positive(),
+    startOffset: z.number().int().nonnegative(),
+    endOffset: z.number().int().nonnegative(),
+    colour: z.string().regex(/^#[0-9a-fA-F]{6}$/u),
+    style: highlightStyle,
+  })
+  .refine((value) => value.endOffset > value.startOffset, {
+    message: 'endOffset must be greater than startOffset.',
+  });
+export type CreateHighlightRequest = z.infer<typeof createHighlightRequest>;
+
+export const highlightRecord = z.object({
+  id: z.string().min(1),
+  verseKey: z.number().int().positive(),
+  startOffset: z.number().int().nonnegative(),
+  endOffset: z.number().int().nonnegative(),
+  colour: z.string(),
+  style: highlightStyle,
+});
+export type HighlightRecord = z.infer<typeof highlightRecord>;
+
+export const listHighlightsRequest = z.object({
+  startKey: z.number().int().positive(),
+  endKey: z.number().int().positive(),
+});
+export type ListHighlightsRequest = z.infer<typeof listHighlightsRequest>;
+
 export const contracts = {
   'app:get-info': { request: emptyRequest, response: appInfo },
   'window:minimize': { request: emptyRequest, response: z.null() },
@@ -132,6 +177,12 @@ export const contracts = {
     response: lexiconEntry.nullable(),
   },
   'clipboard:write-text': { request: clipboardWriteRequest, response: z.null() },
+  'annotations:create-note': { request: createNoteRequest, response: noteRecord },
+  'annotations:create-highlight': { request: createHighlightRequest, response: highlightRecord },
+  'annotations:list-highlights': {
+    request: listHighlightsRequest,
+    response: z.array(highlightRecord),
+  },
 } as const;
 
 export type Contracts = typeof contracts;

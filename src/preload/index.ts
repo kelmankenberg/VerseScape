@@ -5,7 +5,9 @@ import type {
   AppInfo,
   ChapterData,
   CrossReference,
+  HighlightRecord,
   LexiconEntry,
+  NoteRecord,
   ResourceSummary,
   WindowState,
 } from '@shared/ipc/contracts.js';
@@ -55,6 +57,20 @@ const bridge: VerseScapeBridge = {
   clipboard: {
     writeText: (payload) =>
       ipcRenderer.invoke(IpcChannels.clipboardWriteText, payload) as Promise<IpcResult<null>>,
+  },
+  annotations: {
+    createNote: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsCreateNote, request) as Promise<
+        IpcResult<NoteRecord>
+      >,
+    createHighlight: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsCreateHighlight, request) as Promise<
+        IpcResult<HighlightRecord>
+      >,
+    listHighlights: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsListHighlights, request) as Promise<
+        IpcResult<HighlightRecord[]>
+      >,
   },
   window: {
     minimize: () => ipcRenderer.invoke(IpcChannels.windowMinimize) as Promise<IpcResult<null>>,

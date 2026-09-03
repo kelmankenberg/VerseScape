@@ -131,6 +131,53 @@
   font-size: 10px;
 }
 
+.selection-toolbar__swatches {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin: 0 2px;
+}
+
+.selection-toolbar__swatch {
+  width: 16px;
+  height: 16px;
+  min-height: 16px;
+  padding: 0;
+  border: 1px solid var(--vs-border);
+  border-radius: 50%;
+}
+
+.selection-toolbar__swatch:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.selection-toolbar__colour-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  padding: 0;
+  border: none;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.selection-toolbar__note {
+  gap: 5px;
+}
+
+.selection-toolbar__note-input {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 6px;
+  color: var(--vs-fg-primary);
+  background: var(--vs-bg-surface);
+  border: 1px solid var(--vs-border);
+  border-radius: 3px;
+  font: inherit;
+  font-size: 11px;
+}
+
 /* ---------- Splits ---------- */
 
 .split {

@@ -11,13 +11,14 @@ import {
   toVerseKey,
   parseReference,
 } from '@shared/reference/index.js';
-import type { ChapterData, ResourceSummary } from '@shared/ipc/contracts.js';
+import type { ChapterData, HighlightRecord, ResourceSummary } from '@shared/ipc/contracts.js';
 import type { BibleDisplayOptions } from '@shared/settings.js';
 import type { JsonValue } from '@shared/workspace/index.js';
 import { useVerseSync } from '../workspace/use-verse-sync.js';
 import { useWorkspace } from '../workspace/store.js';
 import { useSettings } from '../stores/settings.js';
 import { BibleText } from './BibleText.js';
+import type { HighlightSpan } from './BibleText.js';
 import { CrossReferencesButton } from './CrossReferencesButton.js';
 import { DisplayOptionsButton } from './DisplayOptionsButton.js';
 import { SelectionToolbar } from './SelectionToolbar.js';
@@ -48,6 +49,30 @@ function panelDisplayOverride(state: JsonValue): Partial<BibleDisplayOptions> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
     ? (value as Partial<BibleDisplayOptions>)
     : {};
+}
+
+/**
+ * Maps a DOM range boundary to a character offset in the verse's plain text
+ * (tags, footnote refs and Strong's markers stripped) — the same offset space
+ * `SelectionToolbar`'s `plainText()` and the compiled `<s>`/`<n>` markup both
+ * use, so a persisted highlight lines up with the rendered tokens later.
+ */
+function plainOffsetInVerse(verseElement: HTMLElement, node: Node, domOffset: number): number {
+  const root = verseElement.querySelector('.bible-text');
+  if (!root) return domOffset;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode: (candidate) =>
+      candidate.parentElement?.closest('.bible-text__note')
+        ? NodeFilter.FILTER_REJECT
+        : NodeFilter.FILTER_ACCEPT,
+  });
+  let total = 0;
+  let current: Node | null;
+  while ((current = walker.nextNode())) {
+    if (current === node) return total + domOffset;
+    total += current.textContent?.length ?? 0;
+  }
+  return total;
 }
 
 export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.Element {
@@ -89,6 +114,35 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
       ),
     [chapters],
   );
+
+  const [highlights, setHighlights] = useState<HighlightRecord[]>([]);
+  useEffect(() => {
+    if (verses.length === 0) return;
+    const keys = verses.map((verse) => verse.key);
+    const request = { startKey: Math.min(...keys), endKey: Math.max(...keys) };
+    let cancelled = false;
+    void window.versescape.annotations.listHighlights(request).then((result) => {
+      if (!cancelled && result.ok) setHighlights(result.data);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [verses]);
+
+  const highlightsByVerse = useMemo(() => {
+    const map = new Map<number, HighlightSpan[]>();
+    for (const highlight of highlights) {
+      const list = map.get(highlight.verseKey) ?? [];
+      list.push({
+        start: highlight.startOffset,
+        end: highlight.endOffset,
+        colour: highlight.colour,
+        style: highlight.style,
+      });
+      map.set(highlight.verseKey, list);
+    }
+    return map;
+  }, [highlights]);
 
   // Build a map of chapter -> max verse for keyboard navigation
   const versesByChapter = useMemo(() => {
@@ -395,6 +449,8 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
       text,
       verseKey,
       verseText: source.text,
+      startOffset: plainOffsetInVerse(verse, range.startContainer, range.startOffset),
+      endOffset: plainOffsetInVerse(verse, range.endContainer, range.endOffset),
       ...(strongNumber ? { strongNumber } : {}),
       reference: formatReference({ start: fromVerseKey(verseKey)!, end: fromVerseKey(verseKey)! }),
       translation:
@@ -533,6 +589,7 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
                       footnotes={footnotes}
                       verseKey={verse.key}
                       showFootnotes={displayOptions.showFootnotes}
+                      highlights={highlightsByVerse.get(verse.key) ?? []}
                       {...(highlightedWord ? { highlightWord: highlightedWord } : {})}
                     />
                   </p>
@@ -549,6 +606,25 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
           onStrongLookup={(strongNumber) => {
             openPanel('strongs', undefined, { strongNumber, resourceId });
             setSelection(null);
+          }}
+          onCreateNote={(title) => {
+            void window.versescape.annotations.createNote({
+              verseKey: selection.verseKey,
+              title,
+            });
+          }}
+          onCreateHighlight={(colour, style) => {
+            void window.versescape.annotations
+              .createHighlight({
+                verseKey: selection.verseKey,
+                startOffset: selection.startOffset,
+                endOffset: selection.endOffset,
+                colour,
+                style,
+              })
+              .then((result) => {
+                if (result.ok) setHighlights((previous) => [...previous, result.data]);
+              });
           }}
         />
       )}

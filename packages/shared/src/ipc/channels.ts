@@ -20,6 +20,9 @@ export const IpcChannels = {
   resourceGetLexiconEntry: 'resource:get-lexicon-entry',
   resourceGetCrossReferences: 'resource:get-cross-references',
   clipboardWriteText: 'clipboard:write-text',
+  annotationsCreateNote: 'annotations:create-note',
+  annotationsCreateHighlight: 'annotations:create-highlight',
+  annotationsListHighlights: 'annotations:list-highlights',
 } as const;
 
 export type IpcChannel = (typeof IpcChannels)[keyof typeof IpcChannels];

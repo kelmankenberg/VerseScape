@@ -8,6 +8,7 @@ import { readWindowState } from '../platform/window-manager.js';
 import { loadSettings, patchSettings } from '../services/settings.js';
 import { loadWorkspace, saveWorkspace } from '../services/workspace.js';
 import { getChapter, getConcordance, getCrossReferences, getLexiconEntry, listResources } from '../services/resources.js';
+import { createHighlight, createNote, listHighlights } from '../services/annotations.js';
 import type { Workspace } from '@shared/workspace/types.js';
 
 function requireWindow(event: Electron.IpcMainInvokeEvent): BrowserWindow {
@@ -85,4 +86,12 @@ export function registerIpcHandlers(): void {
     ]);
     return null;
   });
+
+  handle(IpcChannels.annotationsCreateNote, (request) => createNote(request));
+
+  handle(IpcChannels.annotationsCreateHighlight, (request) => createHighlight(request));
+
+  handle(IpcChannels.annotationsListHighlights, (request) =>
+    listHighlights(request.startKey, request.endKey),
+  );
 }

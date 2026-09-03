@@ -37,7 +37,7 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 - Layout persistence and restore
 - **Exit:** FR-WS-01..07, FR-WS-12, FR-WS-17..19; a user can build a 2×3 layout and it survives restart
 
-## M3 — Bible reading
+## M3 — Bible reading ✅
 
 - Resource compiler tool; compile KJV + **Berean Standard Bible** (D-26)
 - Compile the STEPBible TVTMS versification map and openbible.info cross-references
@@ -68,7 +68,9 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 
 ## M5 — Notes and highlights
 
-- Notes schema, notebook tree, TipTap editor with `ref` nodes
+- Notes schema, notebook tree, TipTap editor with `ref` nodes (the
+  `notebook`/`note`/`note_anchor`/`highlight` tables and `versescape.db` already
+  exist from the M3 selection-toolbar work — extend them, don't recreate them)
 - Notes panel + full-page Notes view
 - Notes panel joins sync sets and follows the current verse
 - Personal commentary: notebook `kind`, verse-keyed entry view, commentary

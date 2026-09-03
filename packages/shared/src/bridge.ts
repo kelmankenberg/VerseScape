@@ -3,9 +3,14 @@ import type {
   ChapterData,
   ChapterRequest,
   ConcordanceRequest,
+  CreateHighlightRequest,
+  CreateNoteRequest,
+  HighlightRecord,
   LexiconEntry,
+  ListHighlightsRequest,
   CrossReference,
   CrossReferenceRequest,
+  NoteRecord,
   ResourceSummary,
   WindowState,
 } from './ipc/contracts.js';
@@ -40,6 +45,11 @@ export interface VerseScapeBridge {
   };
   readonly clipboard: {
     writeText(payload: { text: string; html?: string }): Promise<IpcResult<null>>;
+  };
+  readonly annotations: {
+    createNote(request: CreateNoteRequest): Promise<IpcResult<NoteRecord>>;
+    createHighlight(request: CreateHighlightRequest): Promise<IpcResult<HighlightRecord>>;
+    listHighlights(request: ListHighlightsRequest): Promise<IpcResult<HighlightRecord[]>>;
   };
   readonly window: {
     minimize(): Promise<IpcResult<null>>;

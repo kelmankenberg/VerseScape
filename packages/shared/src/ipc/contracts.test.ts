@@ -4,6 +4,8 @@ import {
   appInfo,
   chapterData,
   chapterRequest,
+  createHighlightRequest,
+  createNoteRequest,
   crossReferenceRequest,
 } from './contracts.js';
 import { IpcChannels } from './channels.js';
@@ -70,6 +72,23 @@ describe('ipc contracts', () => {
       limit: 12,
     });
     expect(crossReferenceRequest.safeParse({ verseKey: 1_001_001, limit: 51 }).success).toBe(false);
+  });
+
+  it('allows an empty note title but rejects a non-positive verse key', () => {
+    expect(createNoteRequest.safeParse({ verseKey: 43_003_016, title: 'God so loved' }).success).toBe(
+      true,
+    );
+    expect(createNoteRequest.safeParse({ verseKey: 43_003_016, title: '' }).success).toBe(true);
+    expect(createNoteRequest.safeParse({ verseKey: 0, title: 'x' }).success).toBe(false);
+  });
+
+  it('requires a well-formed hex colour and a positive-length highlight range', () => {
+    const base = { verseKey: 43_003_016, startOffset: 0, endOffset: 3, colour: '#fde68a', style: 'fill' as const };
+    expect(createHighlightRequest.safeParse(base).success).toBe(true);
+    expect(createHighlightRequest.safeParse({ ...base, colour: 'yellow' }).success).toBe(false);
+    expect(createHighlightRequest.safeParse({ ...base, startOffset: 3, endOffset: 3 }).success).toBe(
+      false,
+    );
   });
 });
 

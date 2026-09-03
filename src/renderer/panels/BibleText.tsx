@@ -1,7 +1,14 @@
-import { Fragment } from 'react';
 import type { ChapterData } from '@shared/ipc/contracts.js';
 
 type Footnote = ChapterData['footnotes'][number];
+
+/** A persisted highlight or text-colour span, in plain-text offset space (see `plainOffsetInVerse`). */
+export interface HighlightSpan {
+  start: number;
+  end: number;
+  colour: string;
+  style: 'fill' | 'text';
+}
 
 function decodeText(value: string): string {
   return value.replace(/&lt;/gu, '<').replace(/&gt;/gu, '>').replace(/&amp;/gu, '&');
@@ -11,13 +18,28 @@ function decodeText(value: string): string {
 const WORD_CHAR = /[\p{L}\p{M}\p{N}]/u;
 const TOKEN_PATTERN = /[\p{L}\p{M}\p{N}]+|[^\p{L}\p{M}\p{N}]+/gu;
 
+function styleFor(span: HighlightSpan | undefined): React.CSSProperties | undefined {
+  if (!span) return undefined;
+  return span.style === 'text' ? { color: span.colour } : { backgroundColor: span.colour };
+}
+
 /**
  * Splits decoded text into word and separator tokens. Every word becomes its
  * own element carrying its lowercased form in `data-word`, so click handling
  * and highlight matching both read the same value instead of independently
  * reconstructing word boundaries from raw text or mouse coordinates.
+ *
+ * `offset` tracks the running plain-text position (shared across the whole
+ * verse via the same mutable object) so persisted highlight spans, which are
+ * stored in that offset space, can be matched against each token.
  */
-function renderText(value: string, highlightWord: string | undefined, keyPrefix: string): React.ReactNode[] {
+function renderText(
+  value: string,
+  highlightWord: string | undefined,
+  keyPrefix: string,
+  highlights: HighlightSpan[],
+  offset: { pos: number },
+): React.ReactNode[] {
   const decoded = decodeText(value);
   const normalizedHighlight = highlightWord?.toLowerCase();
   const nodes: React.ReactNode[] = [];
@@ -25,8 +47,22 @@ function renderText(value: string, highlightWord: string | undefined, keyPrefix:
   let index = 0;
   while ((match = TOKEN_PATTERN.exec(decoded)) !== null) {
     const token = match[0];
+    const tokenStart = offset.pos;
+    const tokenEnd = tokenStart + token.length;
+    offset.pos = tokenEnd;
+    const span = highlights.find((h) => tokenStart < h.end && tokenEnd > h.start);
+    const style = styleFor(span);
+
     if (!WORD_CHAR.test(token[0]!)) {
-      nodes.push(token);
+      nodes.push(
+        style ? (
+          <span key={`${keyPrefix}-sep-${index}`} style={style}>
+            {token}
+          </span>
+        ) : (
+          token
+        ),
+      );
       index += 1;
       continue;
     }
@@ -37,6 +73,7 @@ function renderText(value: string, highlightWord: string | undefined, keyPrefix:
         key={`${keyPrefix}-w-${index}`}
         data-word={normalized}
         className={isHighlighted ? 'bible-text__word-highlight' : undefined}
+        style={style}
       >
         {token}
       </span>,
@@ -52,20 +89,24 @@ function renderMarkup(
   keyPrefix: string,
   showFootnotes: boolean,
   highlightWord: string | undefined,
+  highlights: HighlightSpan[],
+  offset: { pos: number },
 ): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
   // Also capture Strong's metadata tags, rendered as hidden spans.
   const marker = /<(wj|i|sc)>|<s n="([^"]+)"\/>|<s>([^<]+)<\/s>|<n id="([^"]+)"\/>/gu;
-  let cursor = 0;
+  let rawCursor = 0;
   let match: RegExpExecArray | null;
 
   while ((match = marker.exec(value)) !== null) {
-    if (match.index > cursor)
+    if (match.index > rawCursor)
       nodes.push(
         ...renderText(
-          value.slice(cursor, match.index),
+          value.slice(rawCursor, match.index),
           highlightWord,
           `${keyPrefix}-text-${nodes.length}`,
+          highlights,
+          offset,
         ),
       );
 
@@ -88,7 +129,7 @@ function renderMarkup(
           </button>,
         );
       }
-      cursor = marker.lastIndex;
+      rawCursor = marker.lastIndex;
       continue;
     }
 
@@ -101,14 +142,14 @@ function renderMarkup(
           className="bible-text__strong"
         />,
       );
-      cursor = marker.lastIndex;
+      rawCursor = marker.lastIndex;
       continue;
     }
 
     const closing = `</${tag}>`;
     const closeAt = value.indexOf(closing, marker.lastIndex);
     if (closeAt === -1) {
-      cursor = marker.lastIndex;
+      rawCursor = marker.lastIndex;
       continue;
     }
 
@@ -118,6 +159,8 @@ function renderMarkup(
       `${keyPrefix}-${nodes.length}`,
       showFootnotes,
       highlightWord,
+      highlights,
+      offset,
     );
     const key = `${keyPrefix}-${tag}-${match.index}`;
     if (tag === 'wj')
@@ -134,12 +177,14 @@ function renderMarkup(
         </span>,
       );
 
-    cursor = closeAt + closing.length;
-    marker.lastIndex = cursor;
+    rawCursor = closeAt + closing.length;
+    marker.lastIndex = rawCursor;
   }
 
-  if (cursor < value.length)
-    nodes.push(...renderText(value.slice(cursor), highlightWord, `${keyPrefix}-tail`));
+  if (rawCursor < value.length)
+    nodes.push(
+      ...renderText(value.slice(rawCursor), highlightWord, `${keyPrefix}-tail`, highlights, offset),
+    );
   return nodes;
 }
 
@@ -149,14 +194,20 @@ export function BibleText({
   verseKey,
   showFootnotes = true,
   highlightWord,
+  highlights = [],
 }: {
   text: string;
   footnotes: ReadonlyMap<string, Footnote>;
   verseKey: number;
   showFootnotes?: boolean;
   highlightWord?: string;
+  highlights?: HighlightSpan[];
 }): React.JSX.Element {
   return (
-    <Fragment>{renderMarkup(text, footnotes, String(verseKey), showFootnotes, highlightWord)}</Fragment>
+    <span className="bible-text">
+      {renderMarkup(text, footnotes, String(verseKey), showFootnotes, highlightWord, highlights, {
+        pos: 0,
+      })}
+    </span>
   );
 }

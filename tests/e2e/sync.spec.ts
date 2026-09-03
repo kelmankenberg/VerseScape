@@ -1,8 +1,9 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import Database from 'better-sqlite3';
 import { test, expect, _electron as electron } from '@playwright/test';
-import type { ElectronApplication, Page } from '@playwright/test';
+import type { ElectronApplication, Locator, Page } from '@playwright/test';
 
 let app: ElectronApplication;
 let page: Page;
@@ -196,6 +197,91 @@ test('a selected BSB word opens the Strong\'s panel using the translation-table 
   await expect(page.locator('.strongs-panel__title')).toHaveText("Strong's G2316");
   await expect(page.locator('.strongs-panel__definition')).toContainText('God');
   await expect(page.locator('.strongs-panel')).toHaveCount(1);
+});
+
+function selectWordIn(verse: Locator) {
+  return async (word: string): Promise<void> => {
+    await verse.evaluate((element, targetWord) => {
+      const walker = element.ownerDocument.createTreeWalker(element, 4);
+      let node;
+      while ((node = walker.nextNode())) {
+        const text = node.textContent ?? '';
+        const start = text.indexOf(targetWord);
+        if (start < 0) continue;
+        const range = element.ownerDocument.createRange();
+        range.setStart(node, start);
+        range.setEnd(node, start + targetWord.length);
+        const selection = element.ownerDocument.defaultView?.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+        const MouseEventConstructor = element.ownerDocument.defaultView?.MouseEvent;
+        if (MouseEventConstructor) {
+          element.dispatchEvent(new MouseEventConstructor('mouseup', { bubbles: true, button: 0 }));
+        }
+        return;
+      }
+      throw new Error(`Could not find ${targetWord}.`);
+    }, word);
+  };
+}
+
+test('a highlight swatch colours the selection immediately and persists it', async () => {
+  await openReader();
+  await page.locator('.reference__input').fill('John 3:16');
+  await page.locator('.reference__input').press('Enter');
+  await page.locator('.bible-panel__translation').selectOption('bsb');
+  const targetVerse = page.locator('.bible-panel__verse').filter({ hasText: 'God' }).first();
+  await expect(targetVerse).toContainText('God');
+
+  await selectWordIn(targetVerse)('loved');
+  const toolbar = page.getByRole('toolbar', { name: 'Selection actions' });
+  await toolbar.getByRole('button', { name: 'Highlight with Yellow' }).click();
+  await expect(toolbar).toHaveCount(0);
+
+  const highlighted = targetVerse.locator('[data-word="loved"]');
+  await expect(highlighted).toHaveCSS('background-color', 'rgb(253, 230, 138)');
+
+  const db = new Database(join(userDataDir, 'versescape.db'), { readonly: true });
+  try {
+    const rows = db.prepare('SELECT colour, style FROM highlight').all() as Array<{
+      colour: string;
+      style: string;
+    }>;
+    expect(rows).toEqual([{ colour: '#fde68a', style: 'fill' }]);
+  } finally {
+    db.close();
+  }
+});
+
+test('creating a note from the selection toolbar pre-fills the title and anchors it to the verse', async () => {
+  await openReader();
+  await page.locator('.reference__input').fill('John 3:16');
+  await page.locator('.reference__input').press('Enter');
+  await page.locator('.bible-panel__translation').selectOption('bsb');
+  const targetVerse = page.locator('.bible-panel__verse').filter({ hasText: 'God' }).first();
+  await expect(targetVerse).toContainText('God');
+
+  await selectWordIn(targetVerse)('world');
+  const toolbar = page.getByRole('toolbar', { name: 'Selection actions' });
+  await toolbar.getByRole('button', { name: 'Note' }).click();
+  const noteInput = toolbar.locator('.selection-toolbar__note-input');
+  await expect(noteInput).toHaveValue('world');
+  await noteInput.fill('The whole world');
+  await toolbar.getByRole('button', { name: 'Save' }).click();
+  await expect(toolbar).toHaveCount(0);
+
+  const db = new Database(join(userDataDir, 'versescape.db'), { readonly: true });
+  try {
+    const rows = db
+      .prepare(
+        `SELECT note.title AS title, note_anchor.start_key AS startKey, note_anchor.end_key AS endKey
+         FROM note JOIN note_anchor ON note_anchor.note_id = note.id`,
+      )
+      .all() as Array<{ title: string; startKey: number; endKey: number }>;
+    expect(rows).toEqual([{ title: 'The whole world', startKey: 43_003_016, endKey: 43_003_016 }]);
+  } finally {
+    db.close();
+  }
 });
 
 test('clicking a word highlights every visible instance and replaces the previous highlight', async () => {
