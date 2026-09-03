@@ -22,6 +22,7 @@ such rather than resolved.
 | Resource                          | Licence                 | Status                     | Obligation                                                     |
 | --------------------------------- | ----------------------- | -------------------------- | -------------------------------------------------------------- |
 | Berean Standard Bible (BSB)       | CC0 1.0 / public domain | **Verified**               | None required; naming limit on derivatives                     |
+| BSB Translation Tables (Strong's alignment) | CC0 1.0 / public domain | **Verified**        | None required                                                   |
 | King James Version (KJV)          | Public domain by age    | **Verified (with caveat)** | None; UK Crown copyright caveat                                |
 | World English Bible (WEB)         | Public domain           | **Verified**               | Trademark limit on the name                                    |
 | STEPBible **TVTMS** versification | CC BY 4.0               | **Verified**               | Credit "STEP Bible" + link; record changes                     |
@@ -66,6 +67,32 @@ since it costs nothing and is courteous.
 text is verbatim. The compiler must not alter wording — markup normalisation is
 fine, editorial change is not. If we ever modify the text, the resource must be
 renamed.
+
+---
+
+## BSB Translation Tables (Strong's alignment)
+
+- **Source:** https://bereanbible.com/bsb_tables.tsv
+- **Terms:** same as the BSB text above (https://berean.bible/terms.htm,
+  https://berean.bible/licensing.htm) — the translation tables are published by
+  the same project under the same CC0 1.0 dedication.
+- **Retrieved:** 2026-09-03
+- **SHA-256:** `09bbee6f9fe4fa22b5df28e8a9ffa99bf9c33435f4eb8c47c2dc221d855d35cb`
+- **Licence:** CC0 1.0 Universal — public domain dedication
+
+**Purpose:** the BSB USFM text does not itself carry per-word Strong's numbers
+(unlike the KJV USFM, which does). The Translation Tables are a
+verse-by-verse, word-by-word interlinear alignment of the BSB against the
+underlying Hebrew/Greek, published separately by the same project. The
+resource compiler (`bsb-tables.ts`) uses this file to inject `<s n="…"/>`
+markers into the BSB verse text via best-effort tokenised alignment; it does
+not alter any BSB wording, only annotates it.
+
+**Obligation:** none is required.
+
+**Constraint to respect:** the injected markup must never change the
+verbatim BSB wording — only add non-visible `<s n="…"/>` annotations, per the
+same naming constraint as the BSB text itself.
 
 ---
 

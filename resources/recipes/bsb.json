@@ -4,6 +4,11 @@
     "sha256": "a91f7b674487981410a9235d8ca8702507b3e1ec39c1f143a0952fde675eed0a",
     "root": "bsb_usfm"
   },
+  "translationTable": {
+    "url": "https://bereanbible.com/bsb_tables.tsv",
+    "name": "bsb_tables.tsv",
+    "sha256": "09bbee6f9fe4fa22b5df28e8a9ffa99bf9c33435f4eb8c47c2dc221d855d35cb"
+  },
   "meta": {
     "id": "bsb",
     "title": "Berean Standard Bible",

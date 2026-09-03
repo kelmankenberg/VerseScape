@@ -13,6 +13,7 @@ import { emitVersification, parseTvtms, versificationMeta } from './tvtms.js';
 import type { VersificationMeta } from './tvtms.js';
 import { emitCrossReferences, parseCrossReferences } from './cross-references.js';
 import { compileLexicon, lexiconMeta } from './lexicon.js';
+import { applyStrongMarkers, parseBsbTables } from './bsb-tables.js';
 
 /**
  * Runs under Electron's Node (`ELECTRON_RUN_AS_NODE=1`), so better-sqlite3 is
@@ -34,7 +35,12 @@ function report(diagnostics: ParseDiagnostic[], label: string): void {
   }
 }
 
-export function compileDirectory(sourceDir: string, outputDir: string, meta: ResourceMeta): number {
+export function compileDirectory(
+  sourceDir: string,
+  outputDir: string,
+  meta: ResourceMeta,
+  strongsTablePath?: string,
+): number {
   const files = readdirSync(sourceDir)
     .filter((name) => /\.usfm$|\.sfm$|\.usx$/iu.test(name))
     .sort();
@@ -71,6 +77,15 @@ export function compileDirectory(sourceDir: string, outputDir: string, meta: Res
   if (failed) {
     console.error('Compilation failed; no resource written.');
     return 1;
+  }
+
+  if (strongsTablePath) {
+    const table = parseBsbTables(readFileSync(strongsTablePath, 'utf8'));
+    const stats = applyStrongMarkers(books, table);
+    console.log(
+      `  Strong's alignment: ${stats.taggedVerses}/${stats.totalVerses} verses tagged ` +
+        `(${Math.round((stats.taggedVerses / stats.totalVerses) * 100)}%)`,
+    );
   }
 
   mkdirSync(outputDir, { recursive: true });
@@ -414,10 +429,17 @@ function main(): void {
     process.exit(count > 0 ? 0 : 1);
   }
 
-  const [sourceDir, outputDir, metaPath] = args;
+  const strongsFlagIndex = args.indexOf('--strongs-table');
+  const strongsTablePath = strongsFlagIndex >= 0 ? args[strongsFlagIndex + 1] : undefined;
+  const positional =
+    strongsFlagIndex >= 0
+      ? [...args.slice(0, strongsFlagIndex), ...args.slice(strongsFlagIndex + 2)]
+      : args;
+
+  const [sourceDir, outputDir, metaPath] = positional;
   if (!sourceDir || !outputDir || !metaPath) {
     console.error(
-      'Usage:\n  cli --selftest\n  cli --versification <tvtms-file> <output-dir> <meta.json>\n  cli <usfm-dir> <output-dir> <meta.json>',
+      'Usage:\n  cli --selftest\n  cli --versification <tvtms-file> <output-dir> <meta.json>\n  cli <usfm-dir> <output-dir> <meta.json> [--strongs-table <tsv-file>]',
     );
     process.exit(1);
   }
@@ -433,7 +455,7 @@ function main(): void {
     console.error(z.prettifyError(parsed.error));
     process.exit(1);
   }
-  process.exit(compileDirectory(sourceDir, outputDir, parsed.data));
+  process.exit(compileDirectory(sourceDir, outputDir, parsed.data, strongsTablePath));
 }
 
 main();

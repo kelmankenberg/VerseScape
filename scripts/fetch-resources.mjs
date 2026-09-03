@@ -65,4 +65,28 @@ for (const id of ids) {
   }
 
   console.log(`Verified ${id} (${actual})`);
+
+  if (recipe.translationTable) {
+    const table = recipe.translationTable;
+    const tableName = table.name ?? basename(new URL(table.url).pathname);
+    const tablePath = join(target, tableName);
+    const temporaryTable = `${tablePath}.download`;
+
+    await rm(temporaryTable, { force: true });
+    console.log(`Fetching ${recipe.meta.title} translation table...`);
+    await download(table.url, temporaryTable);
+
+    const tableActual = createHash('sha256')
+      .update(await readFile(temporaryTable))
+      .digest('hex');
+    if (tableActual !== table.sha256) {
+      await rm(temporaryTable, { force: true });
+      throw new Error(
+        `Checksum mismatch for ${id} translation table: expected ${table.sha256}, received ${tableActual}`,
+      );
+    }
+
+    await rename(temporaryTable, tablePath);
+    console.log(`Verified ${id} translation table (${tableActual})`);
+  }
 }

@@ -37,6 +37,14 @@ for (const id of ids) {
       : isLexicon
         ? [compiler, '--lexicon', source, output, recipe]
       : [compiler, source, output, recipe];
+
+  if (id === 'bsb') {
+    const strongsTable = join(root, 'resources', 'sources', 'bsb', 'bsb_tables.tsv');
+    if (existsSync(strongsTable)) {
+      args.push('--strongs-table', strongsTable);
+    }
+  }
+
   const result = spawnSync(electron, args, {
     cwd: root,
     env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
