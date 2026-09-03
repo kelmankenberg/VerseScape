@@ -152,6 +152,31 @@ export const listHighlightsRequest = z.object({
 });
 export type ListHighlightsRequest = z.infer<typeof listHighlightsRequest>;
 
+const bookIdPattern = /^(?:[1-3])?[A-Z]{3}$/u;
+
+export const searchScope = z.object({
+  resourceIds: z.array(resourceSummary.shape.id).min(1).max(20),
+  testament: z.enum(['OT', 'NT']).optional(),
+  startBook: z.string().regex(bookIdPattern).optional(),
+  endBook: z.string().regex(bookIdPattern).optional(),
+});
+export type SearchScope = z.infer<typeof searchScope>;
+
+export const searchRequest = z.object({
+  query: z.string().min(1).max(200),
+  scope: searchScope,
+  limit: z.number().int().min(1).max(200).default(100),
+});
+export type SearchRequest = z.infer<typeof searchRequest>;
+
+export const searchHit = z.object({
+  resourceId: resourceSummary.shape.id,
+  verseKey: z.number().int().positive(),
+  snippet: z.string(),
+  rank: z.number(),
+});
+export type SearchHit = z.infer<typeof searchHit>;
+
 export const contracts = {
   'app:get-info': { request: emptyRequest, response: appInfo },
   'window:minimize': { request: emptyRequest, response: z.null() },
@@ -183,6 +208,7 @@ export const contracts = {
     request: listHighlightsRequest,
     response: z.array(highlightRecord),
   },
+  'search:query': { request: searchRequest, response: z.array(searchHit) },
 } as const;
 
 export type Contracts = typeof contracts;

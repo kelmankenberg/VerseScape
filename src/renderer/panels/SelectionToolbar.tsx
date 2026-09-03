@@ -1,6 +1,7 @@
 import { Copy, FileText, Palette, Search, StickyNote, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { formatReference, fromVerseKey } from '@shared/reference/index.js';
+import { stripToPlainText } from './text-utils.js';
 
 export interface BibleSelection {
   text: string;
@@ -22,16 +23,6 @@ const HIGHLIGHT_COLOURS: Array<{ name: string; hex: string }> = [
   { name: 'Pink', hex: '#fbcfe8' },
   { name: 'Purple', hex: '#e9d5ff' },
 ];
-
-function plainText(value: string): string {
-  return value
-    .replace(/<n id="[^"]+"\/>/gu, '')
-    .replace(/<s n="[^"]+"\/>/gu, '')
-    .replace(/<\/?(?:wj|i|sc)>/gu, '')
-    .replace(/&lt;/gu, '<')
-    .replace(/&gt;/gu, '>')
-    .replace(/&amp;/gu, '&');
-}
 
 function styledText(value: string): string {
   return value
@@ -57,12 +48,14 @@ export function SelectionToolbar({
   onStrongLookup,
   onCreateNote,
   onCreateHighlight,
+  onSearch,
 }: {
   selection: BibleSelection;
   onDismiss: () => void;
   onStrongLookup?: (strongNumber: string) => void;
   onCreateNote?: (title: string) => void;
   onCreateHighlight?: (colour: string, style: 'fill' | 'text') => void;
+  onSearch?: (query: string) => void;
 }): React.JSX.Element {
   const [copied, setCopied] = useState(false);
   const [noteDraft, setNoteDraft] = useState<string | null>(null);
@@ -95,7 +88,7 @@ export function SelectionToolbar({
     window.setTimeout(() => setCopied(false), 1200);
   };
   const header = verseHeader({ ...selection, reference });
-  const lines = `${header}\n${plainText(selection.verseText)}`;
+  const lines = `${header}\n${stripToPlainText(selection.verseText)}`;
   const styled = `<p><strong>${header}</strong></p><p>${styledText(selection.verseText)}</p>`;
 
   return (
@@ -110,7 +103,15 @@ export function SelectionToolbar({
           <Copy size={13} aria-hidden />
           {copied ? 'Copied' : 'Copy'}
         </button>
-        <button type="button" disabled title="Search Results is coming in M4.">
+        <button
+          type="button"
+          disabled={!onSearch}
+          title="Search this text across your resources"
+          onClick={() => {
+            onSearch?.(selection.text);
+            onDismiss();
+          }}
+        >
           <FileText size={13} aria-hidden />
           Search
         </button>

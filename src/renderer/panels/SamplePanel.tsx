@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { ChevronDown, ChevronUp, SearchIcon, X } from 'lucide-react';
 import {
   formatReference,
   fromVerseKey,
@@ -14,6 +15,7 @@ import {
 import type { ChapterData, HighlightRecord, ResourceSummary } from '@shared/ipc/contracts.js';
 import type { BibleDisplayOptions } from '@shared/settings.js';
 import type { JsonValue } from '@shared/workspace/index.js';
+import { findGroupContainingTab } from '@shared/workspace/index.js';
 import { useVerseSync } from '../workspace/use-verse-sync.js';
 import { useWorkspace } from '../workspace/store.js';
 import { useSettings } from '../stores/settings.js';
@@ -23,6 +25,7 @@ import { CrossReferencesButton } from './CrossReferencesButton.js';
 import { DisplayOptionsButton } from './DisplayOptionsButton.js';
 import { SelectionToolbar } from './SelectionToolbar.js';
 import type { BibleSelection } from './SelectionToolbar.js';
+import { stripToPlainText, findAllOffsets } from './text-utils.js';
 import { useBibleChapterWindow } from './use-bible-chapter-window.js';
 import type { PanelProps } from './registry.js';
 
@@ -75,7 +78,7 @@ function plainOffsetInVerse(verseElement: HTMLElement, node: Node, domOffset: nu
   return total;
 }
 
-export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.Element {
+export function SamplePanel({ tabId, state, setState, visible }: PanelProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const initialScrollKey = useRef('');
   const pendingRestore = useRef<{ verseKey: number; offset: number } | null>(null);
@@ -195,6 +198,76 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
     },
     [verses, virtualizer],
   );
+
+  // Find in panel (Ctrl+F, FR-SE roadmap item): a client-side search over the
+  // currently loaded chapters only — not the cross-resource FTS search.
+  const [findOpen, setFindOpen] = useState(false);
+  const [findQuery, setFindQuery] = useState('');
+  const [findIndex, setFindIndex] = useState(0);
+  const isFocusedPanel = useWorkspace((store) => {
+    const group = findGroupContainingTab(store.workspace.root, tabId);
+    return group?.id === store.workspace.focusedGroup;
+  });
+
+  const findMatches = useMemo(() => {
+    const needle = findQuery.trim().toLowerCase();
+    if (!needle) return [];
+    return verses
+      .filter((verse) => stripToPlainText(verse.text).toLowerCase().includes(needle))
+      .map((verse) => verse.key);
+  }, [verses, findQuery]);
+
+  useEffect(() => {
+    setFindIndex(0);
+  }, [findQuery]);
+
+  const currentFindMatch = findMatches[Math.min(findIndex, Math.max(findMatches.length - 1, 0))];
+
+  // Keyed on the resolved verse key (a primitive), not the `findMatches` array
+  // reference, which changes on every keystroke — scrolling only when the
+  // target verse actually changes avoids firing scrollToIndex on every
+  // keystroke, which was corrupting the virtualizer's measured range.
+  useEffect(() => {
+    if (!findOpen || currentFindMatch === undefined) return;
+    scrollToVerse(currentFindMatch);
+  }, [findOpen, currentFindMatch, scrollToVerse]);
+
+  useEffect(() => {
+    if (!(visible ?? true) || !isFocusedPanel) return;
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.ctrlKey && !event.shiftKey && event.key.toLowerCase() === 'f') {
+        event.preventDefault();
+        setFindOpen(true);
+      } else if (event.key === 'Escape' && findOpen) {
+        setFindOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [visible, isFocusedPanel, findOpen]);
+
+  const findMatchSet = useMemo(() => new Set(findMatches), [findMatches]);
+
+  // Verse-level focus (scroll + tinted background) isn't enough on its own —
+  // highlight every occurrence of the search term itself within each matched
+  // verse, reusing the same offset-based highlight mechanism as persisted
+  // highlights, so the exact word/phrase stands out too.
+  const findHighlightsByVerse = useMemo(() => {
+    const needle = findQuery.trim();
+    const map = new Map<number, HighlightSpan[]>();
+    if (!needle) return map;
+    for (const key of findMatches) {
+      const verse = verses.find((item) => item.key === key);
+      if (!verse) continue;
+      const offsets = findAllOffsets(stripToPlainText(verse.text), needle);
+      if (offsets.length === 0) continue;
+      map.set(
+        key,
+        offsets.map((offset) => ({ start: offset.start, end: offset.end, colour: '#fde68a', style: 'fill' })),
+      );
+    }
+    return map;
+  }, [findMatches, verses, findQuery]);
 
   const getAnchorVerse = useCallback((): number | null => {
     const top = virtualizer.getVirtualItemForOffset(containerRef.current?.scrollTop ?? 0);
@@ -495,19 +568,84 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
             </option>
           ))}
         </select>
-        <DisplayOptionsButton
-          options={displayOptions}
-          overridden={Object.keys(displayOverride).length > 0}
-          onChange={(patch) =>
-            setState(
-              patchState(state, {
-                displayOptions: { ...displayOverride, ...patch } as JsonValue,
-              }),
-            )
-          }
-          onReset={() => setState(patchState(state, { displayOptions: {} }))}
-        />
+        <div className="bible-panel__toolbar-actions">
+          <button
+            type="button"
+            className="bible-panel__find-toggle"
+            aria-label="Find in panel"
+            aria-pressed={findOpen}
+            title="Find in panel (Ctrl+F)"
+            onClick={() => setFindOpen((value) => !value)}
+          >
+            <SearchIcon size={14} aria-hidden />
+          </button>
+          <DisplayOptionsButton
+            options={displayOptions}
+            overridden={Object.keys(displayOverride).length > 0}
+            onChange={(patch) =>
+              setState(
+                patchState(state, {
+                  displayOptions: { ...displayOverride, ...patch } as JsonValue,
+                }),
+              )
+            }
+            onReset={() => setState(patchState(state, { displayOptions: {} }))}
+          />
+        </div>
       </div>
+
+      {findOpen && (
+        <div className="bible-panel__find" role="search" aria-label="Find in panel">
+          <SearchIcon size={13} aria-hidden />
+          <input
+            type="text"
+            className="bible-panel__find-input"
+            placeholder="Find in this chapter…"
+            autoFocus
+            value={findQuery}
+            onChange={(event) => setFindQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                event.stopPropagation();
+                setFindOpen(false);
+              } else if (event.key === 'Enter') {
+                event.preventDefault();
+                if (findMatches.length > 0) {
+                  setFindIndex((value) =>
+                    event.shiftKey
+                      ? (value - 1 + findMatches.length) % findMatches.length
+                      : (value + 1) % findMatches.length,
+                  );
+                }
+              }
+            }}
+          />
+          <span className="bible-panel__find-count">
+            {findMatches.length > 0 ? `${findIndex + 1} of ${findMatches.length}` : '0 results'}
+          </span>
+          <button
+            type="button"
+            aria-label="Previous match"
+            disabled={findMatches.length === 0}
+            onClick={() =>
+              setFindIndex((value) => (value - 1 + findMatches.length) % findMatches.length)
+            }
+          >
+            <ChevronUp size={13} aria-hidden />
+          </button>
+          <button
+            type="button"
+            aria-label="Next match"
+            disabled={findMatches.length === 0}
+            onClick={() => setFindIndex((value) => (value + 1) % findMatches.length)}
+          >
+            <ChevronDown size={13} aria-hidden />
+          </button>
+          <button type="button" aria-label="Close find" onClick={() => setFindOpen(false)}>
+            <X size={13} aria-hidden />
+          </button>
+        </div>
+      )}
 
       {error ? (
         <div className="bible-panel__message" role="alert">
@@ -543,6 +681,8 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
                       : ''
                   }${verse.poetry > 0 ? ' bible-panel__verse--poetry' : ''}${
                     verse.paragraphStart ? ' bible-panel__verse--para-start' : ''
+                  }${findOpen && findMatchSet.has(verse.key) ? ' bible-panel__verse--find-match' : ''}${
+                    findOpen && verse.key === currentFindMatch ? ' bible-panel__verse--find-current' : ''
                   }`}
                   style={{ transform: `translateY(${virtualRow.start}px)` }}
                   onClick={(event) => {
@@ -589,7 +729,10 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
                       footnotes={footnotes}
                       verseKey={verse.key}
                       showFootnotes={displayOptions.showFootnotes}
-                      highlights={highlightsByVerse.get(verse.key) ?? []}
+                      highlights={[
+                        ...(highlightsByVerse.get(verse.key) ?? []),
+                        ...(findOpen ? (findHighlightsByVerse.get(verse.key) ?? []) : []),
+                      ]}
                       {...(highlightedWord ? { highlightWord: highlightedWord } : {})}
                     />
                   </p>
@@ -625,6 +768,15 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
               .then((result) => {
                 if (result.ok) setHighlights((previous) => [...previous, result.data]);
               });
+          }}
+          onSearch={(query) => {
+            openPanel('search-results', undefined, {
+              query,
+              resourceIds: resources.map((resource) => resource.id),
+              testament: '',
+              startBook: '',
+              endBook: '',
+            });
           }}
         />
       )}

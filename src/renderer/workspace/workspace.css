@@ -678,20 +678,27 @@
 
 .bible-panel {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   height: 100%;
   min-height: 0;
   font-family: var(--vs-font-reading);
 }
 
 .bible-panel__toolbar {
+  grid-row: 1;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--vs-space-3);
   min-height: 42px;
   padding: 6px var(--vs-space-4);
   border-bottom: 1px solid var(--vs-border);
+}
+
+.bible-panel__toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
 }
 
 .bible-panel__heading {
@@ -713,7 +720,81 @@
   font-size: 11px;
 }
 
+.bible-panel__find-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  color: var(--vs-fg-primary);
+  background: transparent;
+  border: 1px solid var(--vs-border);
+  border-radius: var(--vs-radius-sm);
+  cursor: pointer;
+}
+
+.bible-panel__find-toggle:hover,
+.bible-panel__find-toggle[aria-pressed='true'] {
+  background: var(--vs-bg-elevated);
+}
+
+.bible-panel__find {
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px var(--vs-space-4);
+  color: var(--vs-fg-muted);
+  background: var(--vs-bg-elevated);
+  border-bottom: 1px solid var(--vs-border);
+}
+
+.bible-panel__find-input {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  color: var(--vs-fg-primary);
+  background: var(--vs-bg-app);
+  border: 1px solid var(--vs-border);
+  border-radius: var(--vs-radius-sm);
+  font: inherit;
+  font-size: 12px;
+}
+
+.bible-panel__find-count {
+  flex-shrink: 0;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.bible-panel__find button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: var(--vs-fg-primary);
+  background: transparent;
+  border: 1px solid var(--vs-border);
+  border-radius: var(--vs-radius-sm);
+  cursor: pointer;
+}
+
+.bible-panel__find button:disabled {
+  color: var(--vs-fg-muted);
+  cursor: not-allowed;
+}
+
+.bible-panel__verse--find-match {
+  background: color-mix(in srgb, var(--vs-warning) 18%, transparent);
+}
+
+.bible-panel__verse--find-current {
+  background: color-mix(in srgb, var(--vs-warning) 38%, transparent);
+}
+
 .bible-panel__scroll {
+  grid-row: 3;
   min-height: 0;
   overflow-y: auto;
   overflow-anchor: none;
@@ -868,6 +949,7 @@
 }
 
 .bible-panel__message {
+  grid-row: 3;
   align-self: start;
   padding: var(--vs-space-5);
   color: var(--vs-fg-muted);

@@ -23,6 +23,7 @@ export const IpcChannels = {
   annotationsCreateNote: 'annotations:create-note',
   annotationsCreateHighlight: 'annotations:create-highlight',
   annotationsListHighlights: 'annotations:list-highlights',
+  searchQuery: 'search:query',
 } as const;
 
 export type IpcChannel = (typeof IpcChannels)[keyof typeof IpcChannels];

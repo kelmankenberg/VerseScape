@@ -232,6 +232,42 @@ export function getCrossReferences(request: CrossReferenceRequest): CrossReferen
   return rows.map((row) => ({ startKey: row.to_start, endKey: row.to_end, votes: row.votes }));
 }
 
+export interface VerseSearchHit {
+  verseKey: number;
+  snippet: string;
+  rank: number;
+}
+
+/**
+ * `verse_fts` is an external-content FTS5 table with `content_rowid='verse_key'`,
+ * so its `rowid` already **is** the verse key — no join against `verse` needed.
+ * The snippet delimiters are control characters, never real verse text, so the
+ * renderer can split on them to build highlight spans without touching HTML.
+ */
+export function searchVerses(
+  resourceId: string,
+  matchExpression: string,
+  keyRange: { minKey: number; maxKey: number } | null,
+  limit: number,
+): VerseSearchHit[] {
+  const db = openResource(resourceId);
+  const params: Array<string | number> = [matchExpression];
+  let sql = `
+    SELECT verse_fts.rowid AS verseKey,
+           snippet(verse_fts, 0, '\u0001', '\u0002', '\u2026', 10) AS snippet,
+           bm25(verse_fts) AS rank
+    FROM verse_fts
+    WHERE verse_fts MATCH ?`;
+  if (keyRange) {
+    sql += ' AND verse_fts.rowid BETWEEN ? AND ?';
+    params.push(keyRange.minKey, keyRange.maxKey);
+  }
+  sql += ' ORDER BY rank LIMIT ?';
+  params.push(limit);
+
+  return db.prepare(sql).all(...params) as VerseSearchHit[];
+}
+
 export function closeResources(): void {
   for (const db of openDatabases.values()) db.close();
   openDatabases.clear();

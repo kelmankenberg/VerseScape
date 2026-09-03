@@ -12,6 +12,8 @@ import type {
   CrossReferenceRequest,
   NoteRecord,
   ResourceSummary,
+  SearchHit,
+  SearchRequest,
   WindowState,
 } from './ipc/contracts.js';
 import type { AppSettings, SettingsPatch } from './settings.js';
@@ -50,6 +52,9 @@ export interface VerseScapeBridge {
     createNote(request: CreateNoteRequest): Promise<IpcResult<NoteRecord>>;
     createHighlight(request: CreateHighlightRequest): Promise<IpcResult<HighlightRecord>>;
     listHighlights(request: ListHighlightsRequest): Promise<IpcResult<HighlightRecord[]>>;
+  };
+  readonly search: {
+    query(request: SearchRequest): Promise<IpcResult<SearchHit[]>>;
   };
   readonly window: {
     minimize(): Promise<IpcResult<null>>;

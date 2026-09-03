@@ -58,10 +58,10 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 - Verse sync made real across Bible panels: scroll, click, selection, keyboard
 - **Exit:** FR-RD-01..10, FR-WS-08, FR-WS-13..16, FR-NT-14; three synced panels track together
 
-## M4 — Search
+## M4 — Search ✅
 
 - FTS query parser → MATCH expression
-- Cross-resource fan-out search in the utility process
+- Cross-resource fan-out search (runs in main, not a utility process — D-32)
 - Search Results panel, scope filters, click-to-open into a target panel
 - Find-in-panel
 - **Exit:** FR-SE-01..04 and NFR-02 search budget met

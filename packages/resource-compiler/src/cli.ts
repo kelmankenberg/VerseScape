@@ -283,8 +283,8 @@ export function selfTest(): number {
       .get() as { value: string } | undefined;
     check('records redistribution rights', redistributable?.value === '1');
 
-    // External-content FTS5 exposes the content rowid as `rowid`, not by the
-    // content table's column name.
+    // verse_fts stores its own plain-text copy (not external-content), with
+    // rowid set explicitly to the verse key at insert time (emit.ts).
     const hit = db.prepare("SELECT rowid FROM verse_fts WHERE verse_fts MATCH 'mercy'").get() as
       { rowid: number } | undefined;
     check('builds a queryable FTS index', hit?.rowid === 65_001_002);
@@ -293,6 +293,19 @@ export function selfTest(): number {
       .prepare("SELECT COUNT(*) AS n FROM verse_fts WHERE verse_fts MATCH 'zebra'")
       .get() as { n: number };
     check('FTS does not match absent words', missing.n === 0);
+
+    // Regression guard: the index must be built from stripped plain text, not
+    // raw markup, or a Strong's/footnote tag sitting between two words would
+    // break phrase-adjacency matching entirely (the exact bug this fixes).
+    const phrase = db
+      .prepare(`SELECT rowid FROM verse_fts WHERE verse_fts MATCH '"peace and love"'`)
+      .get() as { rowid: number } | undefined;
+    check('phrase queries match adjacent words', phrase?.rowid === 65_001_002);
+
+    const noPhrase = db
+      .prepare(`SELECT COUNT(*) AS n FROM verse_fts WHERE verse_fts MATCH '"love and peace"'`)
+      .get() as { n: number };
+    check('phrase queries respect word order', noPhrase.n === 0);
 
     const strong = db
       .prepare('SELECT COUNT(*) AS n FROM strong_verse WHERE strong_num = ?')

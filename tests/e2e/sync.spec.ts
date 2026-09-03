@@ -683,3 +683,52 @@ test('keyboard navigation publishes to sync sets', async () => {
   await expect(page.locator('.reference__input').first()).toHaveValue('John 3:2');
   await expect(page.locator('.reference__input').nth(1)).toHaveValue('John 3:2');
 });
+
+test('Search Results finds a phrase across resources and opens it in a Bible panel', async () => {
+  await page.getByRole('button', { name: 'New Panel' }).click();
+  await page.getByRole('menuitem', { name: 'Search Results' }).click();
+  await expect(page.locator('.search-results')).toBeVisible();
+
+  await page.locator('.search-results__input').fill('"God so loved the world"');
+
+  const item = page.locator('.search-results__item').first();
+  await expect(item).toBeVisible();
+  await expect(item).toContainText('John 3:16');
+  await expect(page.locator('.search-results__mark').first()).toBeVisible();
+
+  await item.click();
+  await expect(page.locator('.bible-panel__heading')).toHaveText('John 3');
+});
+
+test('the testament scope filter excludes results outside it', async () => {
+  await page.getByRole('button', { name: 'New Panel' }).click();
+  await page.getByRole('menuitem', { name: 'Search Results' }).click();
+
+  await page.locator('.search-results__input').fill('"in the beginning God created"');
+  await expect(page.locator('.search-results__item').first()).toBeVisible();
+
+  await page.locator('select[aria-label="Testament"]').selectOption('OT');
+  await expect(page.locator('.search-results__item').first()).toBeVisible();
+
+  await page.locator('select[aria-label="Testament"]').selectOption('NT');
+  await expect(page.locator('.search-results__empty')).toHaveText('No matches.');
+});
+
+test('Ctrl+F opens Find in panel and reports a match count', async () => {
+  await openReader();
+  await page.locator('.bible-panel').click();
+  await page.keyboard.press('Control+f');
+
+  const findBar = page.locator('.bible-panel__find');
+  await expect(findBar).toBeVisible();
+
+  await page.locator('.bible-panel__find-input').fill('world');
+  await expect(page.locator('.bible-panel__find-count')).not.toHaveText('0 results');
+  await expect(page.locator('.bible-panel__verse--find-match').first()).toBeVisible();
+  await expect(
+    page.locator('.bible-panel__verse--find-match [data-word="world"]').first(),
+  ).toHaveCSS('background-color', 'rgb(253, 230, 138)');
+
+  await page.keyboard.press('Escape');
+  await expect(findBar).toHaveCount(0);
+});

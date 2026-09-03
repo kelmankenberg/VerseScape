@@ -137,7 +137,12 @@ test('reads a real chapter through the sandboxed resource bridge', async () => {
 
   expect(result.data.verses).toHaveLength(36);
   expect(result.data.verses[15]).toMatchObject({ key: 43_003_016, verse: 16 });
-  expect(result.data.verses[15]!.text).toContain('God so loved the world');
+  // Verse text carries inline markup (Strong's numbers, D-31); strip it before
+  // asserting on the readable words.
+  const plainVerse16 = result.data.verses[15]!.text
+    .replace(/<s n="[^"]+"\/>/gu, '')
+    .replace(/<[^>]+>/gu, '');
+  expect(plainVerse16).toContain('God so loved the world');
   expect(result.data.footnotes.length).toBeGreaterThan(0);
 
   const crossReferences = await page.evaluate(() =>

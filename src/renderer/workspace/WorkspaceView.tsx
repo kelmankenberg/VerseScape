@@ -55,6 +55,9 @@ export function WorkspaceView(): React.JSX.Element {
       if (event.key.toLowerCase() === 't' && !event.shiftKey) {
         event.preventDefault();
         openPanel('placeholder', group);
+      } else if (event.key.toLowerCase() === 'f' && event.shiftKey) {
+        event.preventDefault();
+        openPanel('search-results', group);
       } else if (event.key.toLowerCase() === 'w' && !event.shiftKey) {
         event.preventDefault();
         const active = findGroup(workspace.root, group)?.activeTab;

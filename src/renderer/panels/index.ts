@@ -5,6 +5,7 @@ import { ScratchPanel } from './ScratchPanel.js';
 import { SamplePanel } from './SamplePanel.js';
 import { PassageComparePanel } from './PassageComparePanel.js';
 import { StrongsPanel, type StrongsPanelState } from './StrongsPanel.js';
+import { SearchResultsPanel } from './SearchResultsPanel.js';
 
 /**
  * M2 test panels. Real Bible, Notes and commentary panels replace these in M3
@@ -59,5 +60,15 @@ export function registerBuiltInPanels(): void {
     hasReferenceInput: false,
     createState: (): StrongsPanelState => ({ strongNumber: '' }),
     component: StrongsPanel,
+  });
+
+  registerPanel({
+    type: 'search-results',
+    title: 'Search Results',
+    icon: Search,
+    linkable: false,
+    hasReferenceInput: false,
+    createState: () => ({ query: '', resourceIds: [], testament: '', startBook: '', endBook: '' }),
+    component: SearchResultsPanel,
   });
 }

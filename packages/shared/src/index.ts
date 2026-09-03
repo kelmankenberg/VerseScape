@@ -5,3 +5,4 @@ export * from './settings.js';
 export * from './reference/index.js';
 export * from './workspace/index.js';
 export * from './bridge.js';
+export * from './search/query.js';

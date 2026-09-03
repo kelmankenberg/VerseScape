@@ -9,6 +9,7 @@ import { loadSettings, patchSettings } from '../services/settings.js';
 import { loadWorkspace, saveWorkspace } from '../services/workspace.js';
 import { getChapter, getConcordance, getCrossReferences, getLexiconEntry, listResources } from '../services/resources.js';
 import { createHighlight, createNote, listHighlights } from '../services/annotations.js';
+import { runSearch } from '../services/search.js';
 import type { Workspace } from '@shared/workspace/types.js';
 
 function requireWindow(event: Electron.IpcMainInvokeEvent): BrowserWindow {
@@ -94,4 +95,6 @@ export function registerIpcHandlers(): void {
   handle(IpcChannels.annotationsListHighlights, (request) =>
     listHighlights(request.startKey, request.endKey),
   );
+
+  handle(IpcChannels.searchQuery, (request) => runSearch(request));
 }

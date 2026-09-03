@@ -27,6 +27,7 @@ function MountedPanel({ tabId, visible }: { tabId: TabId; visible: boolean }): R
         tabId={tab.id}
         state={tab.state}
         setState={(state) => setTabState(tab.id, state)}
+        visible={visible}
       />
     </div>
   );

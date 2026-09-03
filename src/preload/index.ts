@@ -9,6 +9,7 @@ import type {
   LexiconEntry,
   NoteRecord,
   ResourceSummary,
+  SearchHit,
   WindowState,
 } from '@shared/ipc/contracts.js';
 import type { AppSettings } from '@shared/settings.js';
@@ -71,6 +72,10 @@ const bridge: VerseScapeBridge = {
       ipcRenderer.invoke(IpcChannels.annotationsListHighlights, request) as Promise<
         IpcResult<HighlightRecord[]>
       >,
+  },
+  search: {
+    query: (request) =>
+      ipcRenderer.invoke(IpcChannels.searchQuery, request) as Promise<IpcResult<SearchHit[]>>,
   },
   window: {
     minimize: () => ipcRenderer.invoke(IpcChannels.windowMinimize) as Promise<IpcResult<null>>,

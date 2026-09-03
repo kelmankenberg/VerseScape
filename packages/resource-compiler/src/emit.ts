@@ -76,11 +76,27 @@ CREATE INDEX idx_strong_num ON strong_verse(strong_num);
 
 CREATE VIRTUAL TABLE verse_fts USING fts5(
   text,
-  content='verse',
-  content_rowid='verse_key',
   tokenize='unicode61 remove_diacritics 2'
 );
 `;
+
+/**
+ * Strips the compiler's inline markup down to plain reading text, purely for
+ * FTS5 indexing. The stored \`verse.text\` keeps its markup for display; if the
+ * index were built from that raw text directly, the \`<s n="G26"/>\` tag the
+ * compiler inserts before every Strong's-tagged word would sit as extra
+ * tokens between adjacent words and silently break phrase-adjacency queries
+ * (FR-SE-02) for any Bible with per-word Strong's numbers.
+ */
+function stripToPlainTextForIndex(value: string): string {
+  return value
+    .replace(/<n id="[^"]+"\/>/gu, '')
+    .replace(/<s n="[^"]+"\/>/gu, '')
+    .replace(/<\/?(?:wj|i|sc)>/gu, '')
+    .replace(/&lt;/gu, '<')
+    .replace(/&gt;/gu, '>')
+    .replace(/&amp;/gu, '&');
+}
 
 /**
  * Writes a compiled resource database.
@@ -117,6 +133,7 @@ export function emitResource(
     const insertStrongVerse = db.prepare(
       'INSERT OR IGNORE INTO strong_verse (strong_num, verse_key) VALUES (?, ?)',
     );
+    const insertFts = db.prepare('INSERT INTO verse_fts (rowid, text) VALUES (?, ?)');
 
     let verseCount = 0;
 
@@ -175,6 +192,8 @@ export function emitResource(
             insertStrongVerse.run(strongNum, key);
           }
 
+          insertFts.run(key, stripToPlainTextForIndex(verse.text));
+
           verseCount += 1;
         }
 
@@ -195,9 +214,6 @@ export function emitResource(
           );
         }
       }
-
-      // Built here so the shipped resource needs no first-run indexing.
-      db.exec("INSERT INTO verse_fts(verse_fts) VALUES('rebuild')");
     });
 
     write();

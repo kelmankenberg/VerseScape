@@ -79,8 +79,8 @@ export const useWorkspace = create<WorkspaceStore>((set) => {
 
     openPanel: (panelType, targetGroup, state) =>
       apply('openPanel', (w) => {
-        if (panelType === 'strongs') {
-          const existing = Object.values(w.tabs).find((tab) => tab.panelType === 'strongs');
+        if (panelType === 'strongs' || panelType === 'search-results') {
+          const existing = Object.values(w.tabs).find((tab) => tab.panelType === panelType);
           if (existing) {
             let next = activateTab(w, existing.id, ctx);
             if (state !== undefined) next = setTabState(next, existing.id, state, ctx);

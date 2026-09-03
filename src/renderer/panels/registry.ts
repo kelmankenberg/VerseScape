@@ -5,6 +5,9 @@ export interface PanelProps {
   tabId: TabId;
   state: JsonValue;
   setState: (state: JsonValue) => void;
+  /** Whether this tab is the active tab in its group. Absent (`undefined`) in
+   * contexts that don't track that, such as unit tests. */
+  visible?: boolean;
 }
 
 export interface PanelDescriptor {
