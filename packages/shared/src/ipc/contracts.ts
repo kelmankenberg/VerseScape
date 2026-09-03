@@ -114,6 +114,8 @@ export const createNoteRequest = z.object({
   verseKey: z.number().int().positive(),
   title: z.string().max(500),
   resourceId: resourceSummary.shape.id.optional(),
+  startKey: z.number().int().positive().optional(),
+  endKey: z.number().int().positive().optional(),
 });
 export type CreateNoteRequest = z.infer<typeof createNoteRequest>;
 
@@ -128,7 +130,10 @@ export type NoteRecord = z.infer<typeof noteRecord>;
 
 export const updateNoteRequest = z.object({
   id: z.string().min(1),
-  bodyMd: z.string().max(100000),
+  bodyMd: z.string().max(100000).optional(),
+  title: z.string().max(500).optional(),
+}).refine((value) => value.bodyMd !== undefined || value.title !== undefined, {
+  message: 'A note title or body is required.',
 });
 export type UpdateNoteRequest = z.infer<typeof updateNoteRequest>;
 

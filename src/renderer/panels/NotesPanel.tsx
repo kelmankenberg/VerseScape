@@ -64,9 +64,10 @@ const FontSize = Extension.create({
  * Notes panel: displays and manages notes anchored to the current verse.
  * Joins the sync set so it follows synced verse navigation (FR-NT-06).
  */
-export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.Element {
+export function NotesPanel({ tabId, state }: PanelProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const openOrNavigateBible = useWorkspace((store) => store.openOrNavigateBible);
+  const lastBibleTabId = useWorkspace((store) => store.lastBibleTabId);
   const syncSetId = useWorkspace((store) => store.workspace.tabs[tabId]?.syncSet ?? null);
   const syncId = useWorkspace((store) =>
     syncSetId ? store.workspace.syncSets[syncSetId]?.verseKey ?? null : null,
@@ -82,6 +83,41 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
     typeof state === 'object' && state !== null && !Array.isArray(state) && typeof state['resourceId'] === 'string'
       ? state['resourceId']
       : 'bsb';
+  const stateSelectionStartKey =
+    typeof state === 'object' && state !== null && !Array.isArray(state) && typeof state['selectionStartKey'] === 'number'
+      ? state['selectionStartKey']
+      : null;
+  const stateSelectionEndKey =
+    typeof state === 'object' && state !== null && !Array.isArray(state) && typeof state['selectionEndKey'] === 'number'
+      ? state['selectionEndKey']
+      : null;
+  const activeBibleTabState = useWorkspace((store) => {
+    const tab = lastBibleTabId ? store.workspace.tabs[lastBibleTabId] : undefined;
+    if (!tab || tab.panelType !== 'sample' || typeof tab.state !== 'object' || tab.state === null || Array.isArray(tab.state)) {
+      return null;
+    }
+    return tab.state;
+  });
+  const activeBibleContext = activeBibleTabState
+    ? {
+        resourceId:
+          typeof activeBibleTabState['resourceId'] === 'string'
+            ? activeBibleTabState['resourceId']
+            : 'bsb',
+        startKey:
+          typeof activeBibleTabState['selectionStartKey'] === 'number'
+            ? activeBibleTabState['selectionStartKey']
+            : null,
+        endKey:
+          typeof activeBibleTabState['selectionEndKey'] === 'number'
+            ? activeBibleTabState['selectionEndKey']
+            : null,
+        verseKey:
+          typeof activeBibleTabState['verseKey'] === 'number'
+            ? activeBibleTabState['verseKey']
+            : null,
+      }
+    : null;
   const requestedNoteId =
     typeof state === 'object' && state !== null && !Array.isArray(state)
       ? typeof state['noteId'] === 'string'
@@ -104,6 +140,9 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
   const [moreOpen, setMoreOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [noteSearch, setNoteSearch] = useState('');
+  const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
+  const [titleDraft, setTitleDraft] = useState('');
+  const [contextMenuNoteId, setContextMenuNoteId] = useState<string | null>(null);
 
   // When sync verse changes, refresh notes for that verse
   useEffect(() => {
@@ -199,12 +238,22 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
   };
 
   const createAnchoredNote = (): void => {
-    if (currentVerseKey === null) return;
+    const context = activeBibleContext ?? {
+      resourceId: currentResourceId,
+      startKey: stateSelectionStartKey,
+      endKey: stateSelectionEndKey,
+      verseKey: currentVerseKey,
+    };
+    const verseKey = context.verseKey ?? currentVerseKey;
+    if (verseKey === null) return;
     void window.versescape.annotations
       .createNote({
-        verseKey: currentVerseKey,
+        verseKey,
         title: 'New note',
-        resourceId: currentResourceId,
+        resourceId: context.resourceId,
+        ...(context.startKey !== null && context.endKey !== null
+          ? { startKey: context.startKey, endKey: context.endKey }
+          : {}),
       })
       .then((result) => {
         if (result.ok) {
@@ -333,8 +382,8 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
     setMoreOpen(false);
   };
 
-  const removeNote = (): void => {
-    const noteId = selectedNoteId;
+  const removeNote = (requestedNoteId = selectedNoteId): void => {
+    const noteId = requestedNoteId;
     if (!noteId) return;
     void window.versescape.annotations.deleteNote({ id: noteId }).then((result) => {
       if (!result.ok) return;
@@ -343,9 +392,23 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
         setSelectedNoteId(remaining[0]?.id ?? null);
         return remaining;
       });
-      setState({ verseKey: currentVerseKey ?? 0 });
       setMoreOpen(false);
+      setContextMenuNoteId(null);
     });
+  };
+
+  const saveTitle = (): void => {
+    const noteId = editingTitleId;
+    const title = titleDraft.trim();
+    if (!noteId || !title) {
+      setEditingTitleId(null);
+      return;
+    }
+    setNotes((previous) =>
+      previous.map((note) => (note.id === noteId ? { ...note, title } : note)),
+    );
+    setEditingTitleId(null);
+    void window.versescape.annotations.updateNote({ id: noteId, title });
   };
 
   return (
@@ -383,21 +446,66 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
           {!loading &&
             visibleNotes.map((note) => (
               <div key={note.id} className="notes-panel__note">
-                <button
-                  type="button"
+                <div
+                  role="button"
+                  tabIndex={0}
                   className={`notes-panel__note-header${selectedNoteId === note.id ? ' notes-panel__note-header--selected' : ''}`}
-                  onClick={() => {
+                  onClick={(event) => {
+                    if ((event.target as Element).closest('.notes-panel__note-title-input')) return;
                     setSelectedNoteId(note.id);
                     toggleExpand(note.id);
+                    if (editingTitleId === note.id) saveTitle();
+                  }}
+                  onDoubleClick={() => {
+                    setEditingTitleId(note.id);
+                    setTitleDraft(note.title);
+                    setContextMenuNoteId(null);
+                  }}
+                  onContextMenu={(event) => {
+                    event.preventDefault();
+                    setSelectedNoteId(note.id);
+                    setContextMenuNoteId(note.id);
+                  }}
+                  onKeyDown={(event) => {
+                    if ((event.target as Element).closest('.notes-panel__note-title-input')) return;
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setSelectedNoteId(note.id);
+                    }
                   }}
                 >
                   <ChevronDown
                     size={14}
                     className={expandedNotes.has(note.id) ? 'notes-panel__chevron--open' : ''}
                   />
-                  <span className="notes-panel__note-title">{note.title}</span>
+                  {editingTitleId === note.id ? (
+                    <input
+                      className="notes-panel__note-title-input"
+                      aria-label={`Edit title ${note.title}`}
+                      value={titleDraft}
+                      autoFocus
+                      onChange={(event) => setTitleDraft(event.target.value)}
+                      onClick={(event) => event.stopPropagation()}
+                      onKeyDown={(event) => {
+                        event.stopPropagation();
+                        if (event.key === 'Enter') saveTitle();
+                        if (event.key === 'Escape') setEditingTitleId(null);
+                      }}
+                      onBlur={saveTitle}
+                    />
+                  ) : (
+                    <span className="notes-panel__note-title">{note.title}</span>
+                  )}
                   <span className="notes-panel__note-date">Today</span>
-                </button>
+                </div>
+                {contextMenuNoteId === note.id && (
+                  <div className="notes-panel__note-context-menu" role="menu">
+                    <button type="button" role="menuitem" onClick={() => removeNote(note.id)}>
+                      <Trash2 size={13} />
+                      Delete note
+                    </button>
+                  </div>
+                )}
                 {expandedNotes.has(note.id) && (
                   <div className="notes-panel__note-body">
                     <span>{currentVerseRef}</span>
@@ -534,7 +642,7 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
                         <Plus size={14} />
                         Add anchor
                       </button>
-                      <button type="button" role="menuitem" onClick={removeNote}>
+                      <button type="button" role="menuitem" onClick={() => removeNote()}>
                         <Trash2 size={14} />
                         Delete this note
                       </button>

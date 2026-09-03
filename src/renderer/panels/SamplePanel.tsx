@@ -12,6 +12,7 @@ import {
   toVerseKey,
   parseReference,
 } from '@shared/reference/index.js';
+import { BOOKS } from '@shared/reference/canon.js';
 import type { ChapterData, HighlightRecord, ResourceSummary } from '@shared/ipc/contracts.js';
 import type { BibleDisplayOptions } from '@shared/settings.js';
 import type { JsonValue } from '@shared/workspace/index.js';
@@ -85,12 +86,15 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
   const positioningTarget = useRef<number | null>(null);
   const suppressWindowShiftUntil = useRef(0);
   const navigateTab = useWorkspace((store) => store.navigateTab);
+  const rememberBibleTab = useWorkspace((store) => store.rememberBibleTab);
   const followTab = useWorkspace((store) => store.followTab);
   const openPanel = useWorkspace((store) => store.openPanel);
   const [resources, setResources] = useState<ResourceSummary[]>([]);
   const [resourceError, setResourceError] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
   const [selection, setSelection] = useState<BibleSelection | null>(null);
+  const [contentsOpen, setContentsOpen] = useState(true);
+  const [expandedBooks, setExpandedBooks] = useState<Set<string>>(new Set());
   const globalDisplayOptions = useSettings((store) => store.settings.reading);
   const displayOverride = panelDisplayOverride(state);
   const displayOptions: BibleDisplayOptions = { ...globalDisplayOptions, ...displayOverride };
@@ -102,6 +106,17 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
   const parsed = parseReference(reference);
   const anchor = parsed.ok ? parsed.range.start : { book: 'JHN', chapter: 3, verse: 1 };
   const book = getBook(anchor.book);
+  useEffect(() => {
+    if (visible) rememberBibleTab(tabId);
+  }, [rememberBibleTab, tabId, visible]);
+  useEffect(() => {
+    if (visible || typeof state !== 'object' || state === null || Array.isArray(state)) return;
+    if (state['selectionStartKey'] === null && state['selectionEndKey'] === null) return;
+    setState(patchState(state, { selectionStartKey: null, selectionEndKey: null }));
+  }, [setState, state, visible]);
+  useEffect(() => {
+    setExpandedBooks((previous) => (previous.has(anchor.book) ? previous : new Set([anchor.book])));
+  }, [anchor.book]);
   const [visibleChapter, setVisibleChapter] = useState(anchor.chapter);
   const {
     chapters,
@@ -517,6 +532,15 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
     if (!text || !verse || !Number.isInteger(verseKey)) return;
     const source = verses.find((item) => item.key === verseKey);
     if (!source) return;
+    const selectedVerseKeys = verses
+      .filter((item) => {
+        const element = document.querySelector<HTMLElement>(`[data-verse="${item.key}"]`);
+        return element ? range.intersectsNode(element) : false;
+      })
+      .map((item) => item.key);
+    const startKey = Math.min(verseKey, ...(selectedVerseKeys.length > 0 ? selectedVerseKeys : [verseKey]));
+    const endKey = Math.max(verseKey, ...(selectedVerseKeys.length > 0 ? selectedVerseKeys : [verseKey]));
+    setState(patchState(state, { selectionStartKey: startKey, selectionEndKey: endKey }));
     const strongNumber = strongNumberForRange(range, verse);
     setSelection({
       text,
@@ -524,6 +548,8 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
       verseText: source.text,
       startOffset: plainOffsetInVerse(verse, range.startContainer, range.startOffset),
       endOffset: plainOffsetInVerse(verse, range.endContainer, range.endOffset),
+      selectionStartKey: startKey,
+      selectionEndKey: endKey,
       ...(strongNumber ? { strongNumber } : {}),
       reference: formatReference({ start: fromVerseKey(verseKey)!, end: fromVerseKey(verseKey)! }),
       translation:
@@ -654,13 +680,71 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
       ) : loading && verses.length === 0 ? (
         <div className="bible-panel__message">Loading chapter...</div>
       ) : (
-        <div
-          ref={containerRef}
-          className="bible-panel__scroll"
-          data-testid="bible-scroll"
-          onMouseUp={captureSelection}
-          onScroll={() => setSelection(null)}
-        >
+        <div className="bible-panel__reading-area">
+          {contentsOpen && (
+            <aside className="bible-panel__contents" aria-label="Bible contents">
+              <div className="bible-panel__contents-header">
+                <strong>Contents</strong>
+                <button type="button" aria-label="Close contents" onClick={() => setContentsOpen(false)}>
+                  <X size={13} />
+                </button>
+              </div>
+              <div className="bible-panel__contents-list">
+                {BOOKS.map((bookInfo) => {
+                  const expanded = expandedBooks.has(bookInfo.id);
+                  return (
+                    <div key={bookInfo.id} className="bible-panel__contents-book">
+                      <button
+                        type="button"
+                        className="bible-panel__contents-book-button"
+                        aria-expanded={expanded}
+                        onClick={() =>
+                          setExpandedBooks((previous) => {
+                            const next = new Set(previous);
+                            if (next.has(bookInfo.id)) next.delete(bookInfo.id);
+                            else next.add(bookInfo.id);
+                            return next;
+                          })
+                        }
+                      >
+                        <ChevronDown className={expanded ? 'bible-panel__contents-chevron--open' : ''} size={12} />
+                        {bookInfo.name}
+                      </button>
+                      {expanded && (
+                        <div className="bible-panel__contents-chapters">
+                          {Array.from({ length: bookInfo.chapters }, (_, index) => index + 1).map((chapter) => (
+                            <button
+                              type="button"
+                              key={chapter}
+                              className={bookInfo.id === anchor.book && chapter === visibleChapter ? 'bible-panel__contents-chapter--current' : ''}
+                              onClick={() => setState(patchState(state, {
+                                reference: `${bookInfo.name} ${chapter}`,
+                                verseKey: toVerseKey({ book: bookInfo.id, chapter, verse: 1 }),
+                              }))}
+                            >
+                              Chapter {chapter}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </aside>
+          )}
+          {!contentsOpen && (
+            <button type="button" className="bible-panel__contents-open" aria-label="Open contents" onClick={() => setContentsOpen(true)}>
+              Contents
+            </button>
+          )}
+          <div
+            ref={containerRef}
+            className="bible-panel__scroll"
+            data-testid="bible-scroll"
+            onMouseUp={captureSelection}
+            onScroll={() => setSelection(null)}
+          >
           <div
             className="bible-panel__virtual"
             data-loaded-chapters={chapters.map((loaded) => loaded.chapter).join(',')}
@@ -691,7 +775,11 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
                     const wordElement = (event.target as Element).closest<HTMLElement>('[data-word]');
                     const word = wordElement?.dataset['word'];
                     const target = fromVerseKey(verse.key);
-                    if (!word || !target) return;
+                    if (!target) return;
+                    if (!word) {
+                      setState(patchState(state, { highlightedWord: '' }));
+                      return;
+                    }
                     preserveClickPosition.current = verse.key;
                     navigateTab(
                       tabId,
@@ -740,6 +828,7 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
               );
             })}
           </div>
+          </div>
         </div>
       )}
       {selection && (
@@ -754,6 +843,9 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
             openPanel('notes', undefined, {
               verseKey: selection.verseKey,
               resourceId,
+              ...(selection.selectionStartKey !== undefined && selection.selectionEndKey !== undefined
+                ? { selectionStartKey: selection.selectionStartKey, selectionEndKey: selection.selectionEndKey }
+                : {}),
             });
             void window.versescape.annotations
               .createNote({
@@ -767,6 +859,9 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
                     verseKey: selection.verseKey,
                     noteId: result.data.id,
                     resourceId,
+                    ...(selection.selectionStartKey !== undefined && selection.selectionEndKey !== undefined
+                      ? { selectionStartKey: selection.selectionStartKey, selectionEndKey: selection.selectionEndKey }
+                      : {}),
                   });
                 }
               });

@@ -48,6 +48,8 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 - Bible panel: chapter render, translation switch, and a sliding virtualised
   chapter window that automatically prepends/appends adjacent chapters without
   jumping the viewport (FR-RD-03, D-30)
+- Bible panel Contents rail: navigate through books and chapters without
+  leaving the panel
 - Display options; Passage Compare panel
 - Selection toolbar on Bible/Resource Reader panels: copy, search, Strong's
   Number + Concordance link, note, highlight, text colour, copy-verse

@@ -124,7 +124,9 @@ export function registerIpcHandlers(): void {
     return null;
   });
 
-  handle(IpcChannels.annotationsUpdateNote, (request) => updateNote(request.id, request.bodyMd));
+  handle(IpcChannels.annotationsUpdateNote, (request) =>
+    updateNote(request.id, request.bodyMd, request.title),
+  );
 
   handle(IpcChannels.searchQuery, (request) => runSearch(request));
 }

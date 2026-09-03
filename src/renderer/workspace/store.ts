@@ -38,11 +38,13 @@ interface WorkspaceStore {
   syncOrigin: { tabId: TabId; at: number } | null;
   /** Most-recently-active tabs, capped at MOUNT_LIMIT (D-14). */
   mounted: TabId[];
+  lastBibleTabId: TabId | null;
   openPanel: (panelType: string, targetGroup?: NodeId, state?: JsonValue) => void;
   openOrNavigateBible: (state: JsonValue) => void;
   closeTab: (tabId: TabId) => void;
   reopenLastClosed: () => void;
   activateTab: (tabId: TabId) => void;
+  rememberBibleTab: (tabId: TabId) => void;
   focusGroup: (groupId: NodeId) => void;
   moveTab: (tabId: TabId, toGroup: NodeId, index?: number) => void;
   splitGroup: (groupId: NodeId, direction: Direction, panelType?: string) => void;
@@ -77,6 +79,7 @@ export const useWorkspace = create<WorkspaceStore>((set) => {
     workspace: createWorkspace(ctx, { name: 'Study', panelType: 'placeholder' }),
     syncOrigin: null,
     mounted: [],
+    lastBibleTabId: null,
 
     openPanel: (panelType, targetGroup, state) =>
       apply('openPanel', (w) => {
@@ -134,8 +137,12 @@ export const useWorkspace = create<WorkspaceStore>((set) => {
     reopenLastClosed: () => apply('reopenLastClosed', (w) => reopenLastClosed(w, ctx)),
     activateTab: (tabId) => {
       set((state) => ({ mounted: promote(state.mounted, tabId) }));
+      set((state) =>
+        state.workspace.tabs[tabId]?.panelType === 'sample' ? { lastBibleTabId: tabId } : state,
+      );
       apply('activateTab', (w) => activateTab(w, tabId, ctx));
     },
+    rememberBibleTab: (tabId) => set({ lastBibleTabId: tabId }),
     focusGroup: (groupId) => apply('focusGroup', (w) => focusGroup(w, groupId, ctx)),
     moveTab: (tabId, toGroup, index) =>
       apply('moveTab', (w) =>

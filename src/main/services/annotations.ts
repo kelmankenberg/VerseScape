@@ -88,7 +88,18 @@ export function createNote(request: CreateNoteRequest): NoteRecord {
     .prepare(
       `INSERT INTO note_anchor (note_id, start_key, end_key, resource_id) VALUES (?, ?, ?, ?)`,
     )
-    .run(id, request.verseKey, request.verseKey, request.resourceId ?? null);
+    .run(
+      id,
+      request.startKey ?? request.verseKey,
+      request.endKey ?? request.verseKey,
+      request.resourceId ?? null,
+    );
+  return {
+    id,
+    verseKey: request.startKey ?? request.verseKey,
+    title: request.title,
+    resourceId: request.resourceId,
+  };
 
   return { id, verseKey: request.verseKey, title: request.title, resourceId: request.resourceId };
 }
@@ -233,10 +244,18 @@ export function deleteNoteAnchor(noteId: string, startKey: number, endKey: numbe
     .run(noteId, startKey, endKey);
 }
 
-export function updateNote(noteId: string, bodyMd: string): NoteRecord {
+export function updateNote(noteId: string, bodyMd?: string, title?: string): NoteRecord {
   const database = open();
   const now = new Date().toISOString();
-  database.prepare('UPDATE note SET body_md = ?, updated_at = ? WHERE id = ?').run(bodyMd, now, noteId);
+  database
+    .prepare(
+      `UPDATE note SET
+         body_md = COALESCE(?, body_md),
+         title = COALESCE(?, title),
+         updated_at = ?
+       WHERE id = ?`,
+    )
+    .run(bodyMd ?? null, title ?? null, now, noteId);
   const row = database
     .prepare(
       `SELECT note.id, note.title, note.body_md AS bodyMd, note_anchor.start_key AS verseKey

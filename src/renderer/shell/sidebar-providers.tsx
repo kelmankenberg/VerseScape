@@ -23,9 +23,7 @@ function Placeholder({ lines }: { lines: string[] }): React.JSX.Element {
 export const sidebarProviders: Partial<Record<PageId, SidebarProvider>> = {
   workspace: {
     title: 'Books',
-    render: () => (
-      <Placeholder lines={['Book and chapter picker — M3', 'Recent references — M3']} />
-    ),
+    render: () => <Placeholder lines={['Bible panel Contents — available in each Bible panel']} />,
   },
   notes: {
     title: 'Notebooks',

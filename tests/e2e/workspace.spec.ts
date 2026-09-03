@@ -39,6 +39,18 @@ test('the empty state replaces itself with a real panel', async () => {
   await expect(tabs()).toHaveCount(1);
   await expect(tabs().first()).toContainText('BSB');
   await expect(page.locator('.bible-panel')).toBeVisible();
+  await expect(page.getByRole('complementary', { name: 'Bible contents' })).toBeVisible();
+  await page
+    .getByRole('complementary', { name: 'Bible contents' })
+    .getByRole('button', { name: 'Genesis', exact: true })
+    .click();
+  await page
+    .getByRole('complementary', { name: 'Bible contents' })
+    .locator('.bible-panel__contents-book')
+    .filter({ hasText: 'Genesis' })
+    .getByRole('button', { name: 'Chapter 2', exact: true })
+    .click();
+  await expect(page.locator('.bible-panel__heading')).toHaveText('Genesis 2');
 });
 
 test('New Panel adds a tab to the focused group', async () => {

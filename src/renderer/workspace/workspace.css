@@ -702,6 +702,121 @@
   margin-left: auto;
 }
 
+.bible-panel__reading-area {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  grid-row: 3;
+}
+
+.bible-panel__reading-area > .bible-panel__scroll {
+  flex: 1;
+  min-width: 0;
+  grid-row: auto;
+}
+
+.bible-panel__contents {
+  display: flex;
+  width: 220px;
+  min-width: 180px;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--vs-border);
+  background: var(--vs-bg-surface);
+  font-family: var(--vs-font-ui);
+  font-size: 11px;
+}
+
+.bible-panel__contents-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 34px;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--vs-border);
+  text-transform: uppercase;
+}
+
+.bible-panel__contents-header button,
+.bible-panel__contents-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--vs-fg-muted);
+  cursor: pointer;
+}
+
+.bible-panel__contents-header button {
+  width: 22px;
+  height: 22px;
+}
+
+.bible-panel__contents-header button:hover,
+.bible-panel__contents-open:hover {
+  background: var(--vs-bg-elevated);
+  color: var(--vs-fg-primary);
+}
+
+.bible-panel__contents-list {
+  min-height: 0;
+  overflow: auto;
+}
+
+.bible-panel__contents-book-button,
+.bible-panel__contents-chapters button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--vs-fg-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bible-panel__contents-book-button {
+  min-height: 27px;
+  padding: 4px 8px;
+  font-weight: 600;
+}
+
+.bible-panel__contents-book-button:hover,
+.bible-panel__contents-chapters button:hover {
+  background: var(--vs-bg-elevated);
+}
+
+.bible-panel__contents-chevron--open {
+  transform: rotate(180deg);
+}
+
+.bible-panel__contents-chapters {
+  padding: 0 0 4px 22px;
+}
+
+.bible-panel__contents-chapters button {
+  min-height: 24px;
+  padding: 3px 8px;
+  color: var(--vs-fg-muted);
+}
+
+.bible-panel__contents-chapter--current {
+  border-left: 2px solid var(--vs-accent) !important;
+  background: color-mix(in srgb, var(--vs-accent) 12%, transparent) !important;
+  color: var(--vs-fg-primary) !important;
+  font-weight: 600;
+}
+
+.bible-panel__contents-open {
+  align-self: flex-start;
+  width: 28px;
+  writing-mode: vertical-rl;
+  padding: 8px 4px;
+}
+
 .bible-panel__heading {
   margin: 0;
   font-family: var(--vs-font-ui);
@@ -1168,6 +1283,7 @@
 }
 
 .notes-panel__note {
+  position: relative;
   flex: 0 0 auto;
   border-bottom: 1px solid var(--vs-border);
 }
@@ -1186,6 +1302,11 @@
   color: var(--vs-fg);
   text-align: left;
   cursor: pointer;
+  outline: none;
+}
+
+.notes-panel__note-header:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--vs-accent);
 }
 
 .notes-panel__note-header:hover {
@@ -1207,6 +1328,52 @@
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.notes-panel__note-title-input {
+  min-width: 0;
+  width: 100%;
+  padding: 2px 4px;
+  border: 1px solid var(--vs-accent);
+  border-radius: 2px;
+  background: var(--vs-bg-app);
+  color: var(--vs-fg-primary);
+  font: inherit;
+  font-weight: 600;
+  outline: none;
+}
+
+.notes-panel__note-context-menu {
+  position: absolute;
+  z-index: 200;
+  top: 40px;
+  left: 28px;
+  width: 150px;
+  padding: 4px 0;
+  border: 1px solid var(--vs-border);
+  border-radius: 4px;
+  background: var(--vs-bg-surface);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--vs-fg-primary) 25%, transparent);
+}
+
+.notes-panel__note-context-menu button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 28px;
+  padding: 5px 9px;
+  border: 0;
+  background: transparent;
+  color: var(--vs-fg-primary);
+  font: inherit;
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notes-panel__note-context-menu button:hover {
+  background: color-mix(in srgb, var(--vs-accent) 12%, transparent);
 }
 
 .notes-panel__note-date {

@@ -9,6 +9,8 @@ export interface BibleSelection {
   verseText: string;
   startOffset: number;
   endOffset: number;
+  selectionStartKey?: number;
+  selectionEndKey?: number;
   strongNumber?: string;
   reference: string;
   translation: string;

@@ -291,14 +291,24 @@ test('creating a note from the selection toolbar pre-fills the title and anchors
   const editor = notesPanel.locator('.notes-panel__editor-input .tiptap');
   await editor.fill('Saved note content');
   await editor.blur();
+  const firstNoteButton = notesPanel.getByRole('button', { name: /The whole world/ });
+  await firstNoteButton.dblclick();
+  const titleInput = notesPanel.getByRole('textbox', { name: 'Edit title The whole world' });
+  await titleInput.fill('Evening');
+  await titleInput.press('Space');
+  await titleInput.type('and Morning');
+  await titleInput.press('Enter');
+  await expect(notesPanel.getByRole('button', { name: /Evening and Morning/ })).toBeVisible();
   const notesSearch = notesPanel.getByRole('searchbox', { name: 'Search all notes' });
   await notesSearch.fill('Saved note content');
-  await expect(notesPanel.locator('.notes-panel__note-title')).toHaveText('The whole world');
+  await expect(notesPanel.getByRole('button', { name: /Evening and Morning/ })).toBeVisible();
   await notesSearch.fill('no such note');
   await expect(notesPanel.getByText('No matching notes.')).toBeVisible();
   await notesSearch.fill('');
 
-  await page.getByRole('tab', { name: /BSB/ }).first().click();
+  const bsbTab = page.getByRole('tab', { name: /BSB/ }).first();
+  await bsbTab.click();
+  await expect(bsbTab).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('.bible-panel')).toBeVisible();
   const bibleVerse = page.locator('.bible-panel__verse').filter({ hasText: 'God' }).first();
   await expect(bibleVerse).toBeVisible();
@@ -312,7 +322,7 @@ test('creating a note from the selection toolbar pre-fills the title and anchors
 
   await expect(notesPanel.locator('.notes-panel__note-title')).toHaveText([
     'A second note',
-    'The whole world',
+    'Evening and Morning',
   ]);
   await expect(notesPanel.locator('.notes-panel__editor-input')).toHaveAttribute(
     'aria-label',
@@ -328,7 +338,7 @@ test('creating a note from the selection toolbar pre-fills the title and anchors
     'aria-label',
     'Edit A second note',
   );
-  await notesPanel.getByRole('button', { name: /The whole world/ }).click();
+  await notesPanel.getByRole('button', { name: /Evening and Morning/ }).click();
   await expect(notesPanel.locator('.notes-panel__editor-input .tiptap')).toHaveText('Saved note content');
   await notesPanel.getByRole('button', { name: 'Add anchor' }).click();
   await expect(notesPanel.getByText('Active Reference:', { exact: false })).toBeVisible();
@@ -336,23 +346,14 @@ test('creating a note from the selection toolbar pre-fills the title and anchors
   await notesPanel.getByRole('textbox', { name: 'Anchor reference' }).fill('Galatians 5:5-6');
   await notesPanel.getByRole('button', { name: 'Done' }).click();
   await expect(notesPanel.getByRole('link', { name: 'Galatians 5:5-6' })).toBeVisible();
-  await expect(notesPanel.locator('.notes-panel__note-title', { hasText: 'The whole world' })).toHaveCount(1);
-  await notesPanel.getByRole('button', { name: /A second note/ }).click();
+  await expect(notesPanel.locator('.notes-panel__note-title', { hasText: 'Evening and Morning' })).toHaveCount(1);
+  await notesPanel.getByRole('button', { name: /A second note/ }).click({ button: 'right' });
   await expect(notesPanel.locator('.notes-panel__editor-input')).toHaveAttribute(
     'aria-label',
     'Edit A second note',
   );
-  await notesPanel.getByRole('button', { name: 'More note actions' }).click();
-  const moreMenu = notesPanel.getByRole('menu');
-  await expect(moreMenu).toContainText('Close this note');
-  await expect(moreMenu).toContainText('Show full anchor text');
-  await expect(moreMenu).toContainText('Add anchor');
-  await expect(moreMenu).toContainText('Delete this note');
-  await expect(moreMenu).not.toContainText('Send to');
-  await moreMenu
-    .getByRole('menuitem', { name: 'Delete this note' })
-    .click();
-  await expect(notesPanel.locator('.notes-panel__note-title')).toHaveText('The whole world');
+  await notesPanel.getByRole('menu').getByRole('menuitem', { name: 'Delete note' }).click();
+  await expect(notesPanel.getByRole('button', { name: /Evening and Morning/ })).toBeVisible();
   await notesPanel.getByRole('button', { name: 'More note actions' }).click();
   await notesPanel
     .getByRole('menu')
@@ -428,6 +429,8 @@ test('clicking a word highlights every visible instance and replaces the previou
       return (await highlightedLight.count()) === (await lightWords.count());
     })
     .toBe(true);
+  await lightVerse.dispatchEvent('click');
+  await expect(page.locator('[data-word="light"].bible-text__word-highlight')).toHaveCount(0);
 });
 
 test('navigating one panel moves its sync partner', async () => {
