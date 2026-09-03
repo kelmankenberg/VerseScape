@@ -717,8 +717,9 @@
 
 .bible-panel__contents {
   display: flex;
-  width: 220px;
-  min-width: 180px;
+  width: 180px;
+  min-width: 120px;
+  position: relative;
   flex-direction: column;
   min-height: 0;
   border-right: 1px solid var(--vs-border);
@@ -760,8 +761,25 @@
 }
 
 .bible-panel__contents-list {
+  flex: 1;
   min-height: 0;
   overflow: auto;
+}
+
+.bible-panel__contents-resizer {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+}
+
+.bible-panel__contents-resizer:hover,
+.bible-panel__contents-resizer:focus-visible {
+  background: color-mix(in srgb, var(--vs-accent) 35%, transparent);
+  outline: none;
 }
 
 .bible-panel__contents-book-button,

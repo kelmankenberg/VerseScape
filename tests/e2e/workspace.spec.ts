@@ -51,6 +51,13 @@ test('the empty state replaces itself with a real panel', async () => {
     .getByRole('button', { name: 'Chapter 2', exact: true })
     .click();
   await expect(page.locator('.bible-panel__heading')).toHaveText('Genesis 2');
+  const contentsResizer = page.getByRole('separator', { name: 'Resize Bible contents' });
+  await contentsResizer.focus();
+  await contentsResizer.press('ArrowLeft');
+  await expect(contentsResizer).toHaveAttribute('aria-valuenow', '172');
+  await page.getByRole('button', { name: 'New Panel' }).click();
+  await page.getByRole('tab', { name: 'BSB' }).click();
+  await expect(contentsResizer).toHaveAttribute('aria-valuenow', '172');
 });
 
 test('New Panel adds a tab to the focused group', async () => {

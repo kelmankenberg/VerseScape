@@ -32,6 +32,19 @@ import type { PanelProps } from './registry.js';
 
 const DEFAULT_REFERENCE = 'John 3';
 const DEFAULT_RESOURCE = 'bsb';
+const CONTENTS_MIN_WIDTH = 120;
+const CONTENTS_MAX_WIDTH = 200;
+const CONTENTS_DEFAULT_WIDTH = 180;
+
+function panelNumber(state: JsonValue, key: string, fallback: number): number {
+  if (typeof state !== 'object' || state === null || Array.isArray(state)) return fallback;
+  const value = state[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function clampContentsWidth(value: number): number {
+  return Math.min(CONTENTS_MAX_WIDTH, Math.max(CONTENTS_MIN_WIDTH, Math.round(value)));
+}
 
 function panelValue(state: JsonValue, key: string, fallback: string): string {
   if (typeof state !== 'object' || state === null || Array.isArray(state)) return fallback;
@@ -102,6 +115,11 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
   const reference = panelValue(state, 'reference', DEFAULT_REFERENCE);
   const resourceId = panelValue(state, 'resourceId', DEFAULT_RESOURCE);
   const highlightedWord = panelValue(state, 'highlightedWord', '');
+  const savedContentsWidth = clampContentsWidth(
+    panelNumber(state, 'contentsWidth', CONTENTS_DEFAULT_WIDTH),
+  );
+  const [contentsWidth, setContentsWidth] = useState(savedContentsWidth);
+  const contentsResizeRef = useRef<{ startX: number; startWidth: number } | null>(null);
   const preserveClickPosition = useRef<number | null>(null);
   const parsed = parseReference(reference);
   const anchor = parsed.ok ? parsed.range.start : { book: 'JHN', chapter: 3, verse: 1 };
@@ -109,6 +127,36 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
   useEffect(() => {
     if (visible) rememberBibleTab(tabId);
   }, [rememberBibleTab, tabId, visible]);
+  useEffect(() => {
+    setContentsWidth(savedContentsWidth);
+  }, [savedContentsWidth]);
+
+  useEffect(() => {
+    const onPointerMove = (event: PointerEvent): void => {
+      const resize = contentsResizeRef.current;
+      if (!resize) return;
+      setContentsWidth(clampContentsWidth(resize.startWidth + event.clientX - resize.startX));
+    };
+    const onPointerUp = (): void => {
+      const resize = contentsResizeRef.current;
+      if (!resize) return;
+      contentsResizeRef.current = null;
+      setState(patchState(state, {
+        contentsWidth: clampContentsWidth(contentsWidth),
+      }));
+    };
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+  }, [contentsWidth, setState, state]);
+
+  const startContentsResize = (event: React.PointerEvent<HTMLDivElement>): void => {
+    event.preventDefault();
+    contentsResizeRef.current = { startX: event.clientX, startWidth: contentsWidth };
+  };
   useEffect(() => {
     if (visible || typeof state !== 'object' || state === null || Array.isArray(state)) return;
     if (state['selectionStartKey'] === null && state['selectionEndKey'] === null) return;
@@ -682,7 +730,11 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
       ) : (
         <div className="bible-panel__reading-area">
           {contentsOpen && (
-            <aside className="bible-panel__contents" aria-label="Bible contents">
+            <aside
+              className="bible-panel__contents"
+              aria-label="Bible contents"
+              style={{ width: contentsWidth }}
+            >
               <div className="bible-panel__contents-header">
                 <strong>Contents</strong>
                 <button type="button" aria-label="Close contents" onClick={() => setContentsOpen(false)}>
@@ -731,6 +783,26 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
                   );
                 })}
               </div>
+              <div
+                className="bible-panel__contents-resizer"
+                role="separator"
+                aria-label="Resize Bible contents"
+                aria-orientation="vertical"
+                aria-valuemin={CONTENTS_MIN_WIDTH}
+                aria-valuemax={CONTENTS_MAX_WIDTH}
+                aria-valuenow={contentsWidth}
+                tabIndex={0}
+                onPointerDown={startContentsResize}
+                onKeyDown={(event) => {
+                  if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+                    event.preventDefault();
+                    const delta = event.key === 'ArrowRight' ? 8 : -8;
+                    const nextWidth = clampContentsWidth(contentsWidth + delta);
+                    setContentsWidth(nextWidth);
+                    setState(patchState(state, { contentsWidth: nextWidth }));
+                  }
+                }}
+              />
             </aside>
           )}
           {!contentsOpen && (
