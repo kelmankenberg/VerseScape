@@ -51,7 +51,7 @@ interface WorkspaceStore {
   setTabState: (tabId: TabId, state: JsonValue) => void;
   toggleMaximize: (groupId: NodeId) => void;
   publishVerse: (tabId: TabId, verseKey: number) => void;
-  navigateTab: (tabId: TabId, verseKey: number, reference: string) => void;
+  navigateTab: (tabId: TabId, verseKey: number, reference: string, patch?: JsonValue) => void;
   followTab: (tabId: TabId, verseKey: number, reference: string) => void;
   replaceWorkspace: (workspace: Workspace) => void;
 }
@@ -131,7 +131,7 @@ export const useWorkspace = create<WorkspaceStore>((set) => {
         return { workspace: next, syncOrigin: { tabId, at: Date.now() } };
       }),
 
-    navigateTab: (tabId, verseKey, reference) =>
+    navigateTab: (tabId, verseKey, reference, patch) =>
       set((state) => {
         const tab = state.workspace.tabs[tabId];
         if (!tab) return state;
@@ -140,7 +140,14 @@ export const useWorkspace = create<WorkspaceStore>((set) => {
         let next = setTabState(
           state.workspace,
           tabId,
-          { ...(base as Record<string, JsonValue>), reference, verseKey },
+          {
+            ...(base as Record<string, JsonValue>),
+            reference,
+            verseKey,
+            ...(typeof patch === 'object' && patch !== null && !Array.isArray(patch)
+              ? patch
+              : {}),
+          },
           ctx,
         );
 

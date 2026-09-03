@@ -193,13 +193,13 @@ function toInlineMarkup(input: string, noteIds: string[], activeTags: string[], 
 
     output += escapeText(displayText.slice(index, next));
 
-    const match = /^\\([a-z0-9]+)(\*?)/iu.exec(displayText.slice(next));
+    const match = /^\\(\+?[a-z0-9]+)(\*?)/iu.exec(displayText.slice(next));
     if (!match) {
       index = next + 1;
       continue;
     }
 
-    const marker = match[1]!.toLowerCase();
+    const marker = match[1]!.replace(/^\+/u, '').toLowerCase();
     const closing = match[2] === '*';
     index = next + match[0].length;
 
@@ -240,7 +240,7 @@ function toInlineMarkup(input: string, noteIds: string[], activeTags: string[], 
     })
     .replace(/\uE000ST(\d+)\uE000/gu, (_match, id: string) => {
       const strong = strongNumbers[Number(id)];
-      return strong ? `<s>${strong}</s>` : '';
+      return strong ? `<s n="${strong}"/>` : '';
     })
     .replace(/\s+/gu, ' ')
     .replace(/(<(?:wj|i|sc)>)\s+/gu, '$1')

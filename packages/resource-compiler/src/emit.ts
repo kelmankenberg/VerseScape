@@ -169,7 +169,7 @@ export function emitResource(
           );
 
           // Extract Strong's numbers and index them for concordance
-          const strongMatches = verse.text.matchAll(/<s>([^<]+)<\/s>/gu);
+          const strongMatches = verse.text.matchAll(/<s n="([^"]+)"\/>/gu);
           for (const match of strongMatches) {
             const strongNum = match[1]!;
             insertStrongVerse.run(strongNum, key);

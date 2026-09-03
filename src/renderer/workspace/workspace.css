@@ -696,6 +696,13 @@
   background: color-mix(in srgb, var(--vs-accent) 12%, transparent);
 }
 
+.bible-text__word-highlight {
+  padding: 0 2px;
+  color: inherit;
+  background: #b77cff;
+  border-radius: 2px;
+}
+
 .bible-panel__verse--poetry {
   padding-left: calc(var(--vs-space-5) + 18px);
 }

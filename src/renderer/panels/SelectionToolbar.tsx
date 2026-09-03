@@ -15,6 +15,7 @@ export interface BibleSelection {
 function plainText(value: string): string {
   return value
     .replace(/<n id="[^"]+"\/>/gu, '')
+    .replace(/<s n="[^"]+"\/>/gu, '')
     .replace(/<\/?(?:wj|i|sc)>/gu, '')
     .replace(/&lt;/gu, '<')
     .replace(/&gt;/gu, '>')
@@ -24,6 +25,7 @@ function plainText(value: string): string {
 function styledText(value: string): string {
   return value
     .replace(/<n id="[^"]+"\/>/gu, '')
+    .replace(/<s n="[^"]+"\/>/gu, '')
     .replace(/<wj>/gu, '<span style="color:#c62c31">')
     .replace(/<\/wj>/gu, '</span>')
     .replace(/<sc>/gu, '<span style="font-variant:small-caps">')

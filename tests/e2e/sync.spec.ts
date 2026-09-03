@@ -156,6 +156,42 @@ test('a selected KJV word opens and reuses the Strong\'s panel', async () => {
   await expect(page.locator('.strongs-panel')).toHaveCount(1);
 });
 
+test('clicking a word highlights every visible instance and replaces the previous highlight', async () => {
+  await openReader();
+  await page.locator('.reference__input').fill('John 3:16');
+  await page.locator('.reference__input').press('Enter');
+  await page.locator('.bible-panel__translation').selectOption('kjv');
+  await page.waitForTimeout(550);
+
+  const targetVerse = page.locator('.bible-panel__verse--current');
+  await expect(targetVerse).toBeVisible();
+  await expect(targetVerse).toContainText('God');
+  const godWords = page.locator('[data-word="god"]');
+  expect(await godWords.count()).toBeGreaterThan(1);
+
+  await targetVerse.locator('[data-word="god"]').first().click();
+  await expect(page.locator('.reference__input')).toHaveValue('John 3:16');
+  const highlightedGod = page.locator('[data-word="god"].bible-text__word-highlight');
+  await expect
+    .poll(async () => (await highlightedGod.count()) === (await godWords.count()))
+    .toBe(true);
+
+  await page.locator('.reference__input').fill('John 3:19');
+  await page.locator('.reference__input').press('Enter');
+  await page.waitForTimeout(550);
+  const lightVerse = page.locator('.bible-panel__verse--current');
+  await expect(lightVerse).toContainText('light');
+  const lightWords = page.locator('[data-word="light"]');
+  await lightVerse.locator('[data-word="light"]').first().click();
+  await expect(page.locator('[data-word="god"].bible-text__word-highlight')).toHaveCount(0);
+  await expect
+    .poll(async () => {
+      const highlightedLight = page.locator('[data-word="light"].bible-text__word-highlight');
+      return (await highlightedLight.count()) === (await lightWords.count());
+    })
+    .toBe(true);
+});
+
 test('navigating one panel moves its sync partner', async () => {
   // Two readers side by side, both in set A.
   await openReader();

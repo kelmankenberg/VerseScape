@@ -69,6 +69,8 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
 
   const reference = panelValue(state, 'reference', DEFAULT_REFERENCE);
   const resourceId = panelValue(state, 'resourceId', DEFAULT_RESOURCE);
+  const highlightedWord = panelValue(state, 'highlightedWord', '');
+  const preserveClickPosition = useRef<number | null>(null);
   const parsed = parseReference(reference);
   const anchor = parsed.ok ? parsed.range.start : { book: 'JHN', chapter: 3, verse: 1 };
   const book = getBook(anchor.book);
@@ -78,7 +80,7 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
     loading,
     error: chapterError,
     extend,
-  } = useBibleChapterWindow(resourceId, anchor.book, anchor.chapter);
+  } = useBibleChapterWindow(resourceId, anchor.book, anchor.chapter, Boolean(highlightedWord));
 
   const verses = useMemo(
     () =>
@@ -119,6 +121,15 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
     overscan: 8,
     getItemKey: (index) => verses[index]?.key ?? index,
   });
+  const measureVerse = useCallback(
+    (element: HTMLDivElement | null): void => {
+      if (!element) return;
+      queueMicrotask(() => {
+        if (element.isConnected) virtualizer.measureElement(element);
+      });
+    },
+    [virtualizer],
+  );
 
   const scrollToVerse = useCallback(
     (verseKey: number): boolean => {
@@ -204,7 +215,9 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
     (verseKey: number) => {
       const target = fromVerseKey(verseKey);
       if (!target) return;
-      navigateTab(tabId, verseKey, formatReference({ start: target, end: target }));
+      navigateTab(tabId, verseKey, formatReference({ start: target, end: target }), {
+        highlightedWord: '',
+      });
     },
     [navigateTab, tabId],
   );
@@ -255,6 +268,27 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
     setVisibleChapter(anchor.chapter);
   }, [anchor.book, anchor.chapter]);
 
+  // Background full-book loading (D-31 word highlighting) can prepend chapters
+  // earlier than the ones currently on screen. Since virtualized offsets are
+  // cumulative from index 0, that shifts every later row down while scrollTop
+  // stays put, silently changing which verse the scroll-anchor tracker reports.
+  // Force the position-settling effect below to re-run when that happens.
+  const firstLoadedChapter = useRef<number | null>(null);
+  useEffect(() => {
+    const chapter = chapters[0]?.chapter ?? null;
+    if (
+      chapter !== null &&
+      firstLoadedChapter.current !== null &&
+      chapter < firstLoadedChapter.current
+    ) {
+      initialScrollKey.current = '';
+      // A stale click-preserve flag would otherwise make the effect below
+      // treat this correction as "just clicked, skip scrolling."
+      preserveClickPosition.current = null;
+    }
+    firstLoadedChapter.current = chapter;
+  }, [chapters]);
+
   useEffect(() => {
     if (verses.length === 0) return;
     const key = `${resourceId}:${anchor.book}:${anchor.chapter}:${anchor.verse}`;
@@ -263,6 +297,12 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
       (verse) => verse.chapter === anchor.chapter && verse.verse === anchor.verse,
     );
     if (!target) return;
+
+    if (preserveClickPosition.current === target.key) {
+      preserveClickPosition.current = null;
+      initialScrollKey.current = key;
+      return;
+    }
 
     positioningTarget.current = target.key;
     suppressWindowShiftUntil.current = Date.now() + 500;
@@ -389,7 +429,9 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
           className="bible-panel__translation"
           aria-label="Translation"
           value={resourceId}
-          onChange={(event) => setState(patchState(state, { resourceId: event.target.value }))}
+          onChange={(event) =>
+            setState(patchState(state, { resourceId: event.target.value, highlightedWord: '' }))
+          }
         >
           {resources.map((resource) => (
             <option key={resource.id} value={resource.id}>
@@ -415,7 +457,7 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
         <div className="bible-panel__message" role="alert">
           {error}
         </div>
-      ) : loading || verses.length === 0 ? (
+      ) : loading && verses.length === 0 ? (
         <div className="bible-panel__message">Loading chapter...</div>
       ) : (
         <div
@@ -436,7 +478,7 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
               return (
                 <div
                   key={verse.key}
-                  ref={virtualizer.measureElement}
+                  ref={measureVerse}
                   data-index={virtualRow.index}
                   data-verse={verse.key}
                   className={`bible-panel__verse${
@@ -447,7 +489,21 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
                     verse.paragraphStart ? ' bible-panel__verse--para-start' : ''
                   }`}
                   style={{ transform: `translateY(${virtualRow.start}px)` }}
-                  onClick={() => navigateToVerse(verse.key)}
+                  onClick={(event) => {
+                    const selection = window.getSelection();
+                    if (selection && !selection.isCollapsed) return;
+                    const wordElement = (event.target as Element).closest<HTMLElement>('[data-word]');
+                    const word = wordElement?.dataset['word'];
+                    const target = fromVerseKey(verse.key);
+                    if (!word || !target) return;
+                    preserveClickPosition.current = verse.key;
+                    navigateTab(
+                      tabId,
+                      verse.key,
+                      formatReference({ start: target, end: target }),
+                      { highlightedWord: word },
+                    );
+                  }}
                 >
                   {verse.verse === 1 && verse.chapter !== anchor.chapter && (
                     <h3 className="bible-panel__chapter-marker" data-chapter={verse.chapter}>
@@ -477,6 +533,7 @@ export function SamplePanel({ tabId, state, setState }: PanelProps): React.JSX.E
                       footnotes={footnotes}
                       verseKey={verse.key}
                       showFootnotes={displayOptions.showFootnotes}
+                      {...(highlightedWord ? { highlightWord: highlightedWord } : {})}
                     />
                   </p>
                 </div>

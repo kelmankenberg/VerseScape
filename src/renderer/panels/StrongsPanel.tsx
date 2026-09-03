@@ -85,6 +85,7 @@ function useLexiconEntry(strongNumber: string): { definition: string | null } {
 
 function stripMarkup(value: string): string {
   return value
+    .replace(/<s n="[^"]+"\/>/gu, '')
     .replace(/<s>[^<]*<\/s>/gu, '')
     .replace(/<[^>]+>/gu, ' ')
     .replace(/\s+/gu, ' ')
