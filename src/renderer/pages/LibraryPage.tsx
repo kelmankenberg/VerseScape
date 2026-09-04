@@ -1,11 +1,17 @@
-import { BookOpen, Download, FilePlus2, Trash2, Upload } from 'lucide-react';
+import { BookOpen, ChevronDown, Download, FilePlus2, Trash2, Upload } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import type { NotebookRecord } from '@shared/ipc/contracts.js';
+import type { LibraryResource, NotebookRecord } from '@shared/ipc/contracts.js';
+import { useSettings } from '../stores/settings.js';
 import { useWorkspace } from '../workspace/store.js';
 
 export function LibraryPage(): React.JSX.Element {
   const openPanel = useWorkspace((store) => store.openPanel);
+  const setActivePage = useSettings((store) => store.setActivePage);
   const [commentaries, setCommentaries] = useState<NotebookRecord[]>([]);
+  const [resources, setResources] = useState<LibraryResource[]>([]);
+  const [detailsResourceId, setDetailsResourceId] = useState<string | null>(null);
+  const [removingResourceId, setRemovingResourceId] = useState<string | null>(null);
+  const [libraryAvailable, setLibraryAvailable] = useState(true);
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState('');
   const [abbreviation, setAbbreviation] = useState('');
@@ -14,10 +20,59 @@ export function LibraryPage(): React.JSX.Element {
   const importInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    void window.versescape.annotations.listNotebooks().then((result) => {
-      if (result.ok) setCommentaries(result.data.filter((notebook) => notebook.kind === 'commentary'));
-    });
+    void Promise.all([window.versescape.annotations.listNotebooks(), window.versescape.resources.listLibrary(), window.versescape.resources.getLibraryLocation()])
+      .then(([notebooksResult, resourcesResult, locationResult]) => {
+        if (notebooksResult.ok) setCommentaries(notebooksResult.data.filter((notebook) => notebook.kind === 'commentary'));
+        if (resourcesResult.ok) setResources(resourcesResult.data);
+        if (locationResult.ok) setLibraryAvailable(locationResult.data.available);
+      });
   }, []);
+
+  const toggleResource = (resource: LibraryResource): void => {
+    void window.versescape.resources.setEnabled({ id: resource.id, enabled: !resource.enabled }).then((result) => {
+      if (result.ok) setResources((current) => current.map((entry) => entry.id === result.data.id ? result.data : entry));
+    });
+  };
+
+  const formatSize = (sizeBytes: number): string => `${Math.max(1, Math.round(sizeBytes / 1024 / 1024))} MB`;
+
+  const removeResource = (resourceId: string): void => {
+    void window.versescape.resources.remove({ id: resourceId }).then((result) => {
+      if (result.ok) setResources((current) => current.filter((resource) => resource.id !== resourceId));
+      setRemovingResourceId(null);
+    });
+  };
+
+  const importResource = (): void => {
+    void window.versescape.resources.importArchive().then((result) => {
+      if (result.ok) setResources((current) => [...current, result.data].sort((left, right) => left.title.localeCompare(right.title)));
+    });
+  };
+
+  const openResource = (resource: LibraryResource): void => {
+    openPanel(
+      resource.type === 'bible' ? 'sample' : 'commentary',
+      undefined,
+      resource.type === 'bible'
+        ? { reference: 'John 3', verseKey: 43_003_001, resourceId: resource.id }
+        : {
+            reference: 'John 3',
+            verseKey: 43_003_001,
+            commentaryResourceId: resource.id,
+            commentaryAbbreviation: resource.abbreviation,
+          },
+    );
+    void setActivePage('workspace');
+  };
+
+  const openPersonalCommentary = (commentary: NotebookRecord): void => {
+    openPanel('commentary', undefined, {
+      reference: 'John 3',
+      verseKey: 43_003_001,
+      commentaryId: commentary.id,
+    });
+    void setActivePage('workspace');
+  };
 
   const createPersonalCommentary = (): void => {
     if (!title.trim() || !abbreviation.trim()) return;
@@ -123,10 +178,12 @@ export function LibraryPage(): React.JSX.Element {
         <div><h1>Library</h1><p>Installed resources and your Personal Commentaries.</p></div>
         <div className="library-page__actions">
           <input ref={importInputRef} type="file" accept="application/xml,.xml" hidden onChange={importXml} />
+          <button type="button" className="library-page__create" disabled={!libraryAvailable} onClick={importResource}><Upload size={15} /> Import Resource</button>
           <button type="button" className="library-page__create" onClick={() => importInputRef.current?.click()}><Upload size={15} /> Import XML</button>
           <button type="button" className="library-page__create" onClick={() => setCreating(true)}><FilePlus2 size={15} /> Create Personal Commentary</button>
         </div>
       </header>
+      {!libraryAvailable && <div className="library-page__unavailable">The configured resource folder is unavailable. Installed bundled resources remain readable; choose an available folder in Settings to import or remove resources.</div>}
       {creating && (
         <form className="library-page__create-form" onSubmit={(event) => { event.preventDefault(); createPersonalCommentary(); }}>
           <input autoFocus aria-label="Personal Commentary title" placeholder="Title" value={title} onChange={(event) => setTitle(event.target.value)} />
@@ -136,6 +193,44 @@ export function LibraryPage(): React.JSX.Element {
           <button type="submit" disabled={!title.trim() || !abbreviation.trim()}>Create</button>
         </form>
       )}
+      {(['bible', 'commentary'] as const).map((type) => {
+        const grouped = resources.filter((resource) => resource.type === type);
+        return (
+          <section className="library-page__section" aria-label={type === 'bible' ? 'Installed Bibles' : 'Installed Commentaries'} key={type}>
+            <h2>{type === 'bible' ? 'Installed Bibles' : 'Installed Commentaries'}</h2>
+            {grouped.length === 0 ? <p className="library-page__empty">No {type === 'bible' ? 'Bible' : 'commentary'} resources are installed.</p> : (
+              <div className="library-page__resources">
+                {grouped.map((resource) => (
+                  <article key={resource.id} className={`library-page__resource${resource.enabled ? '' : ' library-page__resource--disabled'}`}>
+                    <BookOpen size={20} aria-hidden />
+                    <div><h3>{resource.title}</h3><p>{resource.abbreviation} · {resource.language} · {formatSize(resource.sizeBytes)}</p></div>
+                    <label className="library-page__enabled"><input type="checkbox" checked={resource.enabled} onChange={() => toggleResource(resource)} /> Enabled</label>
+                    <button type="button" disabled={!resource.enabled} onClick={() => openResource(resource)}>Open</button>
+                    <button type="button" aria-label={`Show details for ${resource.title}`} title="Resource details" onClick={() => setDetailsResourceId((current) => current === resource.id ? null : resource.id)}><ChevronDown size={15} /></button>
+                    {resource.removable && <button type="button" aria-label={`Remove ${resource.title}`} title="Remove resource" onClick={() => setRemovingResourceId(resource.id)}><Trash2 size={15} /></button>}
+                    {detailsResourceId === resource.id && (
+                      <div className="library-page__resource-details">
+                        <strong>{resource.licence.spdx}</strong>
+                        <p>{resource.licence.text}</p>
+                        {resource.licence.attribution && <p>{resource.licence.attribution}</p>}
+                        {resource.licence.restrictions && <p>{resource.licence.restrictions}</p>}
+                        <a href={resource.licence.source} target="_blank" rel="noreferrer">Source</a>
+                        <span>Retrieved {resource.licence.retrieved}</span>
+                      </div>
+                    )}
+                    {removingResourceId === resource.id && (
+                      <div className="library-page__resource-details">
+                        <span>Remove this imported resource from this device?</span>
+                        <div><button type="button" onClick={() => setRemovingResourceId(null)}>Cancel</button><button type="button" onClick={() => removeResource(resource.id)}>Remove</button></div>
+                      </div>
+                    )}
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        );
+      })}
       <section className="library-page__section" aria-label="Personal Commentaries">
         <h2>Personal Commentaries</h2>
         {commentaries.length === 0 && <p className="library-page__empty">No Personal Commentaries yet. Create one when you want a dedicated Scripture-ordered work.</p>}
@@ -146,7 +241,7 @@ export function LibraryPage(): React.JSX.Element {
               <div><h3>{commentary.name}</h3><p>{commentary.abbreviation ?? 'PC'} · {commentary.noteCount} entries{commentary.description ? ` · ${commentary.description}` : ''}</p></div>
               <div className="library-page__resource-actions">
                 <button type="button" title="Export XML" aria-label={`Export ${commentary.name} as XML`} onClick={() => downloadXml(commentary)}><Download size={14} /></button>
-                <button type="button" onClick={() => openPanel('commentary', undefined, { reference: 'John 3', verseKey: 43_003_001, commentaryId: commentary.id })}>Open</button>
+                <button type="button" onClick={() => openPersonalCommentary(commentary)}>Open</button>
                 <button type="button" title="Delete Personal Commentary" aria-label={`Delete ${commentary.name}`} onClick={() => setDeletingCommentaryId(commentary.id)}><Trash2 size={14} /></button>
               </div>
               {deletingCommentaryId === commentary.id && (

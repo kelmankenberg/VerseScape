@@ -6,12 +6,14 @@ import { Rail } from './Rail.js';
 import { Sidebar } from './Sidebar.js';
 import { StatusBar } from './StatusBar.js';
 import { PageRouter } from './PageRouter.js';
+import { useWorkspacePersistence } from '../workspace/use-workspace-persistence.js';
 import './shell.css';
 
 export function AppShell(): React.JSX.Element {
   const loaded = useSettings((state) => state.loaded);
   const load = useSettings((state) => state.load);
   const toggleRail = useSettings((state) => state.toggleRail);
+  const workspaceReady = useWorkspacePersistence();
 
   useAppliedTheme();
 
@@ -32,7 +34,7 @@ export function AppShell(): React.JSX.Element {
 
   // Render nothing until settings arrive, so the shell does not flash the
   // default theme and rail state before the real ones load.
-  if (!loaded) return <div className="shell shell--loading" />;
+  if (!loaded || !workspaceReady) return <div className="shell shell--loading" />;
 
   return (
     <div className="shell">

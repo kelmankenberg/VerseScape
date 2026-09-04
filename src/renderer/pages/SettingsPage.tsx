@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { themePreference } from '@shared/settings.js';
 import type { AppSettings, ThemePreference } from '@shared/settings.js';
 import { useSettings } from '../stores/settings.js';
@@ -39,6 +39,21 @@ export function SettingsPage(): React.JSX.Element {
   const setTheme = useSettings((state) => state.setTheme);
   const patch = useSettings((state) => state.patch);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [libraryLocation, setLibraryLocation] = useState<{ path: string | null; available: boolean } | null>(null);
+
+  useEffect(() => {
+    void window.versescape.resources.getLibraryLocation().then((result) => {
+      if (result.ok) setLibraryLocation(result.data);
+    });
+  }, []);
+
+  const chooseLibraryLocation = (): void => {
+    void window.versescape.resources.chooseLibraryLocation().then((result) => {
+      if (!result.ok) return;
+      setLibraryLocation(result.data);
+      void patch({ library: { location: result.data.path } });
+    });
+  };
 
   return (
     <div className="settings">
@@ -123,13 +138,26 @@ export function SettingsPage(): React.JSX.Element {
         ))}
       </section>
 
+      <section className="settings__section" aria-labelledby="library-heading">
+        <h2 id="library-heading" className="settings__section-title">Library</h2>
+        <div className="settings__row">
+          <div className="settings__label">
+            <span>Resource location</span>
+            <span className={`settings__hint${libraryLocation && !libraryLocation.available ? ' settings__hint--error' : ''}`}>
+              {libraryLocation?.path ?? 'Default application data location'}
+              {libraryLocation && !libraryLocation.available ? ' is unavailable.' : ''}
+            </span>
+          </div>
+          <button type="button" className="button" onClick={chooseLibraryLocation}>Choose folder</button>
+        </div>
+      </section>
+
       <section className="settings__section" aria-labelledby="pending-heading">
         <h2 id="pending-heading" className="settings__section-title">
           Coming later
         </h2>
         <ul className="settings__pending">
           <li>Keyboard shortcuts and rebinding — M7</li>
-          <li>Library and resource locations — M6</li>
           <li>Data, backup and export — M8</li>
         </ul>
       </section>

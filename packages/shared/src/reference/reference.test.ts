@@ -36,6 +36,8 @@ describe('canon', () => {
     ['1 John', '1JN'],
     ['1john', '1JN'],
     ['I John', '1JN'],
+    ['II Corinthians', '2CO'],
+    ['iChr', '1CH'],
     ['Song of Solomon', 'SNG'],
     ['Ps', 'PSA'],
     ['Psalms', 'PSA'],

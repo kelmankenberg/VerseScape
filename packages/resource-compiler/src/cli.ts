@@ -14,6 +14,8 @@ import type { VersificationMeta } from './tvtms.js';
 import { emitCrossReferences, parseCrossReferences } from './cross-references.js';
 import { compileLexicon, lexiconMeta } from './lexicon.js';
 import { applyStrongMarkers, parseBsbTables } from './bsb-tables.js';
+import { compileCommentary } from './commentary.js';
+import { normalizeCcelCommentaryEpub } from './commentary-epub.js';
 
 /**
  * Runs under Electron's Node (`ELECTRON_RUN_AS_NODE=1`), so better-sqlite3 is
@@ -372,6 +374,32 @@ export function selfTest(): number {
     check('stores cross-reference ranges', strongest?.to_end === 43_001_003);
     check('indexes cross-references by vote strength', strongest?.votes === 378);
     crossRefDb.close();
+
+    const commentarySource = join(dir, 'commentary.json');
+    const commentaryOut = join(dir, 'commentary');
+    const commentaryMeta: ResourceMeta = {
+      ...meta,
+      id: 'fixture-commentary',
+      title: 'Fixture Commentary',
+      abbreviation: 'FC',
+      type: 'commentary',
+    };
+    writeFileSync(commentarySource, JSON.stringify({ entries: [
+      { id: 'introduction', bookId: 'JHN', chapter: 3, title: 'John 3 introduction', body: 'Introduction.' },
+      { id: 'john-3-16', bookId: 'JHN', chapter: 3, startKey: 43_003_016, endKey: 43_003_016, title: 'John 3:16', body: 'Verse entry.' },
+    ] }), 'utf8');
+    check('compiles commentary entries', compileCommentary(commentarySource, commentaryOut, commentaryMeta) === 2);
+    const commentaryDb = new Database(join(commentaryOut, 'fixture-commentary.db'), { readonly: true });
+    const commentaryEntries = commentaryDb.prepare('SELECT COUNT(*) AS n FROM entry').get() as { n: number };
+    check('stores commentary entries', commentaryEntries.n === 2);
+    const commentaryHit = commentaryDb.prepare("SELECT rowid FROM entry_fts WHERE entry_fts MATCH 'verse'").get() as { rowid: number } | undefined;
+    check('builds a commentary FTS index', commentaryHit !== undefined);
+    commentaryDb.close();
+    const commentaryOutTwo = join(dir, 'commentary2');
+    compileCommentary(commentarySource, commentaryOutTwo, commentaryMeta);
+    check('produces deterministic commentary output',
+      createHash('sha256').update(readFileSync(join(commentaryOut, 'fixture-commentary.db'))).digest('hex') ===
+      createHash('sha256').update(readFileSync(join(commentaryOutTwo, 'fixture-commentary.db'))).digest('hex'));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -442,6 +470,37 @@ function main(): void {
     process.exit(count > 0 ? 0 : 1);
   }
 
+  if (args[0] === '--commentary') {
+    const [, sourcePath, outputDir, metaPath] = args;
+    if (!sourcePath || !outputDir || !metaPath) {
+      console.error('Usage: cli --commentary <entries.json> <output-dir> <meta.json>');
+      process.exit(1);
+    }
+    const document: unknown = JSON.parse(readFileSync(metaPath, 'utf8'));
+    const metadata = typeof document === 'object' && document !== null && 'meta' in document ? document.meta : document;
+    const parsed = resourceMeta.safeParse(metadata);
+    if (!parsed.success) {
+      console.error(`Invalid commentary metadata in ${metaPath}:`);
+      console.error(z.prettifyError(parsed.error));
+      process.exit(1);
+    }
+    const count = compileCommentary(sourcePath, outputDir, parsed.data);
+    console.log(`Wrote ${count} commentary entries to ${outputDir}`);
+    process.exit(count > 0 ? 0 : 1);
+  }
+
+  if (args[0] === '--commentary-epub') {
+    const [, sourcePath, outputPath] = args;
+    if (!sourcePath || !outputPath) {
+      console.error('Usage: cli --commentary-epub <source.epub> <entries.json>');
+      process.exit(1);
+    }
+    const entries = normalizeCcelCommentaryEpub(sourcePath);
+    writeFileSync(outputPath, `${JSON.stringify({ entries }, null, 2)}\n`, 'utf8');
+    console.log(`Extracted ${entries.length} commentary entries to ${outputPath}`);
+    process.exit(0);
+  }
+
   const strongsFlagIndex = args.indexOf('--strongs-table');
   const strongsTablePath = strongsFlagIndex >= 0 ? args[strongsFlagIndex + 1] : undefined;
   const positional =
@@ -452,7 +511,7 @@ function main(): void {
   const [sourceDir, outputDir, metaPath] = positional;
   if (!sourceDir || !outputDir || !metaPath) {
     console.error(
-      'Usage:\n  cli --selftest\n  cli --versification <tvtms-file> <output-dir> <meta.json>\n  cli <usfm-dir> <output-dir> <meta.json> [--strongs-table <tsv-file>]',
+      'Usage:\n  cli --selftest\n  cli --versification <tvtms-file> <output-dir> <meta.json>\n  cli --commentary-epub <source.epub> <entries.json>\n  cli --commentary <entries.json> <output-dir> <meta.json>\n  cli <usfm-dir> <output-dir> <meta.json> [--strongs-table <tsv-file>]',
     );
     process.exit(1);
   }

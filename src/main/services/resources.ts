@@ -1,14 +1,23 @@
 import { app } from 'electron';
-import { existsSync, readdirSync, realpathSync } from 'node:fs';
-import { join, sep } from 'node:path';
+import { accessSync, constants, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync, realpathSync, statSync } from 'node:fs';
+import { basename, isAbsolute, join, normalize, sep } from 'node:path';
+import { createHash, randomUUID } from 'node:crypto';
+import AdmZip from 'adm-zip';
 import Database from 'better-sqlite3';
+import { z } from 'zod';
 import { getBook } from '@shared/reference/canon.js';
+import { loadSettings, patchSettings } from './settings.js';
 import type {
   ChapterData,
   ChapterRequest,
+  CommentaryResourceEntriesRequest,
+  CommentaryResourceEntry,
   ConcordanceRequest,
   CrossReference,
   CrossReferenceRequest,
+  LibraryResource,
+  LibraryLocation,
+  ResourceEnabledRequest,
   ResourceSummary,
 } from '@shared/ipc/contracts.js';
 
@@ -26,6 +35,26 @@ function openLexicon(strongNumber: string): Database.Database | null {
 const RESOURCE_SCHEMA_VERSION = '1';
 const openDatabases = new Map<string, Database.Database>();
 
+const libraryManifest = z.object({
+  schemaVersion: z.literal(1),
+  id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u),
+  title: z.string().min(1),
+  abbreviation: z.string().min(1),
+  type: z.enum(['bible', 'commentary']),
+  language: z.string().min(2),
+  versification: z.string().min(1),
+  licence: z.object({
+    spdx: z.string().min(1),
+    text: z.string().min(1),
+    attribution: z.string().nullable(),
+    source: z.url(),
+    retrieved: z.string().min(1),
+    redistributable: z.boolean(),
+    restrictions: z.string().nullable(),
+  }),
+  files: z.array(z.object({ path: z.string().min(1), sha256: z.string().min(1) })).min(1),
+});
+
 function resourceRoot(): string {
   if (process.env.VERSESCAPE_RESOURCE_DIR) return process.env.VERSESCAPE_RESOURCE_DIR;
   return app.isPackaged
@@ -33,14 +62,71 @@ function resourceRoot(): string {
     : join(process.cwd(), 'resources', 'compiled');
 }
 
+function userResourceRoot(): string {
+  return loadSettings().library.location ?? join(app.getPath('userData'), 'resources');
+}
+
+export function setLibraryLocation(location: string): string {
+  const destination = normalize(location);
+  if (!isAbsolute(destination)) throw new Error('Library location must be absolute.');
+  mkdirSync(destination, { recursive: true });
+  accessSync(destination, constants.W_OK);
+  const source = userResourceRoot();
+  if (source === destination || !existsSync(source)) {
+    patchSettings({ library: { location: destination } });
+    return destination;
+  }
+  const directories = readdirSync(source, { withFileTypes: true }).filter((entry) => entry.isDirectory() && /^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(entry.name));
+  const moved: string[] = [];
+  try {
+    for (const entry of directories) {
+      const from = join(source, entry.name);
+      const to = join(destination, entry.name);
+      if (existsSync(to)) throw new Error(`The destination already contains ${entry.name}.`);
+      renameSync(from, to);
+      moved.push(entry.name);
+    }
+    patchSettings({ library: { location: destination } });
+    return destination;
+  } catch (cause) {
+    for (const id of moved.reverse()) renameSync(join(destination, id), join(source, id));
+    throw cause;
+  }
+}
+
+export function libraryLocationStatus(): LibraryLocation {
+  const configured = loadSettings().library.location;
+  if (!configured) return { path: null, available: true };
+  try {
+    accessSync(configured, constants.R_OK | constants.W_OK);
+    return { path: configured, available: true };
+  } catch {
+    return { path: configured, available: false };
+  }
+}
+
+function resourceRoots(): string[] {
+  return [...new Set([userResourceRoot(), resourceRoot()])];
+}
+
+function resourceDirectory(id: string): string | null {
+  for (const root of resourceRoots()) {
+    const directory = join(root, id);
+    if (existsSync(join(directory, `${id}.db`))) return directory;
+  }
+  return null;
+}
+
 export function isResourceInstalled(id: string): boolean {
-  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(id) && existsSync(join(resourceRoot(), id, `${id}.db`));
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(id) && resourceDirectory(id) !== null;
 }
 
 export function resolveResourceAsset(id: string, relativePath: string): string | null {
   if (!isResourceInstalled(id)) return null;
 
-  const assetRoot = join(resourceRoot(), id, 'assets');
+  const directory = resourceDirectory(id);
+  if (!directory) return null;
+  const assetRoot = join(directory, 'assets');
   const candidate = join(assetRoot, ...relativePath.split('/'));
   if (!existsSync(candidate)) return null;
 
@@ -61,7 +147,9 @@ function openResource(id: string): Database.Database {
   const cached = openDatabases.get(id);
   if (cached) return cached;
 
-  const path = join(resourceRoot(), id, `${id}.db`);
+  const directory = resourceDirectory(id);
+  if (!directory) throw new Error(`Resource ${id} is not installed.`);
+  const path = join(directory, `${id}.db`);
   const db = new Database(path, { readonly: true, fileMustExist: true });
   try {
     const meta = metadata(db);
@@ -76,6 +164,25 @@ function openResource(id: string): Database.Database {
     return db;
   } catch (cause) {
     db.close();
+    throw cause;
+  }
+}
+
+function openCommentaryResource(id: string): Database.Database {
+  const cached = openDatabases.get(id);
+  if (cached) return cached;
+  const directory = resourceDirectory(id);
+  if (!directory) throw new Error(`Commentary ${id} is not installed.`);
+  const database = new Database(join(directory, `${id}.db`), { readonly: true, fileMustExist: true });
+  try {
+    const meta = metadata(database);
+    if (meta.get('schemaVersion') !== RESOURCE_SCHEMA_VERSION || meta.get('id') !== id || meta.get('type') !== 'commentary') {
+      throw new Error(`Commentary ${id} is incompatible with this version of VerseScape.`);
+    }
+    openDatabases.set(id, database);
+    return database;
+  } catch (cause) {
+    database.close();
     throw cause;
   }
 }
@@ -101,12 +208,13 @@ function openCrossReferences(): Database.Database | null {
 }
 
 export function listResources(): ResourceSummary[] {
-  const root = resourceRoot();
-  if (!existsSync(root)) return [];
-
   const resources: ResourceSummary[] = [];
-  for (const entry of readdirSync(root, { withFileTypes: true })) {
+  const seen = new Set<string>();
+  for (const root of resourceRoots()) {
+    if (!existsSync(root)) continue;
+    for (const entry of readdirSync(root, { withFileTypes: true })) {
     if (!entry.isDirectory() || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(entry.name)) continue;
+    if (seen.has(entry.name)) continue;
     if (!existsSync(join(root, entry.name, `${entry.name}.db`))) continue;
 
     let meta: Map<string, string>;
@@ -124,9 +232,117 @@ export function listResources(): ResourceSummary[] {
       language: meta.get('language') ?? 'und',
       versification: meta.get('versification') ?? 'unknown',
     });
+    seen.add(entry.name);
+    }
   }
 
+  const disabled = new Set(loadSettings().library.disabledResourceIds);
+  return resources.filter((resource) => !disabled.has(resource.id)).sort((left, right) => left.title.localeCompare(right.title));
+}
+
+export function listLibraryResources(): LibraryResource[] {
+  const disabled = new Set(loadSettings().library.disabledResourceIds);
+  const resources: LibraryResource[] = [];
+  const seen = new Set<string>();
+  for (const root of resourceRoots()) {
+    if (!existsSync(root)) continue;
+    for (const entry of readdirSync(root, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    if (seen.has(entry.name)) continue;
+    const directory = join(root, entry.name);
+    const manifestPath = join(directory, 'manifest.json');
+    if (!existsSync(manifestPath)) continue;
+    try {
+      const manifest = libraryManifest.parse(JSON.parse(readFileSync(manifestPath, 'utf8')));
+      const sizeBytes = manifest.files.reduce((total, file) => {
+        const filePath = join(directory, file.path);
+        return total + (existsSync(filePath) ? statSync(filePath).size : 0);
+      }, 0);
+      resources.push({
+        id: manifest.id,
+        title: manifest.title,
+        abbreviation: manifest.abbreviation,
+        type: manifest.type,
+        language: manifest.language,
+        versification: manifest.versification,
+        enabled: !disabled.has(manifest.id),
+        removable: directory.startsWith(`${userResourceRoot()}${sep}`),
+        sizeBytes,
+        licence: manifest.licence,
+      });
+      seen.add(manifest.id);
+    } catch {
+      // Invalid or auxiliary manifests cannot become Library resources.
+    }
+    }
+  }
   return resources.sort((left, right) => left.title.localeCompare(right.title));
+}
+
+export function setResourceEnabled(request: ResourceEnabledRequest): LibraryResource {
+  const resource = listLibraryResources().find((candidate) => candidate.id === request.id);
+  if (!resource) throw new Error('Resource not found.');
+  const disabled = new Set(loadSettings().library.disabledResourceIds);
+  if (request.enabled) disabled.delete(request.id);
+  else disabled.add(request.id);
+  patchSettings({ library: { disabledResourceIds: [...disabled].sort() } });
+  return { ...resource, enabled: request.enabled };
+}
+
+export function removeUserResource(id: string): void {
+  const directory = join(userResourceRoot(), id);
+  if (!existsSync(directory)) throw new Error('Only user-imported resources can be removed.');
+  const database = openDatabases.get(id);
+  if (database) {
+    database.close();
+    openDatabases.delete(id);
+  }
+  rmSync(directory, { recursive: true, force: false });
+  const disabled = new Set(loadSettings().library.disabledResourceIds);
+  disabled.delete(id);
+  patchSettings({ library: { disabledResourceIds: [...disabled].sort() } });
+}
+
+export function importResourceArchive(archivePath: string): LibraryResource {
+  const archive = new AdmZip(archivePath);
+  const entries = archive.getEntries();
+  if (entries.length === 0 || entries.length > 1_000) throw new Error('Resource archive has an unsafe entry count.');
+  const manifestEntry = entries.find((entry) => entry.entryName === 'manifest.json' && !entry.isDirectory);
+  if (!manifestEntry) throw new Error('Resource archive has no manifest.');
+  const manifest = libraryManifest.parse(JSON.parse(manifestEntry.getData().toString('utf8')));
+  const allowed = new Set(['manifest.json', ...manifest.files.map((file) => file.path)]);
+  let totalSize = 0;
+  for (const entry of entries) {
+    const name = entry.entryName;
+    if (entry.isDirectory) continue;
+    if (isAbsolute(name) || normalize(name).startsWith(`..${sep}`) || basename(name) !== name && name.includes('..')) throw new Error('Resource archive contains an unsafe path.');
+    if (!allowed.has(name)) throw new Error('Resource archive contains undeclared files.');
+    totalSize += entry.header.size;
+  }
+  if (totalSize > 1_000_000_000) throw new Error('Resource archive is too large.');
+  const fileData = new Map(entries.filter((entry) => !entry.isDirectory).map((entry) => [entry.entryName, entry.getData()]));
+  for (const file of manifest.files) {
+    const data = fileData.get(file.path);
+    if (!data || createHash('sha256').update(data).digest('hex') !== file.sha256) throw new Error(`Resource checksum failed for ${file.path}.`);
+  }
+  const target = join(userResourceRoot(), manifest.id);
+  if (existsSync(target)) throw new Error('A resource with this id is already installed.');
+  const temporary = `${target}.tmp-${randomUUID()}`;
+  try {
+    mkdirSync(temporary, { recursive: true });
+    for (const [name, data] of fileData) {
+      const destination = join(temporary, name);
+      mkdirSync(join(destination, '..'), { recursive: true });
+      writeFileSync(destination, data);
+    }
+    renameSync(temporary, target);
+  } catch (cause) {
+    rmSync(temporary, { recursive: true, force: true });
+    throw cause;
+  }
+  const resource = listLibraryResources().find((candidate) => candidate.id === manifest.id);
+  if (!resource) throw new Error('Imported resource could not be catalogued.');
+  return resource;
 }
 
 export function getChapter(request: ChapterRequest): ChapterData {
@@ -193,6 +409,26 @@ export function getChapter(request: ChapterRequest): ChapterData {
       text: footnote.text,
     })),
   };
+}
+
+export function listCommentaryResourceEntries(request: CommentaryResourceEntriesRequest): CommentaryResourceEntry[] {
+  const database = openCommentaryResource(request.resourceId);
+  const clauses = ['book_id = ?'];
+  const values: Array<string | number> = [request.bookId];
+  if (request.chapter !== undefined) {
+    clauses.push('(chapter IS NULL OR chapter = ?)');
+    values.push(request.chapter);
+  }
+  const rows = database.prepare(`SELECT id, title, body, start_key AS startKey, end_key AS endKey
+    FROM entry WHERE ${clauses.join(' AND ')}
+    ORDER BY start_key IS NULL, start_key, end_key, id`).all(...values) as Array<{
+    id: string;
+    title: string;
+    body: string;
+    startKey: number | null;
+    endKey: number | null;
+  }>;
+  return rows.map((row) => ({ ...row, resourceId: request.resourceId }));
 }
 
 export function getConcordance(request: ConcordanceRequest): Array<{ verseKey: number; text: string }> {

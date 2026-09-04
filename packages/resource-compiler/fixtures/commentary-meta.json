@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "id": "fixture-commentary",
+    "title": "Fixture Commentary",
+    "abbreviation": "FC",
+    "type": "commentary",
+    "language": "en",
+    "versification": "kjv",
+    "licence": "Public domain fixture.",
+    "licenceSpdx": "PublicDomain",
+    "source": "https://example.test/fixture-commentary",
+    "retrieved": "2026-09-04",
+    "redistributable": true
+  }
+}

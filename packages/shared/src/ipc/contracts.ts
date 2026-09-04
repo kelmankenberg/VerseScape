@@ -37,11 +37,68 @@ export const resourceSummary = z.object({
 });
 export type ResourceSummary = z.infer<typeof resourceSummary>;
 
-const bookIdPattern = /^(?:[1-3])?[A-Z]{3}$/u;
+const bookIdPattern = /^(?:[1-3])?[A-Z]{2,3}$/u;
+
+export const libraryResource = z.object({
+  id: resourceSummary.shape.id,
+  title: z.string().min(1),
+  abbreviation: z.string().min(1),
+  type: z.enum(['bible', 'commentary']),
+  language: z.string().min(2),
+  versification: z.string().min(1),
+  enabled: z.boolean(),
+  removable: z.boolean(),
+  sizeBytes: z.number().int().nonnegative(),
+  licence: z.object({
+    spdx: z.string().min(1),
+    text: z.string().min(1),
+    attribution: z.string().nullable(),
+    source: z.url(),
+    retrieved: z.string().min(1),
+    redistributable: z.boolean(),
+    restrictions: z.string().nullable(),
+  }),
+});
+export type LibraryResource = z.infer<typeof libraryResource>;
+
+export const resourceEnabledRequest = z.object({
+  id: resourceSummary.shape.id,
+  enabled: z.boolean(),
+});
+export type ResourceEnabledRequest = z.infer<typeof resourceEnabledRequest>;
+
+export const commentaryResourceEntry = z.object({
+  id: z.string().min(1),
+  resourceId: resourceSummary.shape.id,
+  title: z.string(),
+  body: z.string(),
+  startKey: z.number().int().positive().nullable(),
+  endKey: z.number().int().positive().nullable(),
+});
+export type CommentaryResourceEntry = z.infer<typeof commentaryResourceEntry>;
+
+export const commentaryResourceEntriesRequest = z.object({
+  resourceId: resourceSummary.shape.id,
+  bookId: z.string().regex(bookIdPattern),
+  chapter: z.number().int().positive().optional(),
+});
+export type CommentaryResourceEntriesRequest = z.infer<typeof commentaryResourceEntriesRequest>;
+
+export const libraryLocation = z.object({
+  path: z.string().min(1).nullable(),
+  available: z.boolean(),
+});
+export type LibraryLocation = z.infer<typeof libraryLocation>;
+
+export const libraryLocationRequest = z.object({ path: z.string().min(1) });
+export type LibraryLocationRequest = z.infer<typeof libraryLocationRequest>;
+
+export const libraryResourceIdRequest = z.object({ id: resourceSummary.shape.id });
+export type LibraryResourceIdRequest = z.infer<typeof libraryResourceIdRequest>;
 
 export const chapterRequest = z.object({
   resourceId: resourceSummary.shape.id,
-  bookId: z.string().regex(/^(?:[1-3])?[A-Z]{3}$/u),
+  bookId: z.string().regex(bookIdPattern),
   chapter: z.number().int().positive(),
 });
 export type ChapterRequest = z.infer<typeof chapterRequest>;
@@ -381,6 +438,14 @@ export const contracts = {
   'workspace:get': { request: emptyRequest, response: workspaceSchema.nullable() },
   'workspace:save': { request: workspaceSchema, response: z.null() },
   'resource:list': { request: emptyRequest, response: z.array(resourceSummary) },
+  'resource:list-library': { request: emptyRequest, response: z.array(libraryResource) },
+  'resource:set-enabled': { request: resourceEnabledRequest, response: libraryResource },
+  'resource:remove': { request: libraryResourceIdRequest, response: z.null() },
+  'resource:import-archive': { request: emptyRequest, response: libraryResource },
+  'resource:choose-library-location': { request: emptyRequest, response: libraryLocation },
+  'resource:set-library-location': { request: libraryLocationRequest, response: libraryLocation },
+  'resource:get-library-location': { request: emptyRequest, response: libraryLocation },
+  'resource:list-commentary-entries': { request: commentaryResourceEntriesRequest, response: z.array(commentaryResourceEntry) },
   'resource:get-chapter': { request: chapterRequest, response: chapterData },
   'resource:get-cross-references': {
     request: crossReferenceRequest,

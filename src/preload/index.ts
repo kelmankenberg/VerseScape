@@ -6,9 +6,12 @@ import type {
   BookmarkRecord,
   CommentaryEntryRecord,
   ChapterData,
+  CommentaryResourceEntry,
   CrossReference,
   HighlightRecord,
   LexiconEntry,
+  LibraryResource,
+  LibraryLocation,
   NoteRecord,
   NoteAnchorRecord,
   NotebookRecord,
@@ -44,6 +47,22 @@ const bridge: VerseScapeBridge = {
   resources: {
     list: () =>
       ipcRenderer.invoke(IpcChannels.resourceList) as Promise<IpcResult<ResourceSummary[]>>,
+    listLibrary: () =>
+      ipcRenderer.invoke(IpcChannels.resourceListLibrary) as Promise<IpcResult<LibraryResource[]>>,
+    setEnabled: (request) =>
+      ipcRenderer.invoke(IpcChannels.resourceSetEnabled, request) as Promise<IpcResult<LibraryResource>>,
+    importArchive: () =>
+      ipcRenderer.invoke(IpcChannels.resourceImportArchive) as Promise<IpcResult<LibraryResource>>,
+    remove: (request) =>
+      ipcRenderer.invoke(IpcChannels.resourceRemove, request) as Promise<IpcResult<null>>,
+    chooseLibraryLocation: () =>
+      ipcRenderer.invoke(IpcChannels.resourceChooseLibraryLocation) as Promise<IpcResult<LibraryLocation>>,
+    setLibraryLocation: (request) =>
+      ipcRenderer.invoke(IpcChannels.resourceSetLibraryLocation, request) as Promise<IpcResult<LibraryLocation>>,
+    getLibraryLocation: () =>
+      ipcRenderer.invoke(IpcChannels.resourceGetLibraryLocation) as Promise<IpcResult<LibraryLocation>>,
+    listCommentaryEntries: (request) =>
+      ipcRenderer.invoke(IpcChannels.resourceListCommentaryEntries, request) as Promise<IpcResult<CommentaryResourceEntry[]>>,
     getChapter: (request) =>
       ipcRenderer.invoke(IpcChannels.resourceGetChapter, request) as Promise<
         IpcResult<ChapterData>

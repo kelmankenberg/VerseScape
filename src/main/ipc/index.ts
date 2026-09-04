@@ -1,4 +1,4 @@
-import { app, BrowserWindow, clipboard, ClipboardItem } from 'electron';
+import { app, BrowserWindow, clipboard, ClipboardItem, dialog } from 'electron';
 import { is } from '@electron-toolkit/utils';
 import { IpcChannels } from '@shared/ipc/channels.js';
 import type { AppInfo, WindowState } from '@shared/ipc/contracts.js';
@@ -7,7 +7,7 @@ import { handle } from './handle.js';
 import { readWindowState } from '../platform/window-manager.js';
 import { loadSettings, patchSettings } from '../services/settings.js';
 import { loadWorkspace, saveWorkspace } from '../services/workspace.js';
-import { getChapter, getConcordance, getCrossReferences, getLexiconEntry, listResources } from '../services/resources.js';
+import { getChapter, getConcordance, getCrossReferences, getLexiconEntry, importResourceArchive, libraryLocationStatus, listCommentaryResourceEntries, listLibraryResources, listResources, removeUserResource, setLibraryLocation, setResourceEnabled } from '../services/resources.js';
 import {
   addNoteAnchor,
   addTagLink,
@@ -99,6 +99,28 @@ export function registerIpcHandlers(): void {
   });
 
   handle(IpcChannels.resourceList, () => listResources());
+  handle(IpcChannels.resourceListLibrary, () => listLibraryResources());
+  handle(IpcChannels.resourceSetEnabled, (request) => setResourceEnabled(request));
+  handle(IpcChannels.resourceRemove, (request) => {
+    removeUserResource(request.id);
+    return null;
+  });
+  handle(IpcChannels.resourceImportArchive, async (_request, event) => {
+    const selection = await dialog.showOpenDialog(requireWindow(event), {
+      properties: ['openFile'],
+      filters: [{ name: 'VerseScape Resource', extensions: ['vsres'] }],
+    });
+    if (selection.canceled || !selection.filePaths[0]) throw new Error('No resource archive selected.');
+    return importResourceArchive(selection.filePaths[0]);
+  });
+  handle(IpcChannels.resourceChooseLibraryLocation, async (_request, event) => {
+    const selection = await dialog.showOpenDialog(requireWindow(event), { properties: ['openDirectory', 'createDirectory'] });
+    if (selection.canceled || !selection.filePaths[0]) return libraryLocationStatus();
+    return { path: setLibraryLocation(selection.filePaths[0]), available: true };
+  });
+  handle(IpcChannels.resourceSetLibraryLocation, (request) => ({ path: setLibraryLocation(request.path), available: true }));
+  handle(IpcChannels.resourceGetLibraryLocation, () => libraryLocationStatus());
+  handle(IpcChannels.resourceListCommentaryEntries, (request) => listCommentaryResourceEntries(request));
 
   handle(IpcChannels.resourceGetChapter, (request) => getChapter(request));
 

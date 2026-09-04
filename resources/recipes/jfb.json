@@ -1,0 +1,26 @@
+{
+  "file": {
+    "url": "https://ccel.org/ccel/j/jamieson/jfb/cache/jfb.epub",
+    "name": "jfb.epub",
+    "sha256": "8999173326aa66b5a852f3730ce856245f545dba313416882abdb0e9712f353d"
+  },
+  "commentary": {
+    "minimumEntries": 16000,
+    "minimumBooks": 48
+  },
+  "meta": {
+    "id": "jfb",
+    "title": "Commentary Critical and Explanatory on the Whole Bible",
+    "abbreviation": "JFB",
+    "type": "commentary",
+    "language": "en",
+    "versification": "kjv",
+    "licence": "Public domain text. CCEL is the source; its source-file formatting is discarded during compilation.",
+    "licenceSpdx": "PublicDomain",
+    "source": "https://ccel.org/ccel/jamieson/jfb/jfb.html",
+    "retrieved": "2026-09-04",
+    "attribution": "Source text from the Christian Classics Ethereal Library (CCEL).",
+    "redistributable": true,
+    "restrictions": "CCEL source formatting is not reproduced."
+  }
+}

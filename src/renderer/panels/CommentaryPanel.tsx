@@ -1,7 +1,7 @@
 import { BookOpen, FilePlus2, Pencil, Save, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { formatReference, fromVerseKey } from '@shared/reference/index.js';
-import type { CommentaryAnchorKind, CommentaryEntryRecord, NotebookRecord } from '@shared/ipc/contracts.js';
+import type { CommentaryAnchorKind, CommentaryEntryRecord, CommentaryResourceEntry, LibraryResource, NotebookRecord } from '@shared/ipc/contracts.js';
 import { useVerseSync } from '../workspace/use-verse-sync.js';
 import { useWorkspace } from '../workspace/store.js';
 import type { PanelProps } from './registry.js';
@@ -15,10 +15,15 @@ export function CommentaryPanel({ tabId, state }: PanelProps): React.JSX.Element
     ? state['verseKey'] : null;
   const requestedCommentaryId = typeof state === 'object' && state !== null && !Array.isArray(state) && typeof state['commentaryId'] === 'string'
     ? state['commentaryId'] : null;
+  const requestedInstalledResourceId = typeof state === 'object' && state !== null && !Array.isArray(state) && typeof state['commentaryResourceId'] === 'string'
+    ? state['commentaryResourceId'] : null;
   const verseKey = syncVerseKey ?? stateVerseKey;
   const reference = verseKey ? fromVerseKey(verseKey) : null;
   const [commentaries, setCommentaries] = useState<NotebookRecord[]>([]);
-  const [commentaryId, setCommentaryId] = useState<string | null>(null);
+  const [installedCommentaries, setInstalledCommentaries] = useState<LibraryResource[]>([]);
+  const [installedResourceId, setInstalledResourceId] = useState<string | null>(requestedInstalledResourceId);
+  const [installedEntries, setInstalledEntries] = useState<CommentaryResourceEntry[]>([]);
+  const [commentaryId, setCommentaryId] = useState<string | null>(requestedCommentaryId);
   const [entries, setEntries] = useState<CommentaryEntryRecord[]>([]);
   const [editOpen, setEditOpen] = useState(false);
   const [entryKind, setEntryKind] = useState<CommentaryAnchorKind>('verse_range');
@@ -29,17 +34,26 @@ export function CommentaryPanel({ tabId, state }: PanelProps): React.JSX.Element
   useVerseSync({ tabId, containerRef });
 
   useEffect(() => {
-    void window.versescape.annotations.listNotebooks().then((result) => {
-      if (!result.ok) return;
-      const personalCommentaries = result.data.filter((notebook) => notebook.kind === 'commentary');
-      setCommentaries(personalCommentaries);
-      setCommentaryId((current) => {
-        if (requestedCommentaryId && personalCommentaries.some((commentary) => commentary.id === requestedCommentaryId)) return requestedCommentaryId;
-        return current && personalCommentaries.some((commentary) => commentary.id === current)
-          ? current : personalCommentaries[0]?.id ?? null;
+    void Promise.all([window.versescape.annotations.listNotebooks(), window.versescape.resources.listLibrary()])
+      .then(([notebookResult, resourceResult]) => {
+        if (notebookResult.ok) {
+          const personalCommentaries = notebookResult.data.filter((notebook) => notebook.kind === 'commentary');
+          setCommentaries(personalCommentaries);
+          setCommentaryId((current) => {
+            if (requestedInstalledResourceId) return null;
+            if (requestedCommentaryId && personalCommentaries.some((commentary) => commentary.id === requestedCommentaryId)) return requestedCommentaryId;
+            return current && personalCommentaries.some((commentary) => commentary.id === current)
+              ? current : personalCommentaries[0]?.id ?? null;
+          });
+        }
+        if (resourceResult.ok) {
+          const installed = resourceResult.data.filter((resource) => resource.type === 'commentary' && resource.enabled);
+          setInstalledCommentaries(installed);
+          setInstalledResourceId((current) => requestedInstalledResourceId && installed.some((resource) => resource.id === requestedInstalledResourceId)
+            ? requestedInstalledResourceId : current);
+        }
       });
-    });
-  }, [requestedCommentaryId]);
+  }, [requestedCommentaryId, requestedInstalledResourceId]);
 
   useEffect(() => {
     if (!commentaryId || !reference) {
@@ -53,6 +67,17 @@ export function CommentaryPanel({ tabId, state }: PanelProps): React.JSX.Element
       if (result.ok) setEntries(result.data);
     });
   }, [commentaryId, reference?.book, reference?.chapter]);
+
+  useEffect(() => {
+    if (!installedResourceId || !reference) {
+      setInstalledEntries([]);
+      return;
+    }
+    void window.versescape.resources.listCommentaryEntries({ resourceId: installedResourceId, bookId: reference.book, chapter: reference.chapter })
+      .then((result) => {
+        if (result.ok) setInstalledEntries(result.data);
+      });
+  }, [installedResourceId, reference?.book, reference?.chapter]);
 
   const entryLabel = (entry: CommentaryEntryRecord): string => {
     if (entry.anchorKind === 'book') return `${entry.bookId} introduction`;
@@ -101,17 +126,25 @@ export function CommentaryPanel({ tabId, state }: PanelProps): React.JSX.Element
   return (
     <div className="personal-commentary-panel">
       <div className="personal-commentary-panel__toolbar">
-        <span className="personal-commentary-panel__title">Personal Commentary</span>
-        <select className="personal-commentary-panel__select" value={commentaryId ?? ''} onChange={(event) => setCommentaryId(event.target.value || null)} aria-label="Personal Commentary">
-          <option value="">Select a Personal Commentary</option>
-          {commentaries.map((commentary) => <option key={commentary.id} value={commentary.id}>{commentary.name}</option>)}
-        </select>
+        <span className="personal-commentary-panel__title">Commentary</span>
+        {installedResourceId ? (
+          <span className="personal-commentary-panel__resource-label">{installedCommentaries.find((commentary) => commentary.id === installedResourceId)?.title ?? installedResourceId.toUpperCase()}</span>
+        ) : <select className="personal-commentary-panel__select" value={commentaryId ? `personal:${commentaryId}` : ''} onChange={(event) => {
+          const [kind, id] = event.target.value.split(':', 2);
+          setInstalledResourceId(kind === 'resource' ? id ?? null : null);
+          setCommentaryId(kind === 'personal' ? id ?? null : null);
+          setEditOpen(false);
+        }} aria-label="Commentary resource">
+          <option value="">Select a commentary</option>
+          {installedCommentaries.map((commentary) => <option key={commentary.id} value={`resource:${commentary.id}`}>{commentary.title}</option>)}
+          {commentaries.map((commentary) => <option key={commentary.id} value={`personal:${commentary.id}`}>{commentary.name} (Personal)</option>)}
+        </select>}
         <button type="button" className="personal-commentary-panel__button" aria-label="Add verse entry" title="Add verse entry" disabled={!reference || !commentaryId} onClick={() => beginEntry('verse_range')}><FilePlus2 size={14} /></button>
         <button type="button" className="personal-commentary-panel__button" aria-label="Add chapter introduction" title="Add chapter introduction" disabled={!reference || !commentaryId} onClick={() => beginEntry('chapter')}><BookOpen size={14} /></button>
         <button type="button" className="personal-commentary-panel__button" aria-label="Add book introduction" title="Add book introduction" disabled={!reference || !commentaryId} onClick={() => beginEntry('book')}><BookOpen size={14} /></button>
       </div>
-      {!commentaryId && <div className="personal-commentary-panel__empty">Create a Personal Commentary in Library to begin.</div>}
-      {commentaryId && reference && <div className="personal-commentary-panel__context">{formatReference({ start: reference, end: reference })}</div>}
+      {!commentaryId && !installedResourceId && <div className="personal-commentary-panel__empty">Choose an installed commentary or create a Personal Commentary in Library.</div>}
+      {(commentaryId || installedResourceId) && reference && <div className="personal-commentary-panel__context">{formatReference({ start: reference, end: reference })}</div>}
       {editOpen && (
         <form className="personal-commentary-panel__editor" onSubmit={(event) => { event.preventDefault(); saveEntry(); }}>
           <input aria-label="Entry title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Entry title" autoFocus />
@@ -120,8 +153,9 @@ export function CommentaryPanel({ tabId, state }: PanelProps): React.JSX.Element
         </form>
       )}
       <section ref={containerRef} className="personal-commentary-panel__entries" aria-label="Personal Commentary entries">
-        {commentaryId && !reference && <div className="personal-commentary-panel__empty">Choose a Scripture reference to read this commentary.</div>}
+        {(commentaryId || installedResourceId) && !reference && <div className="personal-commentary-panel__empty">Choose a Scripture reference to read this commentary.</div>}
         {commentaryId && reference && entries.length === 0 && <div className="personal-commentary-panel__empty">No commentary entries for this chapter.</div>}
+        {installedResourceId && reference && installedEntries.length === 0 && <div className="personal-commentary-panel__empty">No commentary entries for this chapter.</div>}
         {entries.map((entry) => (
           <article key={entry.noteId} data-verse={entry.startKey ?? undefined} className={`personal-commentary-panel__entry${coversCurrentVerse(entry) ? ' personal-commentary-panel__entry--active' : ''}`}>
             <header><span>{entryLabel(entry)}</span><button type="button" aria-label={`Edit ${entry.title}`} title="Edit entry" onClick={() => { setSelectedEntryId(entry.noteId); setTitle(entry.title); setBody(entry.bodyMd); setEditOpen(true); }}><Pencil size={13} /></button></header>
@@ -133,6 +167,13 @@ export function CommentaryPanel({ tabId, state }: PanelProps): React.JSX.Element
                 if (result.ok) setEntries((current) => current.filter((candidate) => candidate.noteId !== entry.noteId));
               });
             }}><Trash2 size={13} /> Delete entry</button>
+          </article>
+        ))}
+        {installedEntries.map((entry) => (
+          <article key={entry.id} data-verse={entry.startKey ?? undefined} className={`personal-commentary-panel__entry${verseKey !== null && entry.startKey !== null && entry.endKey !== null && entry.startKey <= verseKey && entry.endKey >= verseKey ? ' personal-commentary-panel__entry--active' : ''}`}>
+            <header><span>{entry.startKey && entry.endKey && fromVerseKey(entry.startKey) && fromVerseKey(entry.endKey) ? formatReference({ start: fromVerseKey(entry.startKey)!, end: fromVerseKey(entry.endKey)! }) : `${reference?.book ?? ''} introduction`}</span></header>
+            <h2>{entry.title}</h2>
+            <div>{entry.body}</div>
           </article>
         ))}
       </section>

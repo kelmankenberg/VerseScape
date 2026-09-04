@@ -1,0 +1,22 @@
+{
+  "entries": [
+    {
+      "id": "jhn-3-intro",
+      "bookId": "JHN",
+      "chapter": 3,
+      "startKey": null,
+      "endKey": null,
+      "title": "John 3 introduction",
+      "body": "A chapter introduction."
+    },
+    {
+      "id": "jhn-3-16",
+      "bookId": "JHN",
+      "chapter": 3,
+      "startKey": 43003016,
+      "endKey": 43003016,
+      "title": "John 3:16",
+      "body": "A verse entry."
+    }
+  ]
+}

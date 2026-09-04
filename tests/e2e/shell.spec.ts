@@ -73,6 +73,20 @@ test('navigating opens the contextual sidebar and switches page', async () => {
   await expect(page.locator('[data-testid="sidebar"]')).toHaveCount(0);
 });
 
+test('opening an installed commentary selects it in the Workspace reader', async () => {
+  await page.getByTestId('rail').getByRole('button', { name: 'Library' }).click();
+  const commentaries = page.getByRole('region', { name: 'Installed Commentaries' });
+  const mhcc = commentaries.locator('.library-page__resource', { hasText: "Matthew Henry's Concise Commentary on the Bible" });
+  await expect(mhcc).toBeVisible();
+  await mhcc.getByRole('button', { name: 'Open' }).click();
+
+  await expect(page.getByRole('main')).toHaveAttribute('data-page', 'workspace');
+  await expect(page.getByRole('tab', { name: /MHCC/ })).toBeVisible();
+  await expect(page.locator('.personal-commentary-panel__resource-label')).toHaveText("Matthew Henry's Concise Commentary on the Bible");
+  await expect(page.getByRole('combobox', { name: 'Commentary resource' })).toHaveCount(0);
+  await expect(page.locator('.personal-commentary-panel__entry')).not.toHaveCount(0);
+});
+
 test('theme changes apply and survive a restart', async () => {
   await page.getByRole('button', { name: 'Settings' }).click();
   await page.getByRole('radio', { name: 'Light' }).click();

@@ -112,7 +112,10 @@ const byOrdinal = new Map(BOOKS.map((book) => [book.ordinal, book]));
 
 /** Normalises for lookup: lower-case, no spaces, punctuation or roman prefixes. */
 export function normaliseBookToken(value: string): string {
-  return value.toLowerCase().replace(/[\s._'’]/g, '');
+  const numbered = value.trim()
+    .replace(/^(III|II|I)\b/iu, (roman) => ({ i: '1', ii: '2', iii: '3' })[roman.toLowerCase()] ?? roman)
+    .replace(/^(iii|ii|i)(?=(?:sam|kgs|kings|chr|chron|cor|thess|tim|pet|john|jn|jo))/iu, (_match, roman: string) => ({ i: '1', ii: '2', iii: '3' })[roman.toLowerCase()] ?? roman);
+  return numbered.toLowerCase().replace(/[\s._'’]/g, '');
 }
 
 const aliasIndex = new Map<string, BookInfo>();

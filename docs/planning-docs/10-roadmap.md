@@ -81,13 +81,13 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 - Export note/notebook to Markdown, HTML and PDF
 - **Exit:** FR-NT-01..08, FR-NT-14
 
-## M6 — Library and resources
+## M6 — Library and resources 🚧
 
 - Library page: list, enable/disable, delete, resource info with licence
 - `.vsres` import with full validation and sandboxed extraction
 - Signed catalogue fetch, resumable download, atomic install
-- Resource Reader panel; compile Matthew Henry and JFB commentaries from CCEL
-  (D-29 — text only, never their formatting)
+- Resource Reader panel; compile Matthew Henry Concise and JFB commentaries from
+  pinned CCEL EPUBs (D-29 — text only, never their formatting)
 - Shared Commentary Reader panel for installed and Personal Commentary resources:
   canonical ordering, sparse coverage, continuous chapter traversal, and
   bidirectional sync-set behavior (D-30, FR-NT-09..11)

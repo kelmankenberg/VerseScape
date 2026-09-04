@@ -7,6 +7,8 @@ import type {
   DeletePersonalCommentaryRequest,
   ChapterData,
   ChapterRequest,
+  CommentaryResourceEntriesRequest,
+  CommentaryResourceEntry,
   ConcordanceRequest,
   CreateHighlightRequest,
   CreateCommentaryEntryRequest,
@@ -14,6 +16,9 @@ import type {
   CreateBookmarkRequest,
   HighlightRecord,
   LexiconEntry,
+  LibraryResource,
+  LibraryLocation,
+  LibraryLocationRequest,
   ListHighlightsRequest,
   ListNotesRequest,
   CreateNoteAnchorRequest,
@@ -33,6 +38,8 @@ import type {
   ReadingPositionRecord,
   ReadingPositionRequest,
   ResourceSummary,
+  LibraryResourceIdRequest,
+  ResourceEnabledRequest,
   ResourceIdRequest,
   SearchHit,
   SearchRequest,
@@ -64,6 +71,14 @@ export interface VerseScapeBridge {
   };
   readonly resources: {
     list(): Promise<IpcResult<ResourceSummary[]>>;
+    listLibrary(): Promise<IpcResult<LibraryResource[]>>;
+    setEnabled(request: ResourceEnabledRequest): Promise<IpcResult<LibraryResource>>;
+    importArchive(): Promise<IpcResult<LibraryResource>>;
+    remove(request: LibraryResourceIdRequest): Promise<IpcResult<null>>;
+    chooseLibraryLocation(): Promise<IpcResult<LibraryLocation>>;
+    setLibraryLocation(request: LibraryLocationRequest): Promise<IpcResult<LibraryLocation>>;
+    getLibraryLocation(): Promise<IpcResult<LibraryLocation>>;
+    listCommentaryEntries(request: CommentaryResourceEntriesRequest): Promise<IpcResult<CommentaryResourceEntry[]>>;
     getChapter(request: ChapterRequest): Promise<IpcResult<ChapterData>>;
     getCrossReferences(request: CrossReferenceRequest): Promise<IpcResult<CrossReference[]>>;
     getConcordance(request: ConcordanceRequest): Promise<IpcResult<Array<{ verseKey: number; text: string }>>>;

@@ -523,6 +523,8 @@
   font-size: 12px;
 }
 
+.settings__hint--error { color: var(--vs-danger); }
+
 .settings__pending {
   margin: 0;
   padding-left: var(--vs-space-4);

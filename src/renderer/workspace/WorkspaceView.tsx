@@ -9,7 +9,6 @@ import {
 } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { useWorkspace } from './store.js';
-import { useWorkspacePersistence } from './use-workspace-persistence.js';
 import { LayoutNodeView } from './LayoutNodeView.js';
 import { findGroup } from '@shared/workspace/index.js';
 import type { Edge } from '@shared/workspace/index.js';
@@ -29,7 +28,6 @@ export function WorkspaceView(): React.JSX.Element {
   const reopenLastClosed = useWorkspace((state) => state.reopenLastClosed);
 
   const [dragging, setDragging] = useState(false);
-  const ready = useWorkspacePersistence();
 
   // A small activation distance keeps a plain click on a tab from starting a drag.
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
@@ -78,8 +76,6 @@ export function WorkspaceView(): React.JSX.Element {
   const maximized = workspace.maximizedGroup
     ? findGroup(workspace.root, workspace.maximizedGroup)
     : null;
-
-  if (!ready) return <div className="workspace workspace--loading" />;
 
   return (
     <DndContext

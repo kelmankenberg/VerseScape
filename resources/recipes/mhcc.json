@@ -1,0 +1,26 @@
+{
+  "file": {
+    "url": "https://ccel.org/ccel/h/henry/mhcc/cache/mhcc.epub",
+    "name": "mhcc.epub",
+    "sha256": "71faf91750820193456036dde801d4c830277be4564c24bd6009082aad553a9f"
+  },
+  "commentary": {
+    "minimumEntries": 3000,
+    "minimumBooks": 54
+  },
+  "meta": {
+    "id": "mhcc",
+    "title": "Matthew Henry's Concise Commentary on the Bible",
+    "abbreviation": "MHCC",
+    "type": "commentary",
+    "language": "en",
+    "versification": "kjv",
+    "licence": "Public domain text. CCEL is the source; its source-file formatting is discarded during compilation.",
+    "licenceSpdx": "PublicDomain",
+    "source": "https://ccel.org/ccel/henry/mhcc/mhcc.html",
+    "retrieved": "2026-09-04",
+    "attribution": "Source text from the Christian Classics Ethereal Library (CCEL).",
+    "redistributable": true,
+    "restrictions": "CCEL source formatting is not reproduced."
+  }
+}

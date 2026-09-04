@@ -13,6 +13,10 @@ function tabLabel(tab: Tab): string {
         : null;
     return (typeof resourceId === 'string' && resourceId ? resourceId : 'bsb').toUpperCase();
   }
+  if (tab.panelType === 'commentary' && typeof tab.state === 'object' && tab.state !== null && !Array.isArray(tab.state)) {
+    const abbreviation = tab.state['commentaryAbbreviation'];
+    if (typeof abbreviation === 'string' && abbreviation) return abbreviation;
+  }
   return tab.title ?? getPanel(tab.panelType)?.title ?? tab.panelType;
 }
 

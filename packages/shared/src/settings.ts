@@ -67,6 +67,10 @@ export const appSettings = z.object({
   }),
   window: windowStateSettings,
   reading: bibleDisplayOptions,
+  library: z.object({
+    disabledResourceIds: z.array(z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u)),
+    location: z.string().min(1).nullable(),
+  }),
 });
 export type AppSettings = z.infer<typeof appSettings>;
 
@@ -82,6 +86,7 @@ export const defaultSettings: AppSettings = {
   },
   window: { width: 1360, height: 900, x: null, y: null, maximized: false },
   reading: defaultBibleDisplayOptions,
+  library: { disabledResourceIds: [], location: null },
 };
 
 /** Patches are section-wise partials so a caller can update one field safely. */
@@ -91,6 +96,7 @@ export const settingsPatch = z
     shell: appSettings.shape.shell.partial(),
     window: windowStateSettings.partial(),
     reading: bibleDisplayOptions.partial(),
+    library: appSettings.shape.library.partial(),
   })
   .partial()
   .strict();

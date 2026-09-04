@@ -297,6 +297,30 @@ here. **It must not be relaxed for ThML input.**
 Attribution is _appreciated but not required_. We do it anyway: CCEL is credited
 in the About dialog alongside the other resource sources.
 
+### Matthew Henry's Concise Commentary on the Bible
+
+- **Work page:** https://ccel.org/ccel/henry/mhcc/mhcc.html
+- **Pinned EPUB:** https://ccel.org/ccel/h/henry/mhcc/cache/mhcc.epub
+- **Retrieved:** 2026-09-04
+- **SHA-256:** `71faf91750820193456036dde801d4c830277be4564c24bd6009082aad553a9f`
+- **Licence:** Public domain text
+
+**Status:** **Verified.** This is the exact concise edition selected for v1.
+The compiler extracts only canonically anchored commentary text from the EPUB and
+discards CCEL XHTML, styles, navigation, and presentation metadata.
+
+### Commentary Critical and Explanatory on the Whole Bible (JFB)
+
+- **Work page:** https://ccel.org/ccel/jamieson/jfb/jfb.html
+- **Pinned EPUB:** https://ccel.org/ccel/j/jamieson/jfb/cache/jfb.epub
+- **Retrieved:** 2026-09-04
+- **SHA-256:** `8999173326aa66b5a852f3730ce856245f545dba313416882abdb0e9712f353d`
+- **Licence:** Public domain text; published 1871
+
+**Status:** **Verified.** The compiler extracts only canonically anchored text
+from the EPUB and discards CCEL XHTML, styles, navigation, and presentation
+metadata.
+
 ### Still to confirm
 
 CCEL says "nearly all" works are public domain, and their policy notes that a
@@ -311,6 +335,5 @@ exceptions.
 
 | Item                                                   | Why it matters                                        |
 | ------------------------------------------------------ | ----------------------------------------------------- |
-| Confirm the Henry/JFB editions are not CCEL exceptions | "Nearly all" works are public domain; a few are not   |
 | Per-translation eBible rows                            | Each text needs its own verified row before compiling |
 | E9 — UK Crown copyright on the KJV                     | Accepted risk; non-commercial distribution only       |
