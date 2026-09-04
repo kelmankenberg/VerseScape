@@ -16,6 +16,8 @@ export const IpcChannels = {
   workspaceSave: 'workspace:save',
   resourceList: 'resource:list',
   resourceListLibrary: 'resource:list-library',
+  resourceListCatalog: 'resource:list-catalog',
+  resourceInstallCatalogItem: 'resource:install-catalog-item',
   resourceSetEnabled: 'resource:set-enabled',
   resourceRemove: 'resource:remove',
   resourceImportArchive: 'resource:import-archive',

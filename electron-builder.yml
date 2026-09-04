@@ -13,6 +13,8 @@ extraResources:
     filter:
       - '**/*.db'
       - '**/manifest.json'
+  - from: src/main/services/keys/catalog-public-key.pem
+    to: keys/catalog-public-key.pem
 asar: true
 
 linux:

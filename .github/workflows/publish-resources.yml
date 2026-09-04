@@ -60,7 +60,8 @@ jobs:
         run: |
           test -n "$CATALOG_SIGNING_KEY_PEM"
           umask 077
-          printf '%s' "$CATALOG_SIGNING_KEY_PEM" > "$RUNNER_TEMP/catalog-private.pem"
+          printf '%b\n' "$CATALOG_SIGNING_KEY_PEM" > "$RUNNER_TEMP/catalog-private.pem"
+          openssl pkey -in "$RUNNER_TEMP/catalog-private.pem" -noout
           node <<'NODE'
           const { createHash } = require('node:crypto');
           const { readFileSync, readdirSync, statSync, writeFileSync } = require('node:fs');

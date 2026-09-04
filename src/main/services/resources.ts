@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import { accessSync, constants, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync, realpathSync, statSync } from 'node:fs';
 import { basename, isAbsolute, join, normalize, sep } from 'node:path';
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash, randomUUID, verify } from 'node:crypto';
 import AdmZip from 'adm-zip';
 import Database from 'better-sqlite3';
 import { z } from 'zod';
@@ -15,11 +15,15 @@ import type {
   ConcordanceRequest,
   CrossReference,
   CrossReferenceRequest,
+  CatalogResource,
+  CatalogResourceIdRequest,
   LibraryResource,
   LibraryLocation,
   ResourceEnabledRequest,
   ResourceSummary,
 } from '@shared/ipc/contracts.js';
+
+const CATALOG_RELEASE_URL = 'https://github.com/kelmankenberg/VerseScape/releases/download/resources-v1';
 
 function openLexicon(strongNumber: string): Database.Database | null {
   const id = strongNumber.startsWith('H') ? 'tbesh' : 'tbesg';
@@ -55,6 +59,28 @@ const libraryManifest = z.object({
   files: z.array(z.object({ path: z.string().min(1), sha256: z.string().min(1) })).min(1),
 });
 
+const signedCatalog = z.object({
+  version: z.literal(1),
+  generatedAt: z.string().min(1),
+  resources: z.array(catalogResourceWithUrl()).max(200),
+}).strict();
+
+function catalogResourceWithUrl() {
+  return z.object({
+    id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u),
+    version: z.string().regex(/^\d+\.\d+\.\d+$/u),
+    title: z.string().min(1),
+    abbreviation: z.string().min(1),
+    type: z.enum(['bible', 'commentary']),
+    language: z.string().min(2),
+    versification: z.string().min(1),
+    sizeBytes: z.number().int().positive().max(1_000_000_000),
+    sha256: z.string().regex(/^[a-f0-9]{64}$/u),
+    url: z.url().refine((value) => new URL(value).protocol === 'https:', 'Catalog URLs must use HTTPS.'),
+    licence: libraryManifest.shape.licence,
+  }).strict();
+}
+
 function resourceRoot(): string {
   if (process.env.VERSESCAPE_RESOURCE_DIR) return process.env.VERSESCAPE_RESOURCE_DIR;
   return app.isPackaged
@@ -64,6 +90,13 @@ function resourceRoot(): string {
 
 function userResourceRoot(): string {
   return loadSettings().library.location ?? join(app.getPath('userData'), 'resources');
+}
+
+function catalogPublicKey(): string {
+  const path = app.isPackaged
+    ? join(process.resourcesPath, 'keys', 'catalog-public-key.pem')
+    : join(process.cwd(), 'src', 'main', 'services', 'keys', 'catalog-public-key.pem');
+  return readFileSync(path, 'utf8');
 }
 
 export function setLibraryLocation(location: string): string {
@@ -389,6 +422,46 @@ export function importResourceArchive(archivePath: string): LibraryResource {
   const resource = listLibraryResources().find((candidate) => candidate.id === manifest.id);
   if (!resource) throw new Error('Imported resource could not be catalogued.');
   return resource;
+}
+
+async function fetchVerifiedCatalog(): Promise<Array<CatalogResource & { url: string }>> {
+  const [catalogResponse, signatureResponse] = await Promise.all([
+    fetch(`${CATALOG_RELEASE_URL}/catalog.json`),
+    fetch(`${CATALOG_RELEASE_URL}/catalog.sig`),
+  ]);
+  if (!catalogResponse.ok || !signatureResponse.ok) throw new Error('The signed resource catalog is unavailable.');
+  const [catalogBytes, signature] = await Promise.all([
+    catalogResponse.arrayBuffer().then((value) => Buffer.from(value)),
+    signatureResponse.arrayBuffer().then((value) => Buffer.from(value)),
+  ]);
+  if (!verify(null, catalogBytes, catalogPublicKey(), signature)) throw new Error('The resource catalog signature is invalid.');
+  const parsed = signedCatalog.parse(JSON.parse(catalogBytes.toString('utf8')));
+  return parsed.resources;
+}
+
+export async function listCatalogResources(): Promise<CatalogResource[]> {
+  const catalog = await fetchVerifiedCatalog();
+  return catalog.map(({ url: _url, ...resource }) => resource).sort((left, right) => left.title.localeCompare(right.title));
+}
+
+export async function installCatalogResource(request: CatalogResourceIdRequest): Promise<LibraryResource> {
+  const resource = (await fetchVerifiedCatalog()).find((candidate) => candidate.id === request.id);
+  if (!resource) throw new Error('The requested resource is not in the verified catalog.');
+  const response = await fetch(resource.url);
+  if (!response.ok) throw new Error('The resource package could not be downloaded.');
+  const archive = Buffer.from(await response.arrayBuffer());
+  if (archive.byteLength !== resource.sizeBytes || createHash('sha256').update(archive).digest('hex') !== resource.sha256) {
+    throw new Error('The downloaded resource package failed its integrity check.');
+  }
+  const directory = join(userResourceRoot(), '.downloads');
+  const archivePath = join(directory, `${resource.id}-${randomUUID()}.vsres`);
+  mkdirSync(directory, { recursive: true });
+  try {
+    writeFileSync(archivePath, archive, { mode: 0o600 });
+    return importResourceArchive(archivePath);
+  } finally {
+    rmSync(archivePath, { force: true });
+  }
 }
 
 export function getChapter(request: ChapterRequest): ChapterData {

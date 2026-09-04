@@ -7,7 +7,7 @@ import { handle } from './handle.js';
 import { readWindowState } from '../platform/window-manager.js';
 import { loadSettings, patchSettings } from '../services/settings.js';
 import { loadWorkspace, saveWorkspace } from '../services/workspace.js';
-import { getChapter, getConcordance, getCrossReferences, getLexiconEntry, importResourceArchive, libraryLocationStatus, listCommentaryResourceEntries, listLibraryResources, listResources, removeUserResource, setLibraryLocation, setResourceEnabled } from '../services/resources.js';
+import { getChapter, getConcordance, getCrossReferences, getLexiconEntry, importResourceArchive, installCatalogResource, libraryLocationStatus, listCatalogResources, listCommentaryResourceEntries, listLibraryResources, listResources, removeUserResource, setLibraryLocation, setResourceEnabled } from '../services/resources.js';
 import {
   addNoteAnchor,
   addTagLink,
@@ -100,6 +100,8 @@ export function registerIpcHandlers(): void {
 
   handle(IpcChannels.resourceList, () => listResources());
   handle(IpcChannels.resourceListLibrary, () => listLibraryResources());
+  handle(IpcChannels.resourceListCatalog, () => listCatalogResources());
+  handle(IpcChannels.resourceInstallCatalogItem, (request) => installCatalogResource(request));
   handle(IpcChannels.resourceSetEnabled, (request) => setResourceEnabled(request));
   handle(IpcChannels.resourceRemove, (request) => {
     removeUserResource(request.id);

@@ -1,6 +1,6 @@
-import { BookOpen, ChevronDown, Download, FilePlus2, Trash2, Upload } from 'lucide-react';
+import { BookOpen, ChevronDown, Download, FilePlus2, LoaderCircle, Trash2, Upload } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import type { LibraryResource, NotebookRecord } from '@shared/ipc/contracts.js';
+import type { CatalogResource, LibraryResource, NotebookRecord } from '@shared/ipc/contracts.js';
 import { useSettings } from '../stores/settings.js';
 import { useWorkspace } from '../workspace/store.js';
 
@@ -9,6 +9,10 @@ export function LibraryPage(): React.JSX.Element {
   const setActivePage = useSettings((store) => store.setActivePage);
   const [commentaries, setCommentaries] = useState<NotebookRecord[]>([]);
   const [resources, setResources] = useState<LibraryResource[]>([]);
+  const [catalogResources, setCatalogResources] = useState<CatalogResource[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [installingResourceId, setInstallingResourceId] = useState<string | null>(null);
   const [detailsResourceId, setDetailsResourceId] = useState<string | null>(null);
   const [removingResourceId, setRemovingResourceId] = useState<string | null>(null);
   const [libraryAvailable, setLibraryAvailable] = useState(true);
@@ -26,6 +30,17 @@ export function LibraryPage(): React.JSX.Element {
         if (resourcesResult.ok) setResources(resourcesResult.data);
         if (locationResult.ok) setLibraryAvailable(locationResult.data.available);
       });
+  }, []);
+
+  useEffect(() => {
+    void window.versescape.resources.listCatalog().then((result) => {
+      if (result.ok) {
+        setCatalogResources(result.data);
+      } else {
+        setCatalogError('Trusted resources are unavailable right now.');
+      }
+      setCatalogLoading(false);
+    });
   }, []);
 
   const toggleResource = (resource: LibraryResource): void => {
@@ -46,6 +61,16 @@ export function LibraryPage(): React.JSX.Element {
   const importResource = (): void => {
     void window.versescape.resources.importArchive().then((result) => {
       if (result.ok) setResources((current) => [...current, result.data].sort((left, right) => left.title.localeCompare(right.title)));
+    });
+  };
+
+  const installCatalogResource = (resource: CatalogResource): void => {
+    setInstallingResourceId(resource.id);
+    void window.versescape.resources.installCatalogItem({ id: resource.id }).then((result) => {
+      if (result.ok) {
+        setResources((current) => [...current, result.data].sort((left, right) => left.title.localeCompare(right.title)));
+      }
+      setInstallingResourceId(null);
     });
   };
 
@@ -193,6 +218,28 @@ export function LibraryPage(): React.JSX.Element {
           <button type="submit" disabled={!title.trim() || !abbreviation.trim()}>Create</button>
         </form>
       )}
+      <section className="library-page__section" aria-label="Available Resources">
+        <h2>Available Resources</h2>
+        {catalogLoading && <p className="library-page__empty">Checking trusted resource catalog...</p>}
+        {catalogError && <p className="library-page__empty">{catalogError}</p>}
+        {!catalogLoading && !catalogError && catalogResources.length === 0 && <p className="library-page__empty">No additional trusted resources are available.</p>}
+        <div className="library-page__resources">
+          {catalogResources.map((resource) => {
+            const installed = resources.some((installedResource) => installedResource.id === resource.id);
+            const installing = installingResourceId === resource.id;
+            return (
+              <article key={resource.id} className="library-page__resource">
+                <BookOpen size={20} aria-hidden />
+                <div><h3>{resource.title}</h3><p>{resource.abbreviation} · {resource.type} · {formatSize(resource.sizeBytes)} · v{resource.version}</p></div>
+                <button type="button" disabled={installed || installing || !libraryAvailable} onClick={() => installCatalogResource(resource)}>
+                  {installing ? <LoaderCircle size={14} className="library-page__spinner" /> : null}
+                  {installed ? 'Installed' : installing ? 'Installing...' : 'Install'}
+                </button>
+              </article>
+            );
+          })}
+        </div>
+      </section>
       {(['bible', 'commentary'] as const).map((type) => {
         const grouped = resources.filter((resource) => resource.type === type);
         return (

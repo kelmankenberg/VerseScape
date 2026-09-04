@@ -1,6 +1,8 @@
 import type {
   AppInfo,
   BookmarkRecord,
+  CatalogResource,
+  CatalogResourceIdRequest,
   CommentaryEntriesRequest,
   CommentaryEntryRecord,
   CopyNoteToCommentaryRequest,
@@ -72,6 +74,8 @@ export interface VerseScapeBridge {
   readonly resources: {
     list(): Promise<IpcResult<ResourceSummary[]>>;
     listLibrary(): Promise<IpcResult<LibraryResource[]>>;
+    listCatalog(): Promise<IpcResult<CatalogResource[]>>;
+    installCatalogItem(request: CatalogResourceIdRequest): Promise<IpcResult<LibraryResource>>;
     setEnabled(request: ResourceEnabledRequest): Promise<IpcResult<LibraryResource>>;
     importArchive(): Promise<IpcResult<LibraryResource>>;
     remove(request: LibraryResourceIdRequest): Promise<IpcResult<null>>;

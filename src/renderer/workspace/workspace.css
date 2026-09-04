@@ -1539,6 +1539,9 @@ background: var(--vs-bg-surface);
 .library-page__resource-details p { grid-column: 1 / -1; margin: 0; }
 .library-page__resource-details a { color: var(--vs-accent); }
 .library-page__unavailable { padding: 9px 24px; border-bottom: 1px solid var(--vs-warning); background: color-mix(in srgb, var(--vs-warning) 10%, transparent); color: var(--vs-fg-primary); font-size: 12px; }
+.library-page__spinner { animation: library-spin 0.9s linear infinite; }
+
+@keyframes library-spin { to { transform: rotate(360deg); } }
 
 .personal-commentary-panel__context { padding: 7px 12px; border-bottom: 1px solid var(--vs-border); color: var(--vs-fg-muted); font-size: 11px; }
 .personal-commentary-panel__editor { display: grid; gap: 7px; padding: 10px 12px; border-bottom: 1px solid var(--vs-border); background: var(--vs-bg-surface); }

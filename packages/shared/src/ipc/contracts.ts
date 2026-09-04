@@ -61,6 +61,24 @@ export const libraryResource = z.object({
 });
 export type LibraryResource = z.infer<typeof libraryResource>;
 
+export const catalogResource = libraryResource.pick({
+  id: true,
+  title: true,
+  abbreviation: true,
+  type: true,
+  language: true,
+  versification: true,
+  sizeBytes: true,
+  licence: true,
+}).extend({
+  version: z.string().regex(/^\d+\.\d+\.\d+$/u),
+  sha256: z.string().regex(/^[a-f0-9]{64}$/u),
+});
+export type CatalogResource = z.infer<typeof catalogResource>;
+
+export const catalogResourceIdRequest = z.object({ id: resourceSummary.shape.id });
+export type CatalogResourceIdRequest = z.infer<typeof catalogResourceIdRequest>;
+
 export const resourceEnabledRequest = z.object({
   id: resourceSummary.shape.id,
   enabled: z.boolean(),
@@ -439,6 +457,8 @@ export const contracts = {
   'workspace:save': { request: workspaceSchema, response: z.null() },
   'resource:list': { request: emptyRequest, response: z.array(resourceSummary) },
   'resource:list-library': { request: emptyRequest, response: z.array(libraryResource) },
+  'resource:list-catalog': { request: emptyRequest, response: z.array(catalogResource) },
+  'resource:install-catalog-item': { request: catalogResourceIdRequest, response: libraryResource },
   'resource:set-enabled': { request: resourceEnabledRequest, response: libraryResource },
   'resource:remove': { request: libraryResourceIdRequest, response: z.null() },
   'resource:import-archive': { request: emptyRequest, response: libraryResource },

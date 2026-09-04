@@ -4,6 +4,7 @@ import type { VerseScapeBridge } from '@shared/bridge.js';
 import type {
   AppInfo,
   BookmarkRecord,
+  CatalogResource,
   CommentaryEntryRecord,
   ChapterData,
   CommentaryResourceEntry,
@@ -49,6 +50,10 @@ const bridge: VerseScapeBridge = {
       ipcRenderer.invoke(IpcChannels.resourceList) as Promise<IpcResult<ResourceSummary[]>>,
     listLibrary: () =>
       ipcRenderer.invoke(IpcChannels.resourceListLibrary) as Promise<IpcResult<LibraryResource[]>>,
+    listCatalog: () =>
+      ipcRenderer.invoke(IpcChannels.resourceListCatalog) as Promise<IpcResult<CatalogResource[]>>,
+    installCatalogItem: (request) =>
+      ipcRenderer.invoke(IpcChannels.resourceInstallCatalogItem, request) as Promise<IpcResult<LibraryResource>>,
     setEnabled: (request) =>
       ipcRenderer.invoke(IpcChannels.resourceSetEnabled, request) as Promise<IpcResult<LibraryResource>>,
     importArchive: () =>
