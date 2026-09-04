@@ -64,7 +64,7 @@ const FontSize = Extension.create({
  * Notes panel: displays and manages notes anchored to the current verse.
  * Joins the sync set so it follows synced verse navigation (FR-NT-06).
  */
-export function NotesPanel({ tabId, state }: PanelProps): React.JSX.Element {
+export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const openOrNavigateBible = useWorkspace((store) => store.openOrNavigateBible);
   const lastBibleTabId = useWorkspace((store) => store.lastBibleTabId);
@@ -259,6 +259,10 @@ export function NotesPanel({ tabId, state }: PanelProps): React.JSX.Element {
         if (result.ok) {
           setNotes((previous) => [result.data, ...previous]);
           setSelectedNoteId(result.data.id);
+          setState({
+            ...(typeof state === 'object' && state !== null && !Array.isArray(state) ? state : {}),
+            noteId: result.data.id,
+          });
         }
       });
   };
@@ -454,6 +458,10 @@ export function NotesPanel({ tabId, state }: PanelProps): React.JSX.Element {
                     if ((event.target as Element).closest('.notes-panel__note-title-input')) return;
                     setSelectedNoteId(note.id);
                     toggleExpand(note.id);
+                    setState({
+                      ...(typeof state === 'object' && state !== null && !Array.isArray(state) ? state : {}),
+                      noteId: note.id,
+                    });
                     if (editingTitleId === note.id) saveTitle();
                   }}
                   onDoubleClick={() => {

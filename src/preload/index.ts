@@ -9,6 +9,7 @@ import type {
   LexiconEntry,
   NoteRecord,
   NoteAnchorRecord,
+  NotebookRecord,
   ResourceSummary,
   SearchHit,
   WindowState,
@@ -94,6 +95,12 @@ const bridge: VerseScapeBridge = {
     updateNote: (request) =>
       ipcRenderer.invoke(IpcChannels.annotationsUpdateNote, request) as Promise<
         IpcResult<NoteRecord>
+      >,
+    listNotebooks: () =>
+      ipcRenderer.invoke(IpcChannels.annotationsListNotebooks) as Promise<IpcResult<NotebookRecord[]>>,
+    createNotebook: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsCreateNotebook, request) as Promise<
+        IpcResult<NotebookRecord>
       >,
   },
   search: {

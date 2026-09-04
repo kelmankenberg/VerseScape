@@ -14,6 +14,8 @@ import type {
   NoteAnchorRecord,
   NoteIdRequest,
   UpdateNoteRequest,
+  CreateNotebookRequest,
+  NotebookRecord,
   CrossReference,
   CrossReferenceRequest,
   NoteRecord,
@@ -63,6 +65,8 @@ export interface VerseScapeBridge {
     deleteNoteAnchor(request: DeleteNoteAnchorRequest): Promise<IpcResult<null>>;
     deleteNote(request: NoteIdRequest): Promise<IpcResult<null>>;
     updateNote(request: UpdateNoteRequest): Promise<IpcResult<NoteRecord>>;
+    listNotebooks(): Promise<IpcResult<NotebookRecord[]>>;
+    createNotebook(request: CreateNotebookRequest): Promise<IpcResult<NotebookRecord>>;
   };
   readonly search: {
     query(request: SearchRequest): Promise<IpcResult<SearchHit[]>>;

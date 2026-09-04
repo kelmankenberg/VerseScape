@@ -4,6 +4,32 @@
   min-height: 0;
 }
 
+/* Keep scrollbars available but visually quiet in the dense study workspace. */
+.workspace :is(.bible-panel__scroll, .bible-panel__contents-list, .notes-panel__list, .compare-panel__scroll, .search-results-panel__list) {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--vs-fg-muted) 42%, transparent) transparent;
+}
+
+.workspace :is(.bible-panel__scroll, .bible-panel__contents-list, .notes-panel__list, .compare-panel__scroll, .search-results-panel__list)::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.workspace :is(.bible-panel__scroll, .bible-panel__contents-list, .notes-panel__list, .compare-panel__scroll, .search-results-panel__list)::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.workspace :is(.bible-panel__scroll, .bible-panel__contents-list, .notes-panel__list, .compare-panel__scroll, .search-results-panel__list)::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 4px;
+  background-clip: padding-box;
+  background-color: color-mix(in srgb, var(--vs-fg-muted) 42%, transparent);
+}
+
+.workspace :is(.bible-panel__scroll, .bible-panel__contents-list, .notes-panel__list, .compare-panel__scroll, .search-results-panel__list)::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--vs-fg-muted) 62%, transparent);
+}
+
 /* ---------- Passage Compare ---------- */
   z-index: 20;
 
@@ -1800,5 +1826,109 @@
 .notes-panel__editor-empty {
   padding: var(--vs-space-6);
   color: var(--vs-fg-muted);
+  text-align: center;
+}
+
+/* ---------- Personal Commentary ---------- */
+
+.commentary-panel {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: auto;
+  color: var(--vs-fg-primary);
+  font-family: var(--vs-font-reading);
+}
+
+.commentary-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vs-space-3);
+  min-height: 42px;
+  padding: 6px var(--vs-space-4);
+  border-bottom: 1px solid var(--vs-border);
+  background: var(--vs-bg-surface);
+  font-family: var(--vs-font-ui);
+  font-size: 12px;
+}
+
+.commentary-panel__header span {
+  color: var(--vs-accent);
+  font-size: 11px;
+}
+
+.commentary-panel__header button,
+.commentary-panel__entry button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border: 1px solid var(--vs-border);
+  border-radius: 3px;
+  background: var(--vs-bg-elevated);
+  color: var(--vs-fg-primary);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.commentary-panel__header button {
+  margin-left: auto;
+}
+
+.commentary-panel__header button:hover:not(:disabled),
+.commentary-panel__entry button:hover {
+  border-color: var(--vs-accent);
+}
+
+.commentary-panel__header button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.commentary-panel__entry {
+  max-width: 75ch;
+  padding: var(--vs-space-5) var(--vs-space-6);
+  border-bottom: 1px solid var(--vs-border);
+  line-height: 1.65;
+}
+
+.commentary-panel__entry--selected {
+  background: color-mix(in srgb, var(--vs-accent) 6%, transparent);
+}
+
+.commentary-panel__entry h2 {
+  margin: 0 0 var(--vs-space-3);
+  font-family: var(--vs-font-ui);
+  font-size: 16px;
+}
+
+.commentary-panel__entry p {
+  margin: 0 0 var(--vs-space-3);
+}
+
+.commentary-panel__entry textarea {
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  margin-bottom: var(--vs-space-3);
+  padding: var(--vs-space-3);
+  border: 1px solid var(--vs-border);
+  border-radius: 3px;
+  background: var(--vs-bg-app);
+  color: var(--vs-fg-primary);
+  font: inherit;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.commentary-panel__empty {
+  padding: var(--vs-space-6);
+  color: var(--vs-fg-muted);
+  font-family: var(--vs-font-ui);
+  font-size: 12px;
   text-align: center;
 }

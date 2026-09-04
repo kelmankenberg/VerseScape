@@ -114,6 +114,7 @@ export const createNoteRequest = z.object({
   verseKey: z.number().int().positive(),
   title: z.string().max(500),
   resourceId: resourceSummary.shape.id.optional(),
+  notebookId: z.string().min(1).optional(),
   startKey: z.number().int().positive().optional(),
   endKey: z.number().int().positive().optional(),
 });
@@ -125,14 +126,33 @@ export const noteRecord = z.object({
   title: z.string(),
   bodyMd: z.string().optional(),
   resourceId: resourceSummary.shape.id.optional(),
+  notebookId: z.string().min(1).optional(),
+  notebookKind: z.string().min(1).optional(),
 });
 export type NoteRecord = z.infer<typeof noteRecord>;
+
+export const notebookRecord = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  parentId: z.string().min(1).nullable(),
+  kind: z.string().min(1),
+  noteCount: z.number().int().nonnegative(),
+});
+export type NotebookRecord = z.infer<typeof notebookRecord>;
+
+export const createNotebookRequest = z.object({
+  name: z.string().trim().min(1).max(200),
+  parentId: z.string().min(1).nullable().default(null),
+  kind: z.enum(['notebook', 'commentary']).default('notebook'),
+});
+export type CreateNotebookRequest = z.infer<typeof createNotebookRequest>;
 
 export const updateNoteRequest = z.object({
   id: z.string().min(1),
   bodyMd: z.string().max(100000).optional(),
   title: z.string().max(500).optional(),
-}).refine((value) => value.bodyMd !== undefined || value.title !== undefined, {
+  notebookId: z.string().min(1).optional(),
+}).refine((value) => value.bodyMd !== undefined || value.title !== undefined || value.notebookId !== undefined, {
   message: 'A note title or body is required.',
 });
 export type UpdateNoteRequest = z.infer<typeof updateNoteRequest>;
@@ -268,6 +288,8 @@ export const contracts = {
   },
   'annotations:delete-note': { request: noteIdRequest, response: z.null() },
   'annotations:update-note': { request: updateNoteRequest, response: noteRecord },
+  'annotations:list-notebooks': { request: emptyRequest, response: z.array(notebookRecord) },
+  'annotations:create-notebook': { request: createNotebookRequest, response: notebookRecord },
   'search:query': { request: searchRequest, response: z.array(searchHit) },
 } as const;
 

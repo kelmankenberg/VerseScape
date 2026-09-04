@@ -12,11 +12,13 @@ import {
   addNoteAnchor,
   createHighlight,
   createNote,
+  createNotebook,
   deleteNote,
   deleteNoteAnchor,
   listHighlights,
   listNoteAnchors,
   listNotes,
+  listNotebooks,
   updateNote,
 } from '../services/annotations.js';
 import { runSearch } from '../services/search.js';
@@ -125,8 +127,11 @@ export function registerIpcHandlers(): void {
   });
 
   handle(IpcChannels.annotationsUpdateNote, (request) =>
-    updateNote(request.id, request.bodyMd, request.title),
+    updateNote(request.id, request.bodyMd, request.title, request.notebookId),
   );
+
+  handle(IpcChannels.annotationsListNotebooks, () => listNotebooks());
+  handle(IpcChannels.annotationsCreateNotebook, (request) => createNotebook(request));
 
   handle(IpcChannels.searchQuery, (request) => runSearch(request));
 }

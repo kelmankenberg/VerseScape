@@ -64,12 +64,12 @@ test('the rail collapses and expands', async () => {
 });
 
 test('navigating opens the contextual sidebar and switches page', async () => {
-  await page.getByRole('button', { name: 'Notes' }).click();
+  await page.getByTestId('rail').getByRole('button', { name: 'Notes' }).click();
   await expect(page.getByRole('main')).toHaveAttribute('data-page', 'notes');
   await expect(page.locator('[data-testid="sidebar"]')).toBeVisible();
 
   // Re-selecting the active section collapses its sidebar.
-  await page.getByRole('button', { name: 'Notes' }).click();
+  await page.getByTestId('rail').getByRole('button', { name: 'Notes' }).click();
   await expect(page.locator('[data-testid="sidebar"]')).toHaveCount(0);
 });
 

@@ -8,6 +8,7 @@ import { StrongsPanel, type StrongsPanelState } from './StrongsPanel.js';
 import { SearchResultsPanel } from './SearchResultsPanel.js';
 
 import { NotesPanel } from './NotesPanel.js';
+import { CommentaryPanel } from './CommentaryPanel.js';
 
 /**
  * M2 test panels. Real Bible, Notes and commentary panels replace these in M3
@@ -82,5 +83,15 @@ export function registerBuiltInPanels(): void {
     hasReferenceInput: false,
     createState: () => null,
     component: NotesPanel,
+  });
+
+  registerPanel({
+    type: 'commentary',
+    title: 'Personal Commentary',
+    icon: NotebookPen,
+    linkable: true,
+    hasReferenceInput: true,
+    createState: () => ({ reference: 'John 3', verseKey: 43_003_001 }),
+    component: CommentaryPanel,
   });
 }

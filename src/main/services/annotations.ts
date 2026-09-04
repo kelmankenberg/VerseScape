@@ -6,7 +6,9 @@ import Database from 'better-sqlite3';
 import type {
   CreateHighlightRequest,
   CreateNoteRequest,
+  CreateNotebookRequest,
   HighlightRecord,
+  NotebookRecord,
   NoteRecord,
 } from '@shared/ipc/contracts.js';
 
@@ -17,7 +19,7 @@ import type {
  * margin indicators arrive with the rest of the Notes feature in M5.
  */
 
-const DEFAULT_NOTEBOOK_ID = 'default';
+  const DEFAULT_NOTEBOOK_ID = 'default';
 
 let db: Database.Database | null = null;
 
@@ -77,13 +79,19 @@ export function createNote(request: CreateNoteRequest): NoteRecord {
   const database = open();
   const id = randomUUID();
   const now = new Date().toISOString();
+  const notebookId = request.notebookId ?? DEFAULT_NOTEBOOK_ID;
+  const notebook = database
+    .prepare('SELECT id, kind FROM notebook WHERE id = ?')
+    .get(notebookId) as { id: string; kind: string } | undefined;
+  const targetNotebookId = notebook?.id ?? DEFAULT_NOTEBOOK_ID;
+  const targetNotebookKind = notebook?.kind ?? 'notebook';
 
   database
     .prepare(
       `INSERT INTO note (id, notebook_id, title, body_md, created_at, updated_at)
        VALUES (?, ?, ?, '', ?, ?)`,
     )
-    .run(id, DEFAULT_NOTEBOOK_ID, request.title, now, now);
+    .run(id, targetNotebookId, request.title, now, now);
   database
     .prepare(
       `INSERT INTO note_anchor (note_id, start_key, end_key, resource_id) VALUES (?, ?, ?, ?)`,
@@ -99,9 +107,9 @@ export function createNote(request: CreateNoteRequest): NoteRecord {
     verseKey: request.startKey ?? request.verseKey,
     title: request.title,
     resourceId: request.resourceId,
+    notebookId: targetNotebookId,
+    notebookKind: targetNotebookKind,
   };
-
-  return { id, verseKey: request.verseKey, title: request.title, resourceId: request.resourceId };
 }
 
 export function createHighlight(request: CreateHighlightRequest): HighlightRecord {
@@ -168,10 +176,12 @@ export function listNotes(startKey?: number, endKey?: number): NoteRecord[] {
   const range = startKey !== undefined && endKey !== undefined;
   const rows = database
     .prepare(
-      `SELECT note.id, note.title, note.body_md AS bodyMd, note.notebook_id,
+        `SELECT note.id, note.title, note.body_md AS bodyMd, note.notebook_id AS notebookId,
+          notebook.kind AS notebookKind,
           MIN(note_anchor.start_key) AS verseKey
        FROM note
        INNER JOIN note_anchor ON note.id = note_anchor.note_id
+         INNER JOIN notebook ON notebook.id = note.notebook_id
        ${range ? 'WHERE note_anchor.start_key >= ? AND note_anchor.end_key <= ?' : ''}
        GROUP BY note.id, note.title, note.body_md, note.notebook_id
        ORDER BY note.created_at DESC`,
@@ -180,6 +190,8 @@ export function listNotes(startKey?: number, endKey?: number): NoteRecord[] {
     id: string;
     title: string;
     bodyMd: string;
+    notebookId: string;
+    notebookKind: string;
     notebook_id: string;
     verseKey: number;
   }>;
@@ -189,6 +201,8 @@ export function listNotes(startKey?: number, endKey?: number): NoteRecord[] {
     verseKey: row.verseKey,
     title: row.title,
     bodyMd: row.bodyMd,
+    notebookId: row.notebookId,
+    notebookKind: row.notebookKind,
   }));
 }
 
@@ -244,7 +258,7 @@ export function deleteNoteAnchor(noteId: string, startKey: number, endKey: numbe
     .run(noteId, startKey, endKey);
 }
 
-export function updateNote(noteId: string, bodyMd?: string, title?: string): NoteRecord {
+export function updateNote(noteId: string, bodyMd?: string, title?: string, notebookId?: string): NoteRecord {
   const database = open();
   const now = new Date().toISOString();
   database
@@ -252,17 +266,60 @@ export function updateNote(noteId: string, bodyMd?: string, title?: string): Not
       `UPDATE note SET
          body_md = COALESCE(?, body_md),
          title = COALESCE(?, title),
+            notebook_id = COALESCE(?, notebook_id),
          updated_at = ?
        WHERE id = ?`,
     )
-    .run(bodyMd ?? null, title ?? null, now, noteId);
+          .run(bodyMd ?? null, title ?? null, notebookId ?? null, now, noteId);
   const row = database
     .prepare(
-      `SELECT note.id, note.title, note.body_md AS bodyMd, note_anchor.start_key AS verseKey
+      `SELECT note.id, note.title, note.body_md AS bodyMd, note.notebook_id AS notebookId,
+              notebook.kind AS notebookKind, note_anchor.start_key AS verseKey
        FROM note INNER JOIN note_anchor ON note.id = note_anchor.note_id
+       INNER JOIN notebook ON notebook.id = note.notebook_id
        WHERE note.id = ? ORDER BY note_anchor.start_key LIMIT 1`,
     )
-    .get(noteId) as { id: string; title: string; bodyMd: string; verseKey: number } | undefined;
+    .get(noteId) as {
+    id: string;
+    title: string;
+    bodyMd: string;
+    notebookId: string;
+    notebookKind: string;
+    verseKey: number;
+  } | undefined;
   if (!row) throw new Error('Note not found.');
   return row;
+}
+
+export function listNotebooks(): NotebookRecord[] {
+  const database = open();
+  const rows = database
+    .prepare(
+      `SELECT notebook.id, notebook.name, notebook.parent_id AS parentId, notebook.kind,
+              COUNT(note.id) AS noteCount
+       FROM notebook LEFT JOIN note ON note.notebook_id = notebook.id
+       GROUP BY notebook.id, notebook.name, notebook.parent_id, notebook.kind
+       ORDER BY notebook.sort_order, notebook.name`,
+    )
+    .all() as Array<{
+    id: string;
+    name: string;
+    parentId: string | null;
+    kind: string;
+    noteCount: number;
+  }>;
+  return rows;
+}
+
+export function createNotebook(request: CreateNotebookRequest): NotebookRecord {
+  const database = open();
+  const id = randomUUID();
+  const now = new Date().toISOString();
+  database
+    .prepare(
+      `INSERT INTO notebook (id, name, parent_id, sort_order, kind, created_at, updated_at)
+       VALUES (?, ?, ?, 0, ?, ?, ?)`,
+    )
+    .run(id, request.name, request.parentId, request.kind, now, now);
+  return { id, name: request.name, parentId: request.parentId, kind: request.kind, noteCount: 0 };
 }
