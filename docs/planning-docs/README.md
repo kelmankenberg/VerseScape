@@ -25,6 +25,7 @@ UI inspiration: Logos Bible Study.
 | [13-decision-log.md](13-decision-log.md)                     | Settled decisions and their consequences       |
 | [14-personal-commentary-redesign.md](14-personal-commentary-redesign.md) | Proposed PC resource-reader redesign and decisions |
 | [15-signed-resource-catalog.md](15-signed-resource-catalog.md) | Signed catalog key custody, publishing, and verification runbook |
+| [16-resource-maintenance-guide.md](16-resource-maintenance-guide.md) | Maintainer guide for selecting, publishing, updating, and removing resources |
 
 ## Conventions
 
