@@ -31,6 +31,8 @@ export const IpcChannels = {
   annotationsUpdateNote: 'annotations:update-note',
   annotationsListNotebooks: 'annotations:list-notebooks',
   annotationsCreateNotebook: 'annotations:create-notebook',
+  annotationsExportNote: 'annotations:export-note',
+  annotationsExportNotebook: 'annotations:export-notebook',
   searchQuery: 'search:query',
 } as const;
 

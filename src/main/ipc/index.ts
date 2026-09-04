@@ -15,6 +15,8 @@ import {
   createNotebook,
   deleteNote,
   deleteNoteAnchor,
+  exportNote,
+  exportNotebook,
   listHighlights,
   listNoteAnchors,
   listNotes,
@@ -132,6 +134,8 @@ export function registerIpcHandlers(): void {
 
   handle(IpcChannels.annotationsListNotebooks, () => listNotebooks());
   handle(IpcChannels.annotationsCreateNotebook, (request) => createNotebook(request));
+  handle(IpcChannels.annotationsExportNote, (request) => exportNote(request.id, request.format));
+  handle(IpcChannels.annotationsExportNotebook, (request) => exportNotebook(request.id, request.format));
 
   handle(IpcChannels.searchQuery, (request) => runSearch(request));
 }

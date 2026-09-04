@@ -68,7 +68,7 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 - Find-in-panel
 - **Exit:** FR-SE-01..04 and NFR-02 search budget met
 
-## M5 — Notes and highlights
+## M5 — Notes and highlights 🚧
 
 - Notes schema, notebook tree, TipTap editor with `ref` nodes (the
   `notebook`/`note`/`note_anchor`/`highlight` tables and `versescape.db` already
@@ -81,6 +81,7 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 - Highlights: selection → colour, margin indicators, persistence
 - Selection context menu (copy with citation, note, highlight, search)
 - Export note/notebook to Markdown, HTML and PDF
+- **Remaining:** TipTap `ref` nodes with `[[ref:BOOK.C.V]]` syntax and hierarchical notebook tree
 - **Exit:** FR-NT-01..12
 
 ## M6 — Library and resources

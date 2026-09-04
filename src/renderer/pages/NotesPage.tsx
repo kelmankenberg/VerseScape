@@ -4,28 +4,12 @@ import { formatReference, fromVerseKey } from '@shared/reference/index.js';
 import type { NoteRecord, NotebookRecord } from '@shared/ipc/contracts.js';
 import { useWorkspace } from '../workspace/store.js';
 
-function downloadText(filename: string, content: string, type: string): void {
+function downloadText(filename: string, content: BlobPart, type: string): void {
   const link = document.createElement('a');
   link.href = URL.createObjectURL(new Blob([content], { type }));
   link.download = filename;
   link.click();
   URL.revokeObjectURL(link.href);
-}
-
-function htmlToMarkdown(html: string): string {
-  return html
-    .replace(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/giu, (_, text: string) => `## ${text.replace(/<[^>]+>/gu, '')}\n\n`)
-    .replace(/<strong>(.*?)<\/strong>/giu, '**$1**')
-    .replace(/<em>(.*?)<\/em>/giu, '*$1*')
-    .replace(/<li[^>]*>(.*?)<\/li>/giu, '- $1\n')
-    .replace(/<p[^>]*>(.*?)<\/p>/giu, '$1\n\n')
-    .replace(/<br\s*\/?>(?<!\n)/giu, '\n')
-    .replace(/<[^>]+>/gu, '')
-    .replace(/&amp;/gu, '&')
-    .replace(/&lt;/gu, '<')
-    .replace(/&gt;/gu, '>')
-    .replace(/\n{3,}/gu, '\n\n')
-    .trim();
 }
 
 export function NotesPage(): React.JSX.Element {
@@ -112,9 +96,15 @@ export function NotesPage(): React.JSX.Element {
   const exportSelected = (format: 'markdown' | 'html' | 'pdf'): void => {
     if (!selectedNote) return;
     const base = selectedNote.title.toLowerCase().replace(/[^a-z0-9]+/gu, '-').replace(/^-|-$/gu, '') || 'note';
-    if (format === 'markdown') downloadText(`${base}.md`, `# ${selectedNote.title}\n\n${htmlToMarkdown(selectedNote.bodyMd ?? '')}`, 'text/markdown');
-    else if (format === 'html') downloadText(`${base}.html`, `<!doctype html><title>${selectedNote.title}</title>${selectedNote.bodyMd ?? ''}`, 'text/html');
-    else window.print();
+    void window.versescape.annotations.exportNote({ id: selectedNote.id, format }).then((result) => {
+      if (!result.ok) return;
+      if (format === 'pdf') {
+        const bytes = Uint8Array.from(atob(result.data), (character) => character.charCodeAt(0));
+        downloadText(`${base}.pdf`, bytes, 'application/pdf');
+        return;
+      }
+      downloadText(`${base}.${format === 'markdown' ? 'md' : 'html'}`, result.data, format === 'markdown' ? 'text/markdown' : 'text/html');
+    });
   };
 
   const outline = selectedNote?.bodyMd

@@ -1,4 +1,4 @@
-import { app } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -322,4 +322,135 @@ export function createNotebook(request: CreateNotebookRequest): NotebookRecord {
     )
     .run(id, request.name, request.parentId, request.kind, now, now);
   return { id, name: request.name, parentId: request.parentId, kind: request.kind, noteCount: 0 };
+}
+
+export async function exportNote(noteId: string, format: 'markdown' | 'html' | 'pdf'): Promise<string> {
+  const database = open();
+  const note = database
+    .prepare('SELECT title, body_md AS bodyMd FROM note WHERE id = ?')
+    .get(noteId) as { title: string; bodyMd: string } | undefined;
+
+  if (!note) throw new Error('Note not found.');
+
+  const title = note.title || 'Untitled Note';
+  const content = note.bodyMd || '';
+
+  if (format === 'markdown') {
+    return `# ${title}\n\n${htmlToMarkdown(content)}`;
+  }
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(title)}</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
+    h1, h2, h3, h4, h5, h6 { margin-top: 1.5em; margin-bottom: 0.5em; }
+  </style>
+</head>
+<body>
+  <h1>${escapeHtml(title)}</h1>
+  ${content}
+</body>
+</html>`;
+
+  return format === 'pdf' ? renderPdf(html) : html;
+}
+
+export async function exportNotebook(notebookId: string, format: 'markdown' | 'html' | 'pdf'): Promise<string> {
+  const database = open();
+
+  const notebook = database
+    .prepare('SELECT id, name FROM notebook WHERE id = ?')
+    .get(notebookId) as { id: string; name: string } | undefined;
+
+  if (!notebook) throw new Error('Notebook not found.');
+
+  const notes = database
+    .prepare(`
+      SELECT id, title, body_md AS bodyMd
+      FROM note
+      WHERE notebook_id = ?
+      ORDER BY created_at ASC
+    `)
+    .all(notebookId) as Array<{ id: string; title: string; bodyMd: string }>;
+
+  const title = notebook.name || 'Untitled Notebook';
+
+  if (format === 'markdown') {
+    const noteContent = notes
+      .map((note) => `## ${note.title || 'Untitled'}\n\n${htmlToMarkdown(note.bodyMd || '')}`)
+      .join('\n\n---\n\n');
+    return `# ${title}\n\n${noteContent}`;
+  }
+
+  const notesHtml = notes
+    .map((note) => `<section><h2>${escapeHtml(note.title || 'Untitled')}</h2>${note.bodyMd || ''}</section>`)
+    .join('\n');
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(title)}</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
+    h1, h2, h3, h4, h5, h6 { margin-top: 1.5em; margin-bottom: 0.5em; }
+    section { margin-bottom: 2em; padding-bottom: 2em; border-bottom: 1px solid #eee; }
+    section:last-child { border-bottom: none; }
+  </style>
+</head>
+<body>
+  <h1>${escapeHtml(title)}</h1>
+  ${notesHtml}
+</body>
+</html>`;
+
+  return format === 'pdf' ? renderPdf(html) : html;
+}
+
+async function renderPdf(html: string): Promise<string> {
+  const exportWindow = new BrowserWindow({
+    show: false,
+    webPreferences: { sandbox: true },
+  });
+
+  try {
+    await exportWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+    const pdf = await exportWindow.webContents.printToPDF({ pageSize: 'A4', printBackground: true });
+    return pdf.toString('base64');
+  } finally {
+    if (!exportWindow.isDestroyed()) exportWindow.destroy();
+  }
+}
+
+function htmlToMarkdown(html: string): string {
+  return html
+    .replace(/<h1[^>]*>(.*?)<\/h1>/giu, '# $1\n\n')
+    .replace(/<h([2-6])[^>]*>(.*?)<\/h\1>/giu, '## $2\n\n')
+    .replace(/<(strong|b)>(.*?)<\/(strong|b)>/giu, '**$2**')
+    .replace(/<(em|i)>(.*?)<\/(em|i)>/giu, '*$2*')
+    .replace(/<li[^>]*>(.*?)<\/li>/giu, '- $1\n')
+    .replace(/<p[^>]*>(.*?)<\/p>/giu, '$1\n\n')
+    .replace(/<br\s*\/?>/giu, '\n')
+    .replace(/<[^>]+>/gu, '')
+    .replace(/&amp;/gu, '&')
+    .replace(/&lt;/gu, '<')
+    .replace(/&gt;/gu, '>')
+    .replace(/&quot;/gu, '"')
+    .replace(/&#39;/gu, "'")
+    .replace(/\n{3,}/gu, '\n\n')
+    .trim();
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/gu, '&amp;')
+    .replace(/</gu, '&lt;')
+    .replace(/>/gu, '&gt;')
+    .replace(/"/gu, '&quot;')
+    .replace(/'/gu, '&#39;');
 }

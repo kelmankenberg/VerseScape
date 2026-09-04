@@ -102,6 +102,14 @@ const bridge: VerseScapeBridge = {
       ipcRenderer.invoke(IpcChannels.annotationsCreateNotebook, request) as Promise<
         IpcResult<NotebookRecord>
       >,
+    exportNote: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsExportNote, request) as Promise<
+        IpcResult<string>
+      >,
+    exportNotebook: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsExportNotebook, request) as Promise<
+        IpcResult<string>
+      >,
   },
   search: {
     query: (request) =>

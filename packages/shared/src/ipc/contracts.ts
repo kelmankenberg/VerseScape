@@ -147,6 +147,21 @@ export const createNotebookRequest = z.object({
 });
 export type CreateNotebookRequest = z.infer<typeof createNotebookRequest>;
 
+export const exportFormat = z.enum(['markdown', 'html', 'pdf']);
+export type ExportFormat = z.infer<typeof exportFormat>;
+
+export const exportNoteRequest = z.object({
+  id: z.string().min(1),
+  format: exportFormat,
+});
+export type ExportNoteRequest = z.infer<typeof exportNoteRequest>;
+
+export const exportNotebookRequest = z.object({
+  id: z.string().min(1),
+  format: exportFormat,
+});
+export type ExportNotebookRequest = z.infer<typeof exportNotebookRequest>;
+
 export const updateNoteRequest = z.object({
   id: z.string().min(1),
   bodyMd: z.string().max(100000).optional(),
@@ -290,6 +305,8 @@ export const contracts = {
   'annotations:update-note': { request: updateNoteRequest, response: noteRecord },
   'annotations:list-notebooks': { request: emptyRequest, response: z.array(notebookRecord) },
   'annotations:create-notebook': { request: createNotebookRequest, response: notebookRecord },
+  'annotations:export-note': { request: exportNoteRequest, response: z.string() },
+  'annotations:export-notebook': { request: exportNotebookRequest, response: z.string() },
   'search:query': { request: searchRequest, response: z.array(searchHit) },
 } as const;
 

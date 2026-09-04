@@ -15,6 +15,8 @@ import type {
   NoteIdRequest,
   UpdateNoteRequest,
   CreateNotebookRequest,
+  ExportNoteRequest,
+  ExportNotebookRequest,
   NotebookRecord,
   CrossReference,
   CrossReferenceRequest,
@@ -67,6 +69,8 @@ export interface VerseScapeBridge {
     updateNote(request: UpdateNoteRequest): Promise<IpcResult<NoteRecord>>;
     listNotebooks(): Promise<IpcResult<NotebookRecord[]>>;
     createNotebook(request: CreateNotebookRequest): Promise<IpcResult<NotebookRecord>>;
+    exportNote(request: ExportNoteRequest): Promise<IpcResult<string>>;
+    exportNotebook(request: ExportNotebookRequest): Promise<IpcResult<string>>;
   };
   readonly search: {
     query(request: SearchRequest): Promise<IpcResult<SearchHit[]>>;

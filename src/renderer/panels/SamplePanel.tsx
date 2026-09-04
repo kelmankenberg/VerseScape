@@ -881,6 +881,7 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
                     }
                   >
                     <span className="bible-panel__number">{verse.verse}</span>
+                    {((highlightsByVerse.get(verse.key) ?? []).length > 0 || (findOpen ? (findHighlightsByVerse.get(verse.key) ?? []).length > 0 : false)) && <span className="bible-panel__highlight-indicator" title={`${highlightsByVerse.get(verse.key)?.length ?? 0} highlight(s)`} />}
                     {displayOptions.showCrossReferences && (
                       <CrossReferencesButton verseKey={verse.key} onNavigate={navigateToVerse} />
                     )}

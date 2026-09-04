@@ -35,7 +35,7 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import UnderlineExtension from '@tiptap/extension-underline';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { formatReference, fromVerseKey, parseReference, rangeToKeys } from '@shared/reference/index.js';
-import type { NoteAnchorRecord, NoteRecord } from '@shared/ipc/contracts.js';
+import type { NoteAnchorRecord, NoteRecord, NotebookRecord } from '@shared/ipc/contracts.js';
 import { useVerseSync } from '../workspace/use-verse-sync.js';
 import { useWorkspace } from '../workspace/store.js';
 import type { PanelProps } from './registry.js';
@@ -143,6 +143,32 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [titleDraft, setTitleDraft] = useState('');
   const [contextMenuNoteId, setContextMenuNoteId] = useState<string | null>(null);
+  const [notebooks, setNotebooks] = useState<NotebookRecord[]>([]);
+  const [selectedNotebookId, setSelectedNotebookId] = useState<string | null>(null);
+  const [creatingNotebook, setCreatingNotebook] = useState(false);
+  const [newNotebookName, setNewNotebookName] = useState('');
+  const [outlineMode, setOutlineMode] = useState(false);
+  const [collapsedOutlineHeadings, setCollapsedOutlineHeadings] = useState<Set<string>>(new Set());
+
+  // Fetch notebooks on mount
+  useEffect(() => {
+    let cancelled = false;
+    void window.versescape.annotations
+      .listNotebooks()
+      .then((result) => {
+        if (cancelled) return;
+        if (result.ok) {
+          setNotebooks(result.data);
+          if (!selectedNotebookId && result.data.length > 0) {
+            setSelectedNotebookId(result.data[0]?.id ?? null);
+          }
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // When sync verse changes, refresh notes for that verse
   useEffect(() => {
@@ -155,11 +181,16 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
       .then((result) => {
         if (cancelled) return;
         if (result.ok) {
-          setNotes(result.data);
+          // Filter notes by selected notebook if one is selected
+          let filteredNotes = result.data;
+          if (selectedNotebookId) {
+            filteredNotes = result.data.filter((note) => note.notebookId === selectedNotebookId);
+          }
+          setNotes(filteredNotes);
           setSelectedNoteId(
-            requestedNoteId && result.data.some((note) => note.id === requestedNoteId)
+            requestedNoteId && filteredNotes.some((note) => note.id === requestedNoteId)
               ? requestedNoteId
-              : result.data[0]?.id ?? null,
+              : filteredNotes[0]?.id ?? null,
           );
         }
         setLoading(false);
@@ -168,7 +199,7 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
     return () => {
       cancelled = true;
     };
-  }, [currentVerseKey, requestedNoteId]);
+  }, [currentVerseKey, requestedNoteId, selectedNotebookId]);
 
   useEffect(() => {
     if (!selectedNoteId) {
@@ -235,6 +266,20 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
       else next.add(noteId);
       return next;
     });
+  };
+
+  const createNotebook = (): void => {
+    if (!newNotebookName.trim()) return;
+    void window.versescape.annotations
+      .createNotebook({ name: newNotebookName.trim(), parentId: null, kind: 'notebook' })
+      .then((result) => {
+        if (result.ok) {
+          setNotebooks((prev) => [result.data, ...prev]);
+          setSelectedNotebookId(result.data.id);
+          setNewNotebookName('');
+          setCreatingNotebook(false);
+        }
+      });
   };
 
   const createAnchoredNote = (): void => {
@@ -400,6 +445,54 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
       setContextMenuNoteId(null);
     });
   };
+  const exportNote = (format: 'markdown' | 'html' | 'pdf'): void => {
+    if (!selectedNoteId) return;
+    void window.versescape.annotations
+      .exportNote({ id: selectedNoteId, format })
+      .then((result) => {
+        if (result.ok) {
+          const extension = format === 'markdown' ? 'md' : format;
+          const type = format === 'markdown' ? 'text/markdown' : format === 'html' ? 'text/html' : 'application/pdf';
+          const data = format === 'pdf'
+            ? Uint8Array.from(atob(result.data), (character) => character.charCodeAt(0))
+            : result.data;
+          const filename = `${selectedNote?.title || 'note'}.${extension}`;
+          const blob = new Blob([data], { type });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }
+      });
+  };
+
+  const exportNotebook = (format: 'markdown' | 'html' | 'pdf'): void => {
+    if (!selectedNotebookId) return;
+    void window.versescape.annotations
+      .exportNotebook({ id: selectedNotebookId, format })
+      .then((result) => {
+        if (!result.ok) return;
+        const extension = format === 'markdown' ? 'md' : format;
+        const type = format === 'markdown' ? 'text/markdown' : format === 'html' ? 'text/html' : 'application/pdf';
+        const data = format === 'pdf'
+          ? Uint8Array.from(atob(result.data), (character) => character.charCodeAt(0))
+          : result.data;
+        const notebook = notebooks.find((entry) => entry.id === selectedNotebookId);
+        const blob = new Blob([data], { type });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${notebook?.name || 'notebook'}.${extension}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      });
+  };
 
   const saveTitle = (): void => {
     const noteId = editingTitleId;
@@ -415,10 +508,86 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
     void window.versescape.annotations.updateNote({ id: noteId, title });
   };
 
+  const parseOutlineHeadings = (html: string): Array<{ level: number; text: string; key: string }> => {
+    const document = new DOMParser().parseFromString(html, 'text/html');
+
+    return Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6')).map((heading, index) => ({
+      level: Number(heading.tagName.at(1) ?? '1'),
+      text: heading.textContent ?? '',
+      key: `heading-${index}`,
+    }));
+  };
+
+  const outlineHeadings = selectedNote?.bodyMd ? parseOutlineHeadings(selectedNote.bodyMd) : [];
+
+  const hasOutlineChildren = (index: number): boolean => {
+    const heading = outlineHeadings[index];
+    return heading !== undefined && (outlineHeadings[index + 1]?.level ?? 0) > heading.level;
+  };
+
+  const isOutlineHeadingVisible = (index: number): boolean => {
+    const heading = outlineHeadings[index];
+    if (heading === undefined) return false;
+
+    let ancestorLevel = heading.level;
+
+    for (let parentIndex = index - 1; parentIndex >= 0; parentIndex -= 1) {
+      const parent = outlineHeadings[parentIndex];
+      if (parent === undefined) continue;
+      if (parent.level < ancestorLevel) {
+        if (collapsedOutlineHeadings.has(parent.key)) return false;
+        ancestorLevel = parent.level;
+      }
+    }
+
+    return true;
+  };
+
   return (
     <div className="notes-panel">
       <div className="notes-panel__toolbar">
         <span className="notes-panel__title">Notes</span>
+        {notebooks.length > 0 && (
+          <select
+            className="notes-panel__notebook-select"
+            value={selectedNotebookId ?? ''}
+            onChange={(e) => setSelectedNotebookId(e.target.value || null)}
+            aria-label="Filter by notebook"
+          >
+            <option value="">All notebooks</option>
+            {notebooks.map((notebook) => (
+              <option key={notebook.id} value={notebook.id}>
+                {notebook.name}
+              </option>
+            ))}
+          </select>
+        )}
+        {creatingNotebook && (
+          <input
+            className="notes-panel__notebook-input"
+            type="text"
+            autoFocus
+            placeholder="Notebook name"
+            value={newNotebookName}
+            onChange={(e) => setNewNotebookName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                createNotebook();
+              } else if (e.key === 'Escape') {
+                setCreatingNotebook(false);
+                setNewNotebookName('');
+              }
+            }}
+            onBlur={() => {
+              if (newNotebookName.trim()) {
+                createNotebook();
+              } else {
+                setCreatingNotebook(false);
+                setNewNotebookName('');
+              }
+            }}
+          />
+        )}
         <input
           className="notes-panel__search"
           type="search"
@@ -427,6 +596,17 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
           value={noteSearch}
           onChange={(event) => setNoteSearch(event.target.value)}
         />
+        {!creatingNotebook && (
+          <button
+            type="button"
+            className="notes-panel__button"
+            title="Create a new notebook"
+            aria-label="Create notebook"
+            onClick={() => setCreatingNotebook(true)}
+          >
+            <Plus size={14} />
+          </button>
+        )}
         <button
           type="button"
           className="notes-panel__button"
@@ -654,6 +834,38 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
                         <Trash2 size={14} />
                         Delete this note
                       </button>
+                      <div className="notes-panel__menu-divider" />
+                      <button type="button" role="menuitem" onClick={() => exportNote('markdown')}>
+                        Export as Markdown
+                      </button>
+                      <button type="button" role="menuitem" onClick={() => exportNote('html')}>
+                        Export as HTML
+                      </button>
+                      <button type="button" role="menuitem" onClick={() => exportNote('pdf')}>
+                        Export as PDF
+                      </button>
+                      <div className="notes-panel__menu-divider" />
+                      <button type="button" role="menuitem" onClick={() => exportNotebook('markdown')}>
+                        Export notebook as Markdown
+                      </button>
+                      <button type="button" role="menuitem" onClick={() => exportNotebook('html')}>
+                        Export notebook as HTML
+                      </button>
+                      <button type="button" role="menuitem" onClick={() => exportNotebook('pdf')}>
+                        Export notebook as PDF
+                      </button>
+                      <div className="notes-panel__menu-divider" />
+                      <button
+                        type="button"
+                        role="menuitemcheckbox"
+                        aria-checked={outlineMode}
+                        onClick={() => setOutlineMode((mode) => !mode)}
+                      >
+                        <span className="notes-panel__menu-check">
+                          {outlineMode ? '✓' : ''}
+                        </span>
+                        Outline mode
+                      </button>
                     </div>
                   )}
                 </div>
@@ -784,6 +996,57 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
                   </div>
                 )}
               </div>
+              {outlineMode && outlineHeadings.length > 0 && (
+                <div className="notes-panel__outline">
+                  <div className="notes-panel__outline-heading">Outline</div>
+                  <nav className="notes-panel__outline-list" role="navigation">
+                    {outlineHeadings.map((heading, index) => {
+                      if (!isOutlineHeadingVisible(index)) return null;
+
+                      const hasChildren = hasOutlineChildren(index);
+                      const isCollapsed = collapsedOutlineHeadings.has(heading.key);
+
+                      return (
+                        <div
+                          key={heading.key}
+                          className={`notes-panel__outline-row notes-panel__outline-row--h${heading.level}`}
+                        >
+                          {hasChildren && (
+                            <button
+                              type="button"
+                              className={`notes-panel__outline-collapse${isCollapsed ? '' : ' notes-panel__outline-collapse--open'}`}
+                              aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${heading.text || `heading ${index + 1}`}`}
+                              aria-expanded={!isCollapsed}
+                              onClick={() => {
+                                setCollapsedOutlineHeadings((collapsed) => {
+                                  const next = new Set(collapsed);
+                                  if (next.has(heading.key)) next.delete(heading.key);
+                                  else next.add(heading.key);
+                                  return next;
+                                });
+                              }}
+                            >
+                              <ChevronDown size={13} />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className="notes-panel__outline-item"
+                            onClick={() => {
+                              const elements = editor?.view.dom.querySelectorAll('h1, h2, h3, h4, h5, h6');
+                              if (elements?.[index]) {
+                                (elements[index] as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              }
+                            }}
+                          >
+                            {heading.text || `Heading ${index + 1}`}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </nav>
+                </div>
+              )}
               <EditorContent
                 key={selectedNote.id}
                 editor={editor}
