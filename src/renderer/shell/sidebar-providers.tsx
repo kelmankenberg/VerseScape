@@ -1,4 +1,5 @@
 import type { PageId } from '@shared/settings.js';
+import { LibrarySidebar } from './LibrarySidebar.js';
 
 export interface SidebarProvider {
   title: string;
@@ -31,7 +32,7 @@ export const sidebarProviders: Partial<Record<PageId, SidebarProvider>> = {
   },
   library: {
     title: 'Resources',
-    render: () => <Placeholder lines={['Resource management is available on the Library page.']} />,
+    render: () => <LibrarySidebar />,
   },
   plans: {
     title: 'Reading Plans',

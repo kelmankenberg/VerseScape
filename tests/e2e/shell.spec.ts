@@ -87,6 +87,19 @@ test('opening an installed commentary selects it in the Workspace reader', async
   await expect(page.locator('.personal-commentary-panel__entry')).not.toHaveCount(0);
 });
 
+test('Library sidebar categorizes installed resources and opens a commentary', async () => {
+  await page.getByTestId('rail').getByRole('button', { name: 'Library' }).click();
+  const sidebar = page.getByTestId('sidebar');
+  await expect(sidebar.getByRole('heading', { name: 'Bibles' })).toBeVisible();
+  await expect(sidebar.getByRole('heading', { name: 'Commentaries' })).toBeVisible();
+  await expect(sidebar.getByRole('heading', { name: 'Lexicons' })).toBeVisible();
+  await expect(sidebar.getByRole('heading', { name: 'Study data' })).toBeVisible();
+
+  await sidebar.getByRole('button', { name: 'MHCC' }).click();
+  await expect(page.getByRole('main')).toHaveAttribute('data-page', 'workspace');
+  await expect(page.getByRole('tab', { name: /MHCC/ })).toBeVisible();
+});
+
 test('theme changes apply and survive a restart', async () => {
   await page.getByRole('button', { name: 'Settings' }).click();
   await page.getByRole('radio', { name: 'Light' }).click();

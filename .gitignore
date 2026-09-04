@@ -16,6 +16,10 @@ coverage/
 .env.*
 !.env.example
 
+# Local release-signing key material. The public key is committed separately at
+# its application location; private key files never belong in this repository.
+.keys/
+
 # Local editor chat history, not project source
 .specstory/
 

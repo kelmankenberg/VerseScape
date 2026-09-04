@@ -43,7 +43,7 @@ export const libraryResource = z.object({
   id: resourceSummary.shape.id,
   title: z.string().min(1),
   abbreviation: z.string().min(1),
-  type: z.enum(['bible', 'commentary']),
+  type: z.enum(['bible', 'commentary', 'lexicon', 'study-data', 'glossary']),
   language: z.string().min(2),
   versification: z.string().min(1),
   enabled: z.boolean(),

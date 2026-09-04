@@ -1,0 +1,104 @@
+name: Publish Resource Catalog
+
+on:
+  push:
+    tags:
+      - 'resources-v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing GitHub Release tag that receives resource assets
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-resources-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: resource-release
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build pinned resources
+        run: pnpm resources:build
+
+      - name: Package release archives
+        run: |
+          mkdir -p release/resources
+          for id in bsb kjv mhcc jfb; do
+            (
+              cd "resources/compiled/$id"
+              files=(manifest.json "$id.db")
+              if [[ -d assets ]]; then files+=(assets); fi
+              zip -q -r "../../../release/resources/$id-1.0.0.vsres" "${files[@]}"
+            )
+          done
+
+      - name: Generate signed catalog
+        env:
+          CATALOG_SIGNING_KEY_PEM: ${{ secrets.CATALOG_SIGNING_KEY_PEM }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          test -n "$CATALOG_SIGNING_KEY_PEM"
+          umask 077
+          printf '%s' "$CATALOG_SIGNING_KEY_PEM" > "$RUNNER_TEMP/catalog-private.pem"
+          node <<'NODE'
+          const { createHash } = require('node:crypto');
+          const { readFileSync, readdirSync, statSync, writeFileSync } = require('node:fs');
+          const { join } = require('node:path');
+
+          const output = 'release/resources';
+          const tag = process.env.RELEASE_TAG;
+          const resources = readdirSync(output)
+            .filter((name) => name.endsWith('.vsres'))
+            .sort()
+            .map((name) => {
+              const [id] = name.split('-');
+              const manifest = JSON.parse(readFileSync(join('resources/compiled', id, 'manifest.json'), 'utf8'));
+              const archive = join(output, name);
+              return {
+                id: manifest.id,
+                version: '1.0.0',
+                title: manifest.title,
+                abbreviation: manifest.abbreviation,
+                type: manifest.type,
+                language: manifest.language,
+                versification: manifest.versification,
+                sizeBytes: statSync(archive).size,
+                sha256: createHash('sha256').update(readFileSync(archive)).digest('hex'),
+                url: `https://github.com/${process.env.GITHUB_REPOSITORY}/releases/download/${tag}/${name}`,
+                licence: manifest.licence,
+              };
+            });
+          writeFileSync(join(output, 'catalog.json'), `${JSON.stringify({ version: 1, generatedAt: new Date().toISOString(), resources }, null, 2)}\n`);
+          NODE
+          openssl pkeyutl -sign -inkey "$RUNNER_TEMP/catalog-private.pem" -rawin -in release/resources/catalog.json -out release/resources/catalog.sig
+          openssl pkeyutl -verify -pubin -inkey src/main/services/keys/catalog-public-key.pem -rawin -in release/resources/catalog.json -sigfile release/resources/catalog.sig
+          rm -f "$RUNNER_TEMP/catalog-private.pem"
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          gh release view "$RELEASE_TAG" >/dev/null 2>&1 || gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --generate-notes
+          gh release upload "$RELEASE_TAG" release/resources/*.vsres release/resources/catalog.json release/resources/catalog.sig --clobber

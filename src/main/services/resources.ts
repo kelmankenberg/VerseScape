@@ -117,6 +117,48 @@ function resourceDirectory(id: string): string | null {
   return null;
 }
 
+function auxiliaryLibraryResource(id: string, directory: string, disabled: Set<string>): LibraryResource | null {
+  const kinds: Record<string, { type: 'lexicon' | 'study-data'; abbreviation: string }> = {
+    tbesh: { type: 'lexicon', abbreviation: 'TBESH' },
+    tbesg: { type: 'lexicon', abbreviation: 'TBESG' },
+    'cross-references': { type: 'study-data', abbreviation: 'XREF' },
+    versification: { type: 'study-data', abbreviation: 'TVTMS' },
+  };
+  const kind = kinds[id];
+  if (!kind) return null;
+  const manifestPath = join(directory, 'manifest.json');
+  if (!existsSync(manifestPath)) return null;
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as Record<string, unknown>;
+  const files = Array.isArray(manifest['files']) ? manifest['files'] : [];
+  const sizeBytes = files.reduce((total, file) => {
+    const relativePath = typeof file === 'object' && file !== null
+      ? (file as Record<string, unknown>)['path']
+      : null;
+    const path = typeof relativePath === 'string' ? join(directory, relativePath) : null;
+    return total + (path && existsSync(path) ? statSync(path).size : 0);
+  }, 0);
+  return {
+    id,
+    title: typeof manifest['title'] === 'string' ? manifest['title'] : id,
+    abbreviation: kind.abbreviation,
+    type: kind.type,
+    language: 'und',
+    versification: 'kjv',
+    enabled: !disabled.has(id),
+    removable: directory.startsWith(`${userResourceRoot()}${sep}`),
+    sizeBytes,
+    licence: {
+      spdx: typeof manifest['licence'] === 'string' ? manifest['licence'] : 'See source',
+      text: typeof manifest['licence'] === 'string' ? manifest['licence'] : 'See source.',
+      attribution: typeof manifest['attribution'] === 'string' ? manifest['attribution'] : null,
+      source: typeof manifest['source'] === 'string' ? manifest['source'] : 'https://versescape.app/',
+      retrieved: typeof manifest['retrieved'] === 'string' ? manifest['retrieved'] : 'unknown',
+      redistributable: true,
+      restrictions: null,
+    },
+  };
+}
+
 export function isResourceInstalled(id: string): boolean {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(id) && resourceDirectory(id) !== null;
 }
@@ -272,7 +314,11 @@ export function listLibraryResources(): LibraryResource[] {
       });
       seen.add(manifest.id);
     } catch {
-      // Invalid or auxiliary manifests cannot become Library resources.
+      const auxiliary = auxiliaryLibraryResource(entry.name, directory, disabled);
+      if (auxiliary) {
+        resources.push(auxiliary);
+        seen.add(entry.name);
+      }
     }
     }
   }

@@ -24,6 +24,7 @@ UI inspiration: Logos Bible Study.
 | [12-build-and-release.md](12-build-and-release.md)           | Packaging, signing, auto-update                |
 | [13-decision-log.md](13-decision-log.md)                     | Settled decisions and their consequences       |
 | [14-personal-commentary-redesign.md](14-personal-commentary-redesign.md) | Proposed PC resource-reader redesign and decisions |
+| [15-signed-resource-catalog.md](15-signed-resource-catalog.md) | Signed catalog key custody, publishing, and verification runbook |
 
 ## Conventions
 
