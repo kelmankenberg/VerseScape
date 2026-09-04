@@ -1501,6 +1501,48 @@ background: var(--vs-bg-surface);
   background: color-mix(in srgb, var(--vs-accent) 12%, transparent);
 }
 
+.notes-panel__pc-transfer {
+  display: grid;
+  gap: 5px;
+  padding: 7px;
+  border-top: 1px solid var(--vs-border);
+}
+
+.notes-panel__pc-transfer select {
+  min-width: 0;
+  padding: 4px;
+  border: 1px solid var(--vs-border);
+  background: var(--vs-bg);
+  color: var(--vs-fg);
+  font: inherit;
+  font-size: 11px;
+}
+
+.notes-panel__pc-transfer > div { display: flex; justify-content: flex-end; gap: 4px; }
+
+.library-page { height: 100%; overflow: auto; color: var(--vs-fg-primary); }
+.library-page__header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 24px; border-bottom: 1px solid var(--vs-border); }
+.library-page__header h1, .library-page__header p, .library-page__section h2, .library-page__resource h3, .library-page__resource p { margin: 0; }
+.library-page__header p, .library-page__empty, .library-page__resource p { margin-top: 4px; color: var(--vs-fg-muted); font-size: 12px; }
+.library-page__create, .library-page__create-form button, .library-page__resource button { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 5px 10px; border: 1px solid var(--vs-border); border-radius: 4px; background: var(--vs-bg-elevated); color: var(--vs-fg); font: inherit; font-size: 11px; cursor: pointer; }
+.library-page__create-form { display: flex; gap: 8px; padding: 12px 24px; border-bottom: 1px solid var(--vs-border); background: var(--vs-bg-surface); }
+.library-page__create-form input { min-width: 0; flex: 1; padding: 6px 8px; border: 1px solid var(--vs-border); border-radius: 3px; background: var(--vs-bg); color: var(--vs-fg); font: inherit; }
+.library-page__section { padding: 24px; max-width: 900px; }
+.library-page__resources { display: grid; gap: 8px; margin-top: 12px; }
+.library-page__resource { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px; border: 1px solid var(--vs-border); border-radius: 5px; background: var(--vs-bg-surface); }
+.library-page__resource > div { flex: 1; min-width: 0; }
+.library-page__actions, .library-page__resource-actions { display: flex; align-items: center; gap: 6px; }
+.library-page__delete-choice { display: flex; flex-basis: 100%; align-items: center; gap: 6px; padding-top: 8px; border-top: 1px solid var(--vs-border); color: var(--vs-fg-muted); font-size: 11px; }
+
+.personal-commentary-panel__context { padding: 7px 12px; border-bottom: 1px solid var(--vs-border); color: var(--vs-fg-muted); font-size: 11px; }
+.personal-commentary-panel__editor { display: grid; gap: 7px; padding: 10px 12px; border-bottom: 1px solid var(--vs-border); background: var(--vs-bg-surface); }
+.personal-commentary-panel__editor input, .personal-commentary-panel__editor textarea { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid var(--vs-border); border-radius: 3px; background: var(--vs-bg); color: var(--vs-fg); font: inherit; font-size: 12px; }
+.personal-commentary-panel__editor textarea { min-height: 110px; resize: vertical; }
+.personal-commentary-panel__editor > div { display: flex; justify-content: flex-end; gap: 6px; }
+.personal-commentary-panel__entry header { display: flex; align-items: center; justify-content: space-between; color: var(--vs-fg-muted); font-size: 11px; }
+.personal-commentary-panel__entry--active { border-left: 3px solid var(--vs-accent); }
+.personal-commentary-panel__open-bible { margin-top: 8px; }
+
 .notes-panel__note-date {
   color: var(--vs-fg-muted);
   font-size: 10px;

@@ -3,10 +3,15 @@ import { randomUUID } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import Database from 'better-sqlite3';
+import { fromVerseKey } from '@shared/reference/index.js';
 import type {
   BookmarkRecord,
+  CommentaryEntriesRequest,
+  CommentaryEntryRecord,
+  CopyNoteToCommentaryRequest,
   CreateBookmarkRequest,
   CreateHighlightRequest,
+  CreateCommentaryEntryRequest,
   CreateNoteRequest,
   CreateNotebookRequest,
   CreateTagRequest,
@@ -89,6 +94,16 @@ function open(): Database.Database {
     CREATE TABLE IF NOT EXISTS reading_position (
       resource_id TEXT PRIMARY KEY, verse_key INTEGER NOT NULL, updated_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS commentary_entry (
+      note_id TEXT PRIMARY KEY REFERENCES note(id) ON DELETE CASCADE,
+      anchor_kind TEXT NOT NULL CHECK(anchor_kind IN ('book', 'chapter', 'verse_range')),
+      book_id TEXT NOT NULL,
+      chapter INTEGER,
+      start_key INTEGER,
+      end_key INTEGER,
+      resource_id TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_commentary_entry_order ON commentary_entry(book_id, chapter, start_key, end_key);
   `);
 
   const now = new Date().toISOString();
@@ -135,6 +150,109 @@ export function createNote(request: CreateNoteRequest): NoteRecord {
     notebookId: targetNotebookId,
     notebookKind: targetNotebookKind,
   };
+}
+
+function commentaryEntryRecord(noteId: string): CommentaryEntryRecord {
+  const row = open().prepare(`SELECT note.id AS noteId, note.notebook_id AS commentaryId, note.title,
+    note.body_md AS bodyMd, commentary_entry.anchor_kind AS anchorKind, commentary_entry.book_id AS bookId,
+    commentary_entry.chapter, commentary_entry.start_key AS startKey, commentary_entry.end_key AS endKey,
+    commentary_entry.resource_id AS resourceId, note.created_at AS createdAt
+    FROM commentary_entry INNER JOIN note ON note.id = commentary_entry.note_id WHERE note.id = ?`).get(noteId) as CommentaryEntryRecord | undefined;
+  if (!row) throw new Error('Commentary entry not found.');
+  return row;
+}
+
+export function createCommentaryEntry(request: CreateCommentaryEntryRequest): CommentaryEntryRecord {
+  const database = open();
+  const commentary = database.prepare("SELECT id FROM notebook WHERE id = ? AND kind = 'commentary'").get(request.commentaryId);
+  if (!commentary) throw new Error('Personal Commentary not found.');
+  if (request.anchorKind === 'chapter' && request.chapter === null) throw new Error('Chapter entries require a chapter.');
+  if (request.anchorKind === 'verse_range' && (request.startKey === null || request.endKey === null)) throw new Error('Verse entries require a range.');
+  const id = randomUUID();
+  const now = new Date().toISOString();
+  database.transaction(() => {
+    database.prepare('INSERT INTO note (id, notebook_id, title, body_md, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(id, request.commentaryId, request.title, request.bodyMd, now, now);
+    database.prepare('INSERT INTO commentary_entry (note_id, anchor_kind, book_id, chapter, start_key, end_key, resource_id) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .run(id, request.anchorKind, request.bookId, request.chapter, request.startKey, request.endKey, request.resourceId);
+  })();
+  return commentaryEntryRecord(id);
+}
+
+export function listCommentaryEntries(request: CommentaryEntriesRequest): CommentaryEntryRecord[] {
+  const clauses = ['note.notebook_id = ?'];
+  const values: Array<string | number> = [request.commentaryId];
+  if (request.bookId) { clauses.push('commentary_entry.book_id = ?'); values.push(request.bookId); }
+  if (request.chapter) { clauses.push("(commentary_entry.anchor_kind = 'book' OR commentary_entry.chapter = ?)"); values.push(request.chapter); }
+  if (request.verseKey) { clauses.push("(commentary_entry.anchor_kind IN ('book', 'chapter') OR (commentary_entry.start_key <= ? AND commentary_entry.end_key >= ?))"); values.push(request.verseKey, request.verseKey); }
+  return open().prepare(`SELECT note.id AS noteId, note.notebook_id AS commentaryId, note.title,
+    note.body_md AS bodyMd, commentary_entry.anchor_kind AS anchorKind, commentary_entry.book_id AS bookId,
+    commentary_entry.chapter, commentary_entry.start_key AS startKey, commentary_entry.end_key AS endKey,
+    commentary_entry.resource_id AS resourceId, note.created_at AS createdAt
+    FROM commentary_entry INNER JOIN note ON note.id = commentary_entry.note_id
+    WHERE ${clauses.join(' AND ')}
+    ORDER BY CASE commentary_entry.anchor_kind WHEN 'book' THEN 0 WHEN 'chapter' THEN 1 ELSE 2 END,
+      commentary_entry.start_key, commentary_entry.end_key, note.created_at`).all(...values) as CommentaryEntryRecord[];
+}
+
+export function copyNoteToCommentary(request: CopyNoteToCommentaryRequest): CommentaryEntryRecord {
+  const database = open();
+  const source = database.prepare('SELECT title, body_md AS bodyMd FROM note WHERE id = ?').get(request.noteId) as { title: string; bodyMd: string } | undefined;
+  if (!source) throw new Error('Source note not found.');
+  const anchor = fromVerseKey(request.startKey);
+  if (!anchor) throw new Error('Invalid source anchor.');
+  const entry = createCommentaryEntry({
+    commentaryId: request.commentaryId,
+    title: source.title,
+    bodyMd: source.bodyMd,
+    anchorKind: 'verse_range',
+    bookId: anchor.book,
+    chapter: null,
+    startKey: request.startKey,
+    endKey: request.endKey,
+    resourceId: request.resourceId,
+  });
+  const tags = database.prepare(`SELECT tag_id AS tagId FROM tag_link WHERE target_kind = 'note' AND target_id = ?`).all(request.noteId) as Array<{ tagId: string }>;
+  for (const tag of tags) database.prepare("INSERT OR IGNORE INTO tag_link (tag_id, target_kind, target_id) VALUES (?, 'note', ?)").run(tag.tagId, entry.noteId);
+  return entry;
+}
+
+export function exportPersonalCommentaryXml(commentaryId: string): string {
+  const commentary = open().prepare("SELECT id, name, abbreviation, description FROM notebook WHERE id = ? AND kind = 'commentary'")
+    .get(commentaryId) as { id: string; name: string; abbreviation: string | null; description: string | null } | undefined;
+  if (!commentary) throw new Error('Personal Commentary not found.');
+  const entries = listCommentaryEntries({ commentaryId });
+  const escapeAttribute = (value: string | number | null): string => escapeHtml(String(value ?? ''));
+  const entryXml = entries.map((entry) => {
+    const tags = listTagsForTarget({ targetKind: 'note', targetId: entry.noteId });
+    const tagXml = tags.map((tag) => `    <tag colour="${escapeAttribute(tag.colour)}">${escapeHtml(tag.name)}</tag>`).join('\n');
+    return `  <entry anchor-kind="${entry.anchorKind}" book-id="${escapeAttribute(entry.bookId)}" chapter="${escapeAttribute(entry.chapter)}" start-key="${escapeAttribute(entry.startKey)}" end-key="${escapeAttribute(entry.endKey)}" resource-id="${escapeAttribute(entry.resourceId)}" created-at="${escapeAttribute(entry.createdAt)}">
+    <title>${escapeHtml(entry.title)}</title>
+    <body><![CDATA[${entry.bodyMd.replace(/\]\]>/gu, ']]]]><![CDATA[>')}]]></body>
+${tagXml}
+  </entry>`;
+  }).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<versescape-personal-commentary version="1" title="${escapeAttribute(commentary.name)}" abbreviation="${escapeAttribute(commentary.abbreviation)}" description="${escapeAttribute(commentary.description)}">
+${entryXml}
+</versescape-personal-commentary>`;
+}
+
+export function deletePersonalCommentary(commentaryId: string, recover: boolean): void {
+  const database = open();
+  const commentary = database.prepare("SELECT name FROM notebook WHERE id = ? AND kind = 'commentary'").get(commentaryId) as { name: string } | undefined;
+  if (!commentary) throw new Error('Personal Commentary not found.');
+  database.transaction(() => {
+    if (recover) {
+      const recoveryId = randomUUID();
+      const now = new Date().toISOString();
+      database.prepare("INSERT INTO notebook (id, name, parent_id, sort_order, kind, created_at, updated_at) VALUES (?, ?, NULL, 0, 'notebook', ?, ?)")
+        .run(recoveryId, `${commentary.name} recovery`, now, now);
+      database.prepare('UPDATE note SET notebook_id = ? WHERE notebook_id = ?').run(recoveryId, commentaryId);
+      database.prepare('DELETE FROM commentary_entry WHERE note_id IN (SELECT id FROM note WHERE notebook_id = ?)').run(recoveryId);
+    }
+    database.prepare('DELETE FROM notebook WHERE id = ?').run(commentaryId);
+  })();
 }
 
 export function createHighlight(request: CreateHighlightRequest): HighlightRecord {
@@ -386,10 +504,11 @@ export function listNotebooks(): NotebookRecord[] {
   const database = open();
   const rows = database
     .prepare(
-      `SELECT notebook.id, notebook.name, notebook.parent_id AS parentId, notebook.kind,
+            `SELECT notebook.id, notebook.name, notebook.parent_id AS parentId, notebook.kind,
+              notebook.abbreviation, notebook.description,
               COUNT(note.id) AS noteCount
        FROM notebook LEFT JOIN note ON note.notebook_id = notebook.id
-       GROUP BY notebook.id, notebook.name, notebook.parent_id, notebook.kind
+             GROUP BY notebook.id, notebook.name, notebook.parent_id, notebook.kind, notebook.abbreviation, notebook.description
        ORDER BY notebook.sort_order, notebook.name`,
     )
     .all() as Array<{
@@ -397,6 +516,8 @@ export function listNotebooks(): NotebookRecord[] {
     name: string;
     parentId: string | null;
     kind: string;
+    abbreviation: string | null;
+    description: string | null;
     noteCount: number;
   }>;
   return rows;
@@ -408,11 +529,19 @@ export function createNotebook(request: CreateNotebookRequest): NotebookRecord {
   const now = new Date().toISOString();
   database
     .prepare(
-      `INSERT INTO notebook (id, name, parent_id, sort_order, kind, created_at, updated_at)
-       VALUES (?, ?, ?, 0, ?, ?, ?)`,
+      `INSERT INTO notebook (id, name, parent_id, sort_order, kind, abbreviation, description, created_at, updated_at)
+       VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?)`,
     )
-    .run(id, request.name, request.parentId, request.kind, now, now);
-  return { id, name: request.name, parentId: request.parentId, kind: request.kind, noteCount: 0 };
+    .run(id, request.name, request.parentId, request.kind, request.abbreviation, request.description, now, now);
+  return {
+    id,
+    name: request.name,
+    parentId: request.parentId,
+    kind: request.kind,
+    abbreviation: request.abbreviation,
+    description: request.description,
+    noteCount: 0,
+  };
 }
 
 export async function exportNote(noteId: string, format: 'markdown' | 'html' | 'pdf'): Promise<string> {

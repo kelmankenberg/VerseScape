@@ -12,18 +12,23 @@ import {
   addNoteAnchor,
   addTagLink,
   createBookmark,
+  createCommentaryEntry,
   createHighlight,
   createNote,
   createNotebook,
   createTag,
+  copyNoteToCommentary,
+  deletePersonalCommentary,
   deleteBookmark,
   deleteNote,
   deleteNoteAnchor,
   deleteTagLink,
   exportNote,
   exportNotebook,
+  exportPersonalCommentaryXml,
   getReadingPosition,
   listBookmarks,
+  listCommentaryEntries,
   listHighlights,
   listNoteAnchors,
   listNotes,
@@ -140,6 +145,14 @@ export function registerIpcHandlers(): void {
     return null;
   });
   handle(IpcChannels.annotationsListTagsForTarget, (request) => listTagsForTarget(request));
+  handle(IpcChannels.annotationsCreateCommentaryEntry, (request) => createCommentaryEntry(request));
+  handle(IpcChannels.annotationsListCommentaryEntries, (request) => listCommentaryEntries(request));
+  handle(IpcChannels.annotationsCopyNoteToCommentary, (request) => copyNoteToCommentary(request));
+  handle(IpcChannels.annotationsExportPersonalCommentaryXml, (request) => exportPersonalCommentaryXml(request.id));
+  handle(IpcChannels.annotationsDeletePersonalCommentary, (request) => {
+    deletePersonalCommentary(request.id, request.action === 'recover');
+    return null;
+  });
 
   handle(IpcChannels.annotationsListNotes, (request) =>
     listNotes(request.start, request.end),

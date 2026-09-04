@@ -37,6 +37,8 @@ export const resourceSummary = z.object({
 });
 export type ResourceSummary = z.infer<typeof resourceSummary>;
 
+const bookIdPattern = /^(?:[1-3])?[A-Z]{3}$/u;
+
 export const chapterRequest = z.object({
   resourceId: resourceSummary.shape.id,
   bookId: z.string().regex(/^(?:[1-3])?[A-Z]{3}$/u),
@@ -136,6 +138,8 @@ export const notebookRecord = z.object({
   name: z.string().min(1),
   parentId: z.string().min(1).nullable(),
   kind: z.string().min(1),
+  abbreviation: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
   noteCount: z.number().int().nonnegative(),
 });
 export type NotebookRecord = z.infer<typeof notebookRecord>;
@@ -144,6 +148,8 @@ export const createNotebookRequest = z.object({
   name: z.string().trim().min(1).max(200),
   parentId: z.string().min(1).nullable().default(null),
   kind: z.enum(['notebook', 'commentary']).default('notebook'),
+  abbreviation: z.string().trim().min(1).max(20).nullable().default(null),
+  description: z.string().trim().max(2_000).nullable().default(null),
 });
 export type CreateNotebookRequest = z.infer<typeof createNotebookRequest>;
 
@@ -278,13 +284,68 @@ export type TagLinkRequest = z.infer<typeof tagLinkRequest>;
 export const tagsForTargetRequest = tagLinkRequest.omit({ tagId: true });
 export type TagsForTargetRequest = z.infer<typeof tagsForTargetRequest>;
 
+export const commentaryAnchorKind = z.enum(['book', 'chapter', 'verse_range']);
+export type CommentaryAnchorKind = z.infer<typeof commentaryAnchorKind>;
+
+export const commentaryEntryRecord = z.object({
+  noteId: z.string().min(1),
+  commentaryId: z.string().min(1),
+  title: z.string(),
+  bodyMd: z.string(),
+  anchorKind: commentaryAnchorKind,
+  bookId: z.string().regex(bookIdPattern),
+  chapter: z.number().int().positive().nullable(),
+  startKey: z.number().int().positive().nullable(),
+  endKey: z.number().int().positive().nullable(),
+  resourceId: resourceSummary.shape.id.nullable(),
+  createdAt: z.string().min(1),
+});
+export type CommentaryEntryRecord = z.infer<typeof commentaryEntryRecord>;
+
+export const createCommentaryEntryRequest = z.object({
+  commentaryId: z.string().min(1),
+  title: z.string().max(500),
+  bodyMd: z.string().max(100_000).default(''),
+  anchorKind: commentaryAnchorKind,
+  bookId: z.string().regex(bookIdPattern),
+  chapter: z.number().int().positive().nullable().default(null),
+  startKey: z.number().int().positive().nullable().default(null),
+  endKey: z.number().int().positive().nullable().default(null),
+  resourceId: resourceSummary.shape.id.nullable().default(null),
+});
+export type CreateCommentaryEntryRequest = z.infer<typeof createCommentaryEntryRequest>;
+
+export const commentaryEntriesRequest = z.object({
+  commentaryId: z.string().min(1),
+  bookId: z.string().regex(bookIdPattern).optional(),
+  chapter: z.number().int().positive().optional(),
+  verseKey: z.number().int().positive().optional(),
+});
+export type CommentaryEntriesRequest = z.infer<typeof commentaryEntriesRequest>;
+
+export const copyNoteToCommentaryRequest = z.object({
+  noteId: z.string().min(1),
+  commentaryId: z.string().min(1),
+  startKey: z.number().int().positive(),
+  endKey: z.number().int().positive(),
+  resourceId: resourceSummary.shape.id.nullable().default(null),
+});
+export type CopyNoteToCommentaryRequest = z.infer<typeof copyNoteToCommentaryRequest>;
+
+export const personalCommentaryIdRequest = z.object({ id: z.string().min(1) });
+export type PersonalCommentaryIdRequest = z.infer<typeof personalCommentaryIdRequest>;
+
+export const deletePersonalCommentaryRequest = z.object({
+  id: z.string().min(1),
+  action: z.enum(['recover', 'delete']),
+});
+export type DeletePersonalCommentaryRequest = z.infer<typeof deletePersonalCommentaryRequest>;
+
 export const listNotesRequest = z.object({
   start: z.number().int().positive().optional(),
   end: z.number().int().positive().optional(),
 });
 export type ListNotesRequest = z.infer<typeof listNotesRequest>;
-
-const bookIdPattern = /^(?:[1-3])?[A-Z]{3}$/u;
 
 export const searchScope = z.object({
   resourceIds: z.array(resourceSummary.shape.id).min(1).max(20),
@@ -350,6 +411,11 @@ export const contracts = {
   'annotations:add-tag-link': { request: tagLinkRequest, response: z.null() },
   'annotations:delete-tag-link': { request: tagLinkRequest, response: z.null() },
   'annotations:list-tags-for-target': { request: tagsForTargetRequest, response: z.array(tagRecord) },
+  'annotations:create-commentary-entry': { request: createCommentaryEntryRequest, response: commentaryEntryRecord },
+  'annotations:list-commentary-entries': { request: commentaryEntriesRequest, response: z.array(commentaryEntryRecord) },
+  'annotations:copy-note-to-commentary': { request: copyNoteToCommentaryRequest, response: commentaryEntryRecord },
+  'annotations:export-personal-commentary-xml': { request: personalCommentaryIdRequest, response: z.string() },
+  'annotations:delete-personal-commentary': { request: deletePersonalCommentaryRequest, response: z.null() },
   'annotations:list-notes': {
     request: listNotesRequest,
     response: z.array(noteRecord),

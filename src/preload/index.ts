@@ -4,6 +4,7 @@ import type { VerseScapeBridge } from '@shared/bridge.js';
 import type {
   AppInfo,
   BookmarkRecord,
+  CommentaryEntryRecord,
   ChapterData,
   CrossReference,
   HighlightRecord,
@@ -93,6 +94,16 @@ const bridge: VerseScapeBridge = {
     deleteTagLink: (request) => ipcRenderer.invoke(IpcChannels.annotationsDeleteTagLink, request) as Promise<IpcResult<null>>,
     listTagsForTarget: (request) =>
       ipcRenderer.invoke(IpcChannels.annotationsListTagsForTarget, request) as Promise<IpcResult<TagRecord[]>>,
+    createCommentaryEntry: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsCreateCommentaryEntry, request) as Promise<IpcResult<CommentaryEntryRecord>>,
+    listCommentaryEntries: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsListCommentaryEntries, request) as Promise<IpcResult<CommentaryEntryRecord[]>>,
+    copyNoteToCommentary: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsCopyNoteToCommentary, request) as Promise<IpcResult<CommentaryEntryRecord>>,
+    exportPersonalCommentaryXml: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsExportPersonalCommentaryXml, request) as Promise<IpcResult<string>>,
+    deletePersonalCommentary: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsDeletePersonalCommentary, request) as Promise<IpcResult<null>>,
     listNotes: (request) =>
       ipcRenderer.invoke(IpcChannels.annotationsListNotes, request) as Promise<
         IpcResult<NoteRecord[]>

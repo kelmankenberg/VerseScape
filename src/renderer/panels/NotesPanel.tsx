@@ -195,6 +195,18 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [titleDraft, setTitleDraft] = useState('');
   const [contextMenuNoteId, setContextMenuNoteId] = useState<string | null>(null);
+  const [personalCommentaryTransfer, setPersonalCommentaryTransfer] = useState<{
+    noteId: string;
+    anchors: NoteAnchorRecord[];
+    commentaryId: string;
+    anchorIndex: number;
+  } | null>(null);
+  const [personalCommentaryCreation, setPersonalCommentaryCreation] = useState<{
+    noteId: string;
+    anchors: NoteAnchorRecord[];
+    title: string;
+    abbreviation: string;
+  } | null>(null);
   const [notebooks, setNotebooks] = useState<NotebookRecord[]>([]);
   const [selectedNotebookId, setSelectedNotebookId] = useState<string | null>(null);
   const [creatingNotebook, setCreatingNotebook] = useState(false);
@@ -337,7 +349,13 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
   const createNotebook = (): void => {
     if (!newNotebookName.trim()) return;
     void window.versescape.annotations
-      .createNotebook({ name: newNotebookName.trim(), parentId: null, kind: 'notebook' })
+      .createNotebook({
+        name: newNotebookName.trim(),
+        parentId: null,
+        kind: 'notebook',
+        abbreviation: null,
+        description: null,
+      })
       .then((result) => {
         if (result.ok) {
           setNotebooks((prev) => [result.data, ...prev]);
@@ -568,6 +586,58 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
       });
       setMoreOpen(false);
       setContextMenuNoteId(null);
+    });
+  };
+
+  const beginPersonalCommentaryTransfer = (noteId: string): void => {
+    const personalCommentaries = notebooks.filter((notebook) => notebook.kind === 'commentary');
+    void window.versescape.annotations.listNoteAnchors({ id: noteId }).then((result) => {
+      if (!result.ok || result.data.length === 0) return;
+      if (personalCommentaries.length === 0) {
+        setPersonalCommentaryCreation({ noteId, anchors: result.data, title: '', abbreviation: '' });
+        return;
+      }
+      setPersonalCommentaryTransfer({
+        noteId,
+        anchors: result.data,
+        commentaryId: personalCommentaries[0]!.id,
+        anchorIndex: 0,
+      });
+    });
+  };
+
+  const createPersonalCommentaryForNote = (): void => {
+    if (!personalCommentaryCreation?.title.trim() || !personalCommentaryCreation.abbreviation.trim()) return;
+    void window.versescape.annotations.createNotebook({
+      name: personalCommentaryCreation.title.trim(),
+      parentId: null,
+      kind: 'commentary',
+      abbreviation: personalCommentaryCreation.abbreviation.trim().toUpperCase(),
+      description: null,
+    }).then((result) => {
+      if (!result.ok || !personalCommentaryCreation) return;
+      const pending = personalCommentaryCreation;
+      setNotebooks((current) => [...current, result.data]);
+      setPersonalCommentaryTransfer({ noteId: pending.noteId, anchors: pending.anchors, commentaryId: result.data.id, anchorIndex: 0 });
+      setPersonalCommentaryCreation(null);
+    });
+  };
+
+  const copyToPersonalCommentary = (): void => {
+    if (!personalCommentaryTransfer) return;
+    const anchor = personalCommentaryTransfer.anchors[personalCommentaryTransfer.anchorIndex];
+    if (!anchor) return;
+    void window.versescape.annotations.copyNoteToCommentary({
+      noteId: personalCommentaryTransfer.noteId,
+      commentaryId: personalCommentaryTransfer.commentaryId,
+      startKey: anchor.startKey,
+      endKey: anchor.endKey,
+      resourceId: anchor.resourceId ?? null,
+    }).then((result) => {
+      if (result.ok) {
+        setPersonalCommentaryTransfer(null);
+        setContextMenuNoteId(null);
+      }
     });
   };
   const exportNote = (format: 'markdown' | 'html' | 'pdf'): void => {
@@ -813,10 +883,49 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
                 </div>
                 {contextMenuNoteId === note.id && (
                   <div className="notes-panel__note-context-menu" role="menu">
+                    <button type="button" role="menuitem" onClick={() => beginPersonalCommentaryTransfer(note.id)}>
+                      <BookOpen size={13} />
+                      Add to Personal Commentary
+                    </button>
                     <button type="button" role="menuitem" onClick={() => removeNote(note.id)}>
                       <Trash2 size={13} />
                       Delete note
                     </button>
+                    {personalCommentaryTransfer?.noteId === note.id && (
+                      <div className="notes-panel__pc-transfer">
+                        <select
+                          aria-label="Personal Commentary"
+                          value={personalCommentaryTransfer.commentaryId}
+                          onChange={(event) => setPersonalCommentaryTransfer((current) => current ? { ...current, commentaryId: event.target.value } : null)}
+                        >
+                          {notebooks.filter((notebook) => notebook.kind === 'commentary').map((commentary) => (
+                            <option key={commentary.id} value={commentary.id}>{commentary.name}</option>
+                          ))}
+                        </select>
+                        <select
+                          aria-label="Commentary anchor"
+                          value={personalCommentaryTransfer.anchorIndex}
+                          onChange={(event) => setPersonalCommentaryTransfer((current) => current ? { ...current, anchorIndex: Number(event.target.value) } : null)}
+                        >
+                          {personalCommentaryTransfer.anchors.map((anchor, index) => {
+                            const start = fromVerseKey(anchor.startKey);
+                            const end = fromVerseKey(anchor.endKey);
+                            return <option key={`${anchor.startKey}-${anchor.endKey}`} value={index}>{start && end ? formatReference({ start, end }) : `${anchor.startKey}-${anchor.endKey}`}</option>;
+                          })}
+                        </select>
+                        <div>
+                          <button type="button" onClick={() => setPersonalCommentaryTransfer(null)}>Cancel</button>
+                          <button type="button" onClick={copyToPersonalCommentary}>Add copy</button>
+                        </div>
+                      </div>
+                    )}
+                    {personalCommentaryCreation?.noteId === note.id && (
+                      <form className="notes-panel__pc-transfer" onSubmit={(event) => { event.preventDefault(); createPersonalCommentaryForNote(); }}>
+                        <input aria-label="Personal Commentary title" placeholder="Commentary title" value={personalCommentaryCreation.title} onChange={(event) => setPersonalCommentaryCreation((current) => current ? { ...current, title: event.target.value } : null)} />
+                        <input aria-label="Personal Commentary abbreviation" placeholder="Abbreviation" value={personalCommentaryCreation.abbreviation} onChange={(event) => setPersonalCommentaryCreation((current) => current ? { ...current, abbreviation: event.target.value } : null)} />
+                        <div><button type="button" onClick={() => setPersonalCommentaryCreation(null)}>Cancel</button><button type="submit" disabled={!personalCommentaryCreation.title.trim() || !personalCommentaryCreation.abbreviation.trim()}>Create</button></div>
+                      </form>
+                    )}
                   </div>
                 )}
                 {expandedNotes.has(note.id) && (

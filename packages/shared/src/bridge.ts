@@ -1,10 +1,15 @@
 import type {
   AppInfo,
   BookmarkRecord,
+  CommentaryEntriesRequest,
+  CommentaryEntryRecord,
+  CopyNoteToCommentaryRequest,
+  DeletePersonalCommentaryRequest,
   ChapterData,
   ChapterRequest,
   ConcordanceRequest,
   CreateHighlightRequest,
+  CreateCommentaryEntryRequest,
   CreateNoteRequest,
   CreateBookmarkRequest,
   HighlightRecord,
@@ -20,6 +25,7 @@ import type {
   CreateTagRequest,
   ExportNoteRequest,
   ExportNotebookRequest,
+  PersonalCommentaryIdRequest,
   NotebookRecord,
   CrossReference,
   CrossReferenceRequest,
@@ -80,6 +86,13 @@ export interface VerseScapeBridge {
     addTagLink(request: TagLinkRequest): Promise<IpcResult<null>>;
     deleteTagLink(request: TagLinkRequest): Promise<IpcResult<null>>;
     listTagsForTarget(request: TagsForTargetRequest): Promise<IpcResult<TagRecord[]>>;
+    createCommentaryEntry(request: CreateCommentaryEntryRequest): Promise<IpcResult<CommentaryEntryRecord>>;
+    listCommentaryEntries(request: CommentaryEntriesRequest): Promise<IpcResult<CommentaryEntryRecord[]>>;
+    copyNoteToCommentary(request: CopyNoteToCommentaryRequest): Promise<IpcResult<CommentaryEntryRecord>>;
+    exportPersonalCommentaryXml(request: PersonalCommentaryIdRequest): Promise<IpcResult<string>>;
+    deletePersonalCommentary(request: DeletePersonalCommentaryRequest): Promise<IpcResult<null>>;
+      exportPersonalCommentaryXml(request: PersonalCommentaryIdRequest): Promise<IpcResult<string>>;
+      deletePersonalCommentary(request: DeletePersonalCommentaryRequest): Promise<IpcResult<null>>;
     listNotes(request: ListNotesRequest): Promise<IpcResult<NoteRecord[]>>;
     listNoteAnchors(request: NoteIdRequest): Promise<IpcResult<NoteAnchorRecord[]>>;
     addNoteAnchor(request: CreateNoteAnchorRequest): Promise<IpcResult<NoteAnchorRecord>>;

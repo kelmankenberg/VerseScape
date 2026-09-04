@@ -68,23 +68,18 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 - Find-in-panel
 - **Exit:** FR-SE-01..04 and NFR-02 search budget met
 
-## M5 — Notes and highlights 🚧
+## M5 — Notes and highlights ✅
 
 - Notes schema, notebook tree, TipTap editor with `ref` nodes (the
   `notebook`/`note`/`note_anchor`/`highlight` tables and `versescape.db` already
   exist from the M3 selection-toolbar work — extend them, don't recreate them)
 - Notes panel + full-page Notes view
 - Notes panel joins sync sets and follows the current verse
-- Personal commentary: notebook `kind`, verse-keyed entry view, commentary
-  panel, create/edit from a Bible selection (FR-NT-09..12)
 - Outline mode with collapsible headings (lesson/sermon prep)
 - Highlights: selection → colour, margin indicators, persistence
 - Selection context menu (copy with citation, note, highlight, search)
 - Export note/notebook to Markdown, HTML and PDF
-- **Remaining:** redesign and implement Personal Commentary as an optional,
-  resource-like canonical commentary reader; see
-  [14-personal-commentary-redesign.md](14-personal-commentary-redesign.md).
-- **Exit:** FR-NT-01..12
+- **Exit:** FR-NT-01..08, FR-NT-14
 
 ## M6 — Library and resources
 
@@ -93,14 +88,17 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 - Signed catalogue fetch, resumable download, atomic install
 - Resource Reader panel; compile Matthew Henry and JFB commentaries from CCEL
   (D-29 — text only, never their formatting)
-- Commentary continuous reading: automatically traverse previous/next chapter
-  coverage with stable prepend anchoring, matching Bible-panel behavior (D-30)
-- Commentary follows its sync set alongside Bible panels
-- Personal commentaries listed in the Library and exportable/importable as XML,
-  with Markdown/HTML/PDF exports (FR-NT-13)
+- Shared Commentary Reader panel for installed and Personal Commentary resources:
+  canonical ordering, sparse coverage, continuous chapter traversal, and
+  bidirectional sync-set behavior (D-30, FR-NT-09..11)
+- Personal Commentary: optional Library creation and metadata; reader Edit mode
+  for book/chapter introductions and verse ranges; add-copy from Notes through
+  a canonical anchor picker; recovery-or-XML-export deletion (FR-NT-09..12)
+- Personal Commentary XML import/export, plus Markdown/HTML/PDF exports
+  (FR-NT-13; see [14-personal-commentary-redesign.md](14-personal-commentary-redesign.md))
 - Configurable library location with move-and-rollback migration, plus the
   unavailable-path degraded state (FR-LB-08/09)
-- **Exit:** FR-LB-01..09
+- **Exit:** FR-LB-01..09, FR-NT-09..13
 
 ## M7 — Dashboard, plans, polish
 

@@ -132,7 +132,13 @@ export function NotesPage(): React.JSX.Element {
     const name = notebookDraft.trim();
     if (!name || !notebookCreation) return;
     void window.versescape.annotations
-      .createNotebook({ name, parentId: notebookCreation.parentId, kind: notebookCreation.kind })
+      .createNotebook({
+        name,
+        parentId: notebookCreation.parentId,
+        kind: notebookCreation.kind,
+        abbreviation: null,
+        description: null,
+      })
       .then((result) => {
         if (result.ok) {
           setNotebooks((previous) => [...previous, result.data]);
