@@ -55,12 +55,12 @@ jobs:
 
       - name: Generate signed catalog
         env:
-          CATALOG_SIGNING_KEY_PEM: ${{ secrets.CATALOG_SIGNING_KEY_PEM }}
+          CATALOG_SIGNING_KEY_B64: ${{ secrets.CATALOG_SIGNING_KEY_B64 }}
           RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          test -n "$CATALOG_SIGNING_KEY_PEM"
+          test -n "$CATALOG_SIGNING_KEY_B64"
           umask 077
-          printf '%b\n' "$CATALOG_SIGNING_KEY_PEM" > "$RUNNER_TEMP/catalog-private.pem"
+          printf '%s' "$CATALOG_SIGNING_KEY_B64" | base64 --decode > "$RUNNER_TEMP/catalog-private.pem"
           openssl pkey -in "$RUNNER_TEMP/catalog-private.pem" -noout
           node <<'NODE'
           const { createHash } = require('node:crypto');

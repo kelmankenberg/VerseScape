@@ -63,7 +63,18 @@ Commit only the public key in the application, for example at `src/main/services
 
 ### 3. Configure GitHub Actions
 
-In the GitHub repository, open **Settings -> Secrets and variables -> Actions** and create a repository secret named `CATALOG_SIGNING_KEY_PEM` containing the complete PEM value of `versescape-catalog-private.pem`.
+In the GitHub repository, open **Settings -> Secrets and variables -> Actions**
+and create a repository secret named `CATALOG_SIGNING_KEY_B64`. Its value is the
+single-line base64 encoding of `versescape-catalog-private.pem`:
+
+```bash
+base64 --wrap=0 .keys/versescape-catalog-private.pem
+```
+
+Copy the command's output directly into the GitHub secret field. This encoding
+avoids browser handling differences for multiline PEM values; it is not
+encryption and must receive the same secret handling as the original private
+key.
 
 The workflow may read the secret to sign release catalogs. It must not print the secret, its base64 representation, or a derived private key value.
 
@@ -247,7 +258,7 @@ Because old app versions embed the old public key, key rotation requires an app 
 
 - [ ] Private Ed25519 key generated and stored outside the repository.
 - [ ] Public key committed to the application.
-- [ ] `CATALOG_SIGNING_KEY_PEM` configured as a protected GitHub Actions secret.
+- [ ] `CATALOG_SIGNING_KEY_B64` configured as a protected GitHub Actions secret.
 - [ ] M6 catalog-client schema and signature verifier implemented.
 - [ ] Reproducible `.vsres` package build script added.
 - [ ] `catalog.json` and `catalog.sig` generated from final release artifacts.
