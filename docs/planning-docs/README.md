@@ -23,6 +23,7 @@ UI inspiration: Logos Bible Study.
 | [11-project-structure.md](11-project-structure.md)           | Repo layout and conventions                    |
 | [12-build-and-release.md](12-build-and-release.md)           | Packaging, signing, auto-update                |
 | [13-decision-log.md](13-decision-log.md)                     | Settled decisions and their consequences       |
+| [14-personal-commentary-redesign.md](14-personal-commentary-redesign.md) | Proposed PC resource-reader redesign and decisions |
 
 ## Conventions
 

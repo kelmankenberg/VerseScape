@@ -1,7 +1,7 @@
-import { BookOpen, ChevronDown, Download, FileText, Folder, FolderPlus, ListTree, MessageSquare, Printer, Search } from 'lucide-react';
+import { BookOpen, Bookmark, ChevronDown, ChevronRight, Download, FileText, Folder, FolderPlus, ListTree, MessageSquare, Printer, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { formatReference, fromVerseKey } from '@shared/reference/index.js';
-import type { NoteRecord, NotebookRecord } from '@shared/ipc/contracts.js';
+import type { BookmarkRecord, NoteRecord, NotebookRecord } from '@shared/ipc/contracts.js';
 import { useWorkspace } from '../workspace/store.js';
 
 function downloadText(filename: string, content: BlobPart, type: string): void {
@@ -28,13 +28,21 @@ export function NotesPage(): React.JSX.Element {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [outlineOpen, setOutlineOpen] = useState(false);
+  const [expandedNotebooks, setExpandedNotebooks] = useState<Set<string>>(new Set());
+  const [bookmarks, setBookmarks] = useState<BookmarkRecord[]>([]);
+  const [notebookDraft, setNotebookDraft] = useState('');
+  const [notebookCreation, setNotebookCreation] = useState<{
+    kind: 'notebook' | 'commentary';
+    parentId: string | null;
+  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     void Promise.all([
       window.versescape.annotations.listNotes({}),
       window.versescape.annotations.listNotebooks(),
-    ]).then(([notesResult, notebooksResult]) => {
+      window.versescape.annotations.listBookmarks(),
+    ]).then(([notesResult, notebooksResult, bookmarksResult]) => {
       if (cancelled) return;
       if (notesResult.ok) {
         setNotes(notesResult.data);
@@ -48,6 +56,7 @@ export function NotesPage(): React.JSX.Element {
         setNotebooks(notebooksResult.data);
         setSelectedNotebookId(notebooksResult.data[0]?.id ?? 'default');
       }
+      if (bookmarksResult.ok) setBookmarks(bookmarksResult.data);
       setLoading(false);
     });
     return () => {
@@ -114,18 +123,63 @@ export function NotesPage(): React.JSX.Element {
       }))
     : [];
 
-  const createNotebook = (kind: 'notebook' | 'commentary'): void => {
-    const name = window.prompt(kind === 'commentary' ? 'Commentary notebook name' : 'Notebook name');
-    if (!name?.trim()) return;
+  const beginNotebookCreation = (kind: 'notebook' | 'commentary', parentId: string | null = null): void => {
+    setNotebookDraft('');
+    setNotebookCreation({ kind, parentId });
+  };
+
+  const createNotebook = (): void => {
+    const name = notebookDraft.trim();
+    if (!name || !notebookCreation) return;
     void window.versescape.annotations
-      .createNotebook({ name: name.trim(), parentId: null, kind })
+      .createNotebook({ name, parentId: notebookCreation.parentId, kind: notebookCreation.kind })
       .then((result) => {
         if (result.ok) {
           setNotebooks((previous) => [...previous, result.data]);
           setSelectedNotebookId(result.data.id);
+          if (notebookCreation.parentId) {
+            setExpandedNotebooks((previous) => new Set(previous).add(notebookCreation.parentId!));
+          }
+          setNotebookDraft('');
+          setNotebookCreation(null);
         }
       });
   };
+
+  const notebookTree = (parentId: string | null = null, depth = 0): React.JSX.Element[] =>
+    notebooks.filter((notebook) => notebook.parentId === parentId).flatMap((notebook) => {
+      const children = notebooks.filter((candidate) => candidate.parentId === notebook.id);
+      const expanded = expandedNotebooks.has(notebook.id);
+      const row = (
+        <div
+          key={notebook.id}
+          className={`notes-page__notebook${notebook.id === selectedNotebookId ? ' notes-page__notebook--active' : ''}`}
+          style={{ paddingLeft: `${12 + depth * 16}px` }}
+        >
+          {children.length > 0 ? (
+            <button
+              type="button"
+              className="notes-page__notebook-toggle"
+              aria-label={`${expanded ? 'Collapse' : 'Expand'} ${notebook.name}`}
+              onClick={() => setExpandedNotebooks((previous) => {
+                const next = new Set(previous);
+                if (next.has(notebook.id)) next.delete(notebook.id);
+                else next.add(notebook.id);
+                return next;
+              })}
+            >
+              {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+            </button>
+          ) : <span className="notes-page__notebook-spacer" />}
+          <button type="button" className="notes-page__notebook-select" onClick={() => setSelectedNotebookId(notebook.id)}>
+            <Folder size={14} />
+            <span>{notebook.name}</span>
+            <span className="notes-page__count">{notebook.noteCount}</span>
+          </button>
+        </div>
+      );
+      return expanded ? [row, ...notebookTree(notebook.id, depth + 1)] : [row];
+    });
 
   return (
     <div className="notes-page">
@@ -139,7 +193,7 @@ export function NotesPage(): React.JSX.Element {
             type="button"
             className="notes-page__open-panel"
             aria-label="Create notebook"
-            onClick={() => createNotebook('notebook')}
+            onClick={() => beginNotebookCreation('notebook')}
           >
             <FolderPlus size={14} />
             New notebook
@@ -155,6 +209,34 @@ export function NotesPage(): React.JSX.Element {
             <BookOpen size={14} />
             Open in workspace
           </button>
+          {notebookCreation && (
+            <form
+              className="notes-page__create-notebook"
+              onSubmit={(event) => {
+                event.preventDefault();
+                createNotebook();
+              }}
+            >
+              <input
+                type="text"
+                autoFocus
+                aria-label={notebookCreation.kind === 'commentary' ? 'Commentary name' : 'Notebook name'}
+                placeholder={notebookCreation.kind === 'commentary' ? 'Commentary name' : 'Notebook name'}
+                value={notebookDraft}
+                onChange={(event) => setNotebookDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') {
+                    event.preventDefault();
+                    setNotebookCreation(null);
+                    setNotebookDraft('');
+                  }
+                }}
+              />
+              <button type="submit" aria-label="Create notebook" title="Create notebook" disabled={!notebookDraft.trim()}>
+                <FolderPlus size={14} />
+              </button>
+            </form>
+          )}
           <button type="button" className="notes-page__icon-action" aria-label="Toggle outline" title="Toggle outline" disabled={!selectedNote} onClick={() => setOutlineOpen((open) => !open)}>
             <ListTree size={15} />
           </button>
@@ -170,34 +252,47 @@ export function NotesPage(): React.JSX.Element {
       <div className="notes-page__body">
         <aside className="notes-page__notebooks" aria-label="Notebooks">
           <div className="notes-page__rail-heading">Notebooks</div>
-          {notebooks.map((notebook) => (
-            <button
-              type="button"
-              key={notebook.id}
-              className={`notes-page__notebook${notebook.id === selectedNotebookId ? ' notes-page__notebook--active' : ''}`}
-              onClick={() => setSelectedNotebookId(notebook.id)}
-            >
-              <Folder size={14} />
-              <span>{notebook.name}</span>
-              <span className="notes-page__count">{notebook.noteCount}</span>
-            </button>
-          ))}
+          {notebookTree()}
+          {bookmarks.length > 0 && (
+            <>
+              <div className="notes-page__rail-heading">Bookmarks</div>
+              {bookmarks.map((bookmark) => {
+                const reference = fromVerseKey(bookmark.verseKey);
+                const label = bookmark.label || (reference ? formatReference({ start: reference, end: reference }) : 'Bookmark');
+                return (
+                  <div className="notes-page__bookmark" key={bookmark.id}>
+                    <button type="button" onClick={() => reference && openPanel('sample', undefined, { reference: label, verseKey: bookmark.verseKey, resourceId: bookmark.resourceId ?? 'bsb' })}>
+                      <Bookmark size={13} />
+                      <span>{label}</span>
+                    </button>
+                    <button type="button" aria-label={`Delete ${label}`} title={`Delete ${label}`} onClick={() => {
+                      void window.versescape.annotations.deleteBookmark({ id: bookmark.id }).then((result) => {
+                        if (result.ok) setBookmarks((previous) => previous.filter((entry) => entry.id !== bookmark.id));
+                      });
+                    }}>
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                );
+              })}
+            </>
+          )}
           <button
             type="button"
             className="notes-page__new-notebook"
             aria-label="Create notebook"
             title="Create notebook"
-            onClick={() => createNotebook('notebook')}
+            onClick={() => beginNotebookCreation('notebook', selectedNotebookId)}
           >
             <FolderPlus size={14} />
-            New notebook
+            New subnotebook
           </button>
           <button
             type="button"
             className="notes-page__new-notebook"
             aria-label="Create commentary notebook"
             title="Create commentary notebook"
-            onClick={() => createNotebook('commentary')}
+            onClick={() => beginNotebookCreation('commentary')}
           >
             <MessageSquare size={14} />
             New commentary

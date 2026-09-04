@@ -10,17 +10,27 @@ import { loadWorkspace, saveWorkspace } from '../services/workspace.js';
 import { getChapter, getConcordance, getCrossReferences, getLexiconEntry, listResources } from '../services/resources.js';
 import {
   addNoteAnchor,
+  addTagLink,
+  createBookmark,
   createHighlight,
   createNote,
   createNotebook,
+  createTag,
+  deleteBookmark,
   deleteNote,
   deleteNoteAnchor,
+  deleteTagLink,
   exportNote,
   exportNotebook,
+  getReadingPosition,
+  listBookmarks,
   listHighlights,
   listNoteAnchors,
   listNotes,
   listNotebooks,
+  listTags,
+  listTagsForTarget,
+  setReadingPosition,
   updateNote,
 } from '../services/annotations.js';
 import { runSearch } from '../services/search.js';
@@ -109,6 +119,27 @@ export function registerIpcHandlers(): void {
   handle(IpcChannels.annotationsListHighlights, (request) =>
     listHighlights(request.startKey, request.endKey),
   );
+  handle(IpcChannels.annotationsCreateBookmark, (request) => createBookmark(request));
+  handle(IpcChannels.annotationsListBookmarks, () => listBookmarks());
+  handle(IpcChannels.annotationsDeleteBookmark, (request) => {
+    deleteBookmark(request.id);
+    return null;
+  });
+  handle(IpcChannels.annotationsSetReadingPosition, (request) =>
+    setReadingPosition(request.resourceId, request.verseKey),
+  );
+  handle(IpcChannels.annotationsGetReadingPosition, (request) => getReadingPosition(request.resourceId));
+  handle(IpcChannels.annotationsListTags, () => listTags());
+  handle(IpcChannels.annotationsCreateTag, (request) => createTag(request));
+  handle(IpcChannels.annotationsAddTagLink, (request) => {
+    addTagLink(request);
+    return null;
+  });
+  handle(IpcChannels.annotationsDeleteTagLink, (request) => {
+    deleteTagLink(request);
+    return null;
+  });
+  handle(IpcChannels.annotationsListTagsForTarget, (request) => listTagsForTarget(request));
 
   handle(IpcChannels.annotationsListNotes, (request) =>
     listNotes(request.start, request.end),

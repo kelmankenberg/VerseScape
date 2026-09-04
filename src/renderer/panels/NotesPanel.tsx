@@ -3,6 +3,7 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  BookOpen,
   ChevronDown,
   Ellipsis,
   ExternalLink,
@@ -18,12 +19,13 @@ import {
   Strikethrough,
   Subscript,
   Superscript,
+  Tag,
   Trash2,
   Underline,
   X,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Extension } from '@tiptap/core';
+import { Extension, Node, nodeInputRule } from '@tiptap/core';
 import { Color } from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import LinkExtension from '@tiptap/extension-link';
@@ -34,8 +36,8 @@ import TextAlign from '@tiptap/extension-text-align';
 import { TextStyle } from '@tiptap/extension-text-style';
 import UnderlineExtension from '@tiptap/extension-underline';
 import { EditorContent, useEditor } from '@tiptap/react';
-import { formatReference, fromVerseKey, parseReference, rangeToKeys } from '@shared/reference/index.js';
-import type { NoteAnchorRecord, NoteRecord, NotebookRecord } from '@shared/ipc/contracts.js';
+import { formatReference, fromVerseKey, getBook, parseReference, rangeToKeys, toVerseKey } from '@shared/reference/index.js';
+import type { NoteAnchorRecord, NoteRecord, NotebookRecord, TagRecord } from '@shared/ipc/contracts.js';
 import { useVerseSync } from '../workspace/use-verse-sync.js';
 import { useWorkspace } from '../workspace/store.js';
 import type { PanelProps } from './registry.js';
@@ -59,6 +61,56 @@ const FontSize = Extension.create({
     ];
   },
 });
+
+const referenceInputPattern = /\[\[ref:((?:[1-3]?[A-Z]{3})\.\d+\.\d+)\]\]$/u;
+
+const ReferenceNode = Node.create({
+  name: 'reference',
+  inline: true,
+  group: 'inline',
+  atom: true,
+  selectable: false,
+  addAttributes() {
+    return {
+      reference: { default: null },
+      label: { default: null },
+    };
+  },
+  parseHTML() {
+    return [{ tag: 'span[data-versescape-reference]' }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ['span', { ...HTMLAttributes, 'data-versescape-reference': HTMLAttributes.reference, class: 'notes-panel__reference' }, HTMLAttributes.label];
+  },
+  renderText({ node }) {
+    return `[[ref:${String(node.attrs.reference)}]]`;
+  },
+  addInputRules() {
+    return [
+      nodeInputRule({
+        find: referenceInputPattern,
+        type: this.type,
+        getAttributes: (match) => {
+          const reference = match[1] ?? '';
+          const parsed = parseNoteReference(reference);
+          if (!parsed) return false;
+          return { reference, label: parsed.label };
+        },
+      }),
+    ];
+  },
+});
+
+function parseNoteReference(value: string): { verseKey: number; label: string } | null {
+  const match = /^((?:[1-3]?[A-Z]{3}))\.(\d+)\.(\d+)$/u.exec(value);
+  if (!match) return null;
+  const bookId = match[1];
+  const chapter = Number(match[2]);
+  const verse = Number(match[3]);
+  if (!bookId || !chapter || !verse || !getBook(bookId as never)) return null;
+  const reference = { book: bookId as never, chapter, verse };
+  return { verseKey: toVerseKey(reference), label: formatReference({ start: reference, end: reference }) };
+}
 
 /**
  * Notes panel: displays and manages notes anchored to the current verse.
@@ -149,6 +201,9 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
   const [newNotebookName, setNewNotebookName] = useState('');
   const [outlineMode, setOutlineMode] = useState(false);
   const [collapsedOutlineHeadings, setCollapsedOutlineHeadings] = useState<Set<string>>(new Set());
+  const [noteTags, setNoteTags] = useState<TagRecord[]>([]);
+  const [editorInputMode, setEditorInputMode] = useState<'link' | 'reference' | 'tag' | null>(null);
+  const [editorInputValue, setEditorInputValue] = useState('');
 
   // Fetch notebooks on mount
   useEffect(() => {
@@ -215,6 +270,17 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
     return () => {
       cancelled = true;
     };
+  }, [selectedNoteId]);
+
+  useEffect(() => {
+    if (!selectedNoteId) {
+      setNoteTags([]);
+      return;
+    }
+    void window.versescape.annotations.listTagsForTarget({ targetKind: 'note', targetId: selectedNoteId })
+      .then((result) => {
+        if (result.ok) setNoteTags(result.data);
+      });
   }, [selectedNoteId]);
 
   useEffect(() => {
@@ -333,12 +399,19 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
     });
   };
 
+  const openNoteReference = (reference: string): void => {
+    const parsed = parseNoteReference(reference);
+    if (!parsed) return;
+    openOrNavigateBible({ reference: parsed.label, verseKey: parsed.verseKey, resourceId: currentResourceId });
+  };
+
   const editor = useEditor({
     extensions: [
       StarterKit,
       UnderlineExtension,
       TextStyle,
       FontSize,
+      ReferenceNode,
       Color,
       Highlight.configure({ multicolor: true }),
       LinkExtension.configure({ openOnClick: false, autolink: true }),
@@ -348,6 +421,16 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
     ],
     content: selectedNote?.bodyMd ?? '',
     immediatelyRender: false,
+    editorProps: {
+      handleClick: (_view, _position, event) => {
+        const target = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-versescape-reference]') : null;
+        const reference = target?.dataset['versescapeReference'];
+        if (!reference) return false;
+        event.preventDefault();
+        openNoteReference(reference);
+        return true;
+      },
+    },
     onUpdate: ({ editor: changedEditor }) => {
       if (!selectedNoteId) return;
       const noteId = selectedNoteId;
@@ -368,9 +451,51 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
     editor?.chain().focus().setMark('textStyle', { fontSize }).run();
   };
 
-  const setLink = (): void => {
-    const url = window.prompt('Enter a URL');
-    if (url) editor?.chain().focus().setLink({ href: url }).run();
+  const beginEditorInput = (mode: 'link' | 'reference' | 'tag'): void => {
+    setEditorInputMode(mode);
+    setEditorInputValue('');
+  };
+
+  const submitEditorInput = (): void => {
+    const value = editorInputValue.trim();
+    const mode = editorInputMode;
+    if (!value || !mode) return;
+
+    if (mode === 'link') {
+      editor?.chain().focus().setLink({ href: value }).run();
+    } else if (mode === 'reference') {
+      const reference = value.toUpperCase();
+      const parsed = parseNoteReference(reference);
+      if (!parsed) return;
+      editor?.chain().focus().insertContent({ type: 'reference', attrs: { reference, label: parsed.label } }).run();
+    } else if (selectedNoteId) {
+      void window.versescape.annotations.createTag({ name: value, colour: null }).then((tagResult) => {
+        if (!tagResult.ok) return;
+        void window.versescape.annotations.addTagLink({ tagId: tagResult.data.id, targetKind: 'note', targetId: selectedNoteId })
+          .then((linkResult) => {
+            if (linkResult.ok) setNoteTags((previous) => previous.some((tag) => tag.id === tagResult.data.id) ? previous : [...previous, tagResult.data]);
+          });
+      });
+    }
+
+    setEditorInputMode(null);
+    setEditorInputValue('');
+  };
+
+  const insertReference = (): void => {
+    beginEditorInput('reference');
+  };
+
+  const addNoteTag = (): void => {
+    beginEditorInput('tag');
+  };
+
+  const removeNoteTag = (tagId: string): void => {
+    if (!selectedNoteId) return;
+    void window.versescape.annotations.deleteTagLink({ tagId, targetKind: 'note', targetId: selectedNoteId })
+      .then((result) => {
+        if (result.ok) setNoteTags((previous) => previous.filter((tag) => tag.id !== tagId));
+      });
   };
 
   const addAnchor = (): void => {
@@ -777,8 +902,14 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
                 <button type="button" aria-label="Increase indent" title="Increase indent" onClick={() => editor?.chain().focus().sinkListItem('listItem').run()}>
                   <IndentIncrease size={15} />
                 </button>
-                <button type="button" aria-label="Insert link" title="Insert link" onClick={setLink}>
+                <button type="button" aria-label="Insert link" title="Insert link" onClick={() => beginEditorInput('link')}>
                   <Link size={15} />
+                </button>
+                <button type="button" aria-label="Insert Bible reference" title="Insert Bible reference" onClick={insertReference}>
+                  <BookOpen size={15} />
+                </button>
+                <button type="button" aria-label="Add tag" title="Add tag" onClick={addNoteTag}>
+                  <Tag size={15} />
                 </button>
                 <button type="button" aria-label="Subscript" title="Subscript" onClick={() => editor?.chain().focus().toggleSubscript().run()}>
                   <Subscript size={15} />
@@ -789,6 +920,31 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
                 <button type="button" aria-label="Clear formatting" title="Clear formatting" onClick={() => editor?.chain().focus().clearNodes().unsetAllMarks().run()}>
                   <RemoveFormatting size={15} />
                 </button>
+                {editorInputMode && (
+                  <form
+                    className="notes-panel__editor-inline-input"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      submitEditorInput();
+                    }}
+                  >
+                    <input
+                      autoFocus
+                      aria-label={editorInputMode === 'link' ? 'Link URL' : editorInputMode === 'reference' ? 'Bible reference' : 'Tag name'}
+                      placeholder={editorInputMode === 'link' ? 'https://...' : editorInputMode === 'reference' ? 'JHN.3.16' : 'Tag name'}
+                      value={editorInputValue}
+                      onChange={(event) => setEditorInputValue(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Escape') {
+                          event.preventDefault();
+                          setEditorInputMode(null);
+                          setEditorInputValue('');
+                        }
+                      }}
+                    />
+                    <button type="submit" aria-label="Apply" disabled={!editorInputValue.trim()}><Plus size={14} /></button>
+                  </form>
+                )}
                 <span className="notes-panel__editor-reference">{currentVerseRef}</span>
                 <div className="notes-panel__more">
                   <button
@@ -870,6 +1026,18 @@ export function NotesPanel({ tabId, state, setState }: PanelProps): React.JSX.El
                   )}
                 </div>
               </div>
+              {noteTags.length > 0 && (
+                <div className="notes-panel__tags" aria-label="Note tags">
+                  {noteTags.map((tag) => (
+                    <span key={tag.id} className="notes-panel__tag" style={tag.colour ? { borderColor: tag.colour } : undefined}>
+                      {tag.name}
+                      <button type="button" aria-label={`Remove ${tag.name} tag`} onClick={() => removeNoteTag(tag.id)}>
+                        <X size={11} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
               <div className="notes-panel__anchors">
                 <button
                   type="button"

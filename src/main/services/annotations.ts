@@ -4,12 +4,19 @@ import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import Database from 'better-sqlite3';
 import type {
+  BookmarkRecord,
+  CreateBookmarkRequest,
   CreateHighlightRequest,
   CreateNoteRequest,
   CreateNotebookRequest,
+  CreateTagRequest,
   HighlightRecord,
   NotebookRecord,
   NoteRecord,
+  ReadingPositionRecord,
+  TagRecord,
+  TagLinkRequest,
+  TagsForTargetRequest,
 } from '@shared/ipc/contracts.js';
 
 /**
@@ -64,6 +71,24 @@ function open(): Database.Database {
       resource_id TEXT, created_at TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_highlight_range ON highlight(start_key, end_key);
+    CREATE TABLE IF NOT EXISTS bookmark (
+      id TEXT PRIMARY KEY, label TEXT, verse_key INTEGER NOT NULL,
+      resource_id TEXT, created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_bookmark_verse ON bookmark(verse_key);
+    CREATE TABLE IF NOT EXISTS tag (
+      id TEXT PRIMARY KEY, name TEXT UNIQUE NOT NULL, colour TEXT
+    );
+    CREATE TABLE IF NOT EXISTS tag_link (
+      tag_id TEXT NOT NULL REFERENCES tag(id) ON DELETE CASCADE,
+      target_kind TEXT NOT NULL CHECK(target_kind IN ('note', 'highlight', 'bookmark')),
+      target_id TEXT NOT NULL,
+      PRIMARY KEY (tag_id, target_kind, target_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_tag_link_target ON tag_link(target_kind, target_id);
+    CREATE TABLE IF NOT EXISTS reading_position (
+      resource_id TEXT PRIMARY KEY, verse_key INTEGER NOT NULL, updated_at TEXT NOT NULL
+    );
   `);
 
   const now = new Date().toISOString();
@@ -169,6 +194,72 @@ export function listHighlights(startKey: number, endKey: number): HighlightRecor
     colour: row.colour,
     style: row.style === 'text' ? 'text' : 'fill',
   }));
+}
+
+export function createBookmark(request: CreateBookmarkRequest): BookmarkRecord {
+  const id = randomUUID();
+  const createdAt = new Date().toISOString();
+  open()
+    .prepare('INSERT INTO bookmark (id, label, verse_key, resource_id, created_at) VALUES (?, ?, ?, ?, ?)')
+    .run(id, request.label, request.verseKey, request.resourceId, createdAt);
+  return { id, label: request.label, verseKey: request.verseKey, resourceId: request.resourceId, createdAt };
+}
+
+export function listBookmarks(): BookmarkRecord[] {
+  const rows = open()
+    .prepare('SELECT id, label, verse_key AS verseKey, resource_id AS resourceId, created_at AS createdAt FROM bookmark ORDER BY created_at DESC')
+    .all() as BookmarkRecord[];
+  return rows;
+}
+
+export function deleteBookmark(id: string): void {
+  open().prepare('DELETE FROM bookmark WHERE id = ?').run(id);
+}
+
+export function setReadingPosition(resourceId: string, verseKey: number): ReadingPositionRecord {
+  const updatedAt = new Date().toISOString();
+  open()
+    .prepare(`INSERT INTO reading_position (resource_id, verse_key, updated_at) VALUES (?, ?, ?)
+      ON CONFLICT(resource_id) DO UPDATE SET verse_key = excluded.verse_key, updated_at = excluded.updated_at`)
+    .run(resourceId, verseKey, updatedAt);
+  return { resourceId, verseKey, updatedAt };
+}
+
+export function getReadingPosition(resourceId: string): ReadingPositionRecord | null {
+  return (open()
+    .prepare('SELECT resource_id AS resourceId, verse_key AS verseKey, updated_at AS updatedAt FROM reading_position WHERE resource_id = ?')
+    .get(resourceId) as ReadingPositionRecord | undefined) ?? null;
+}
+
+export function listTags(): TagRecord[] {
+  return open().prepare('SELECT id, name, colour FROM tag ORDER BY name COLLATE NOCASE').all() as TagRecord[];
+}
+
+export function createTag(request: CreateTagRequest): TagRecord {
+  const database = open();
+  const existing = database.prepare('SELECT id, name, colour FROM tag WHERE name = ? COLLATE NOCASE').get(request.name) as TagRecord | undefined;
+  if (existing) return existing;
+  const tag = { id: randomUUID(), name: request.name, colour: request.colour };
+  database.prepare('INSERT INTO tag (id, name, colour) VALUES (?, ?, ?)').run(tag.id, tag.name, tag.colour);
+  return tag;
+}
+
+export function addTagLink(request: TagLinkRequest): void {
+  open().prepare('INSERT OR IGNORE INTO tag_link (tag_id, target_kind, target_id) VALUES (?, ?, ?)')
+    .run(request.tagId, request.targetKind, request.targetId);
+}
+
+export function deleteTagLink(request: TagLinkRequest): void {
+  open().prepare('DELETE FROM tag_link WHERE tag_id = ? AND target_kind = ? AND target_id = ?')
+    .run(request.tagId, request.targetKind, request.targetId);
+}
+
+export function listTagsForTarget(request: TagsForTargetRequest): TagRecord[] {
+  return open()
+    .prepare(`SELECT tag.id, tag.name, tag.colour FROM tag
+      INNER JOIN tag_link ON tag_link.tag_id = tag.id
+      WHERE tag_link.target_kind = ? AND tag_link.target_id = ? ORDER BY tag.name COLLATE NOCASE`)
+    .all(request.targetKind, request.targetId) as TagRecord[];
 }
 
 export function listNotes(startKey?: number, endKey?: number): NoteRecord[] {
@@ -429,6 +520,7 @@ async function renderPdf(html: string): Promise<string> {
 
 function htmlToMarkdown(html: string): string {
   return html
+    .replace(/<span[^>]*data-versescape-reference="([^"]+)"[^>]*>.*?<\/span>/giu, '[[ref:$1]]')
     .replace(/<h1[^>]*>(.*?)<\/h1>/giu, '# $1\n\n')
     .replace(/<h([2-6])[^>]*>(.*?)<\/h\1>/giu, '## $2\n\n')
     .replace(/<(strong|b)>(.*?)<\/(strong|b)>/giu, '**$2**')

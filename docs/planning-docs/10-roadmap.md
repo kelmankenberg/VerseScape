@@ -81,7 +81,9 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 - Highlights: selection → colour, margin indicators, persistence
 - Selection context menu (copy with citation, note, highlight, search)
 - Export note/notebook to Markdown, HTML and PDF
-- **Remaining:** TipTap `ref` nodes with `[[ref:BOOK.C.V]]` syntax and hierarchical notebook tree
+- **Remaining:** redesign and implement Personal Commentary as an optional,
+  resource-like canonical commentary reader; see
+  [14-personal-commentary-redesign.md](14-personal-commentary-redesign.md).
 - **Exit:** FR-NT-01..12
 
 ## M6 — Library and resources
@@ -94,8 +96,8 @@ Sequenced by dependency, not by date. Each milestone ends with something runnabl
 - Commentary continuous reading: automatically traverse previous/next chapter
   coverage with stable prepend anchoring, matching Bible-panel behavior (D-30)
 - Commentary follows its sync set alongside Bible panels
-- Personal commentaries listed in the Library and exportable as `.vsres`
-  (FR-NT-13)
+- Personal commentaries listed in the Library and exportable/importable as XML,
+  with Markdown/HTML/PDF exports (FR-NT-13)
 - Configurable library location with move-and-rollback migration, plus the
   unavailable-path degraded state (FR-LB-08/09)
 - **Exit:** FR-LB-01..09

@@ -1,10 +1,12 @@
 import type {
   AppInfo,
+  BookmarkRecord,
   ChapterData,
   ChapterRequest,
   ConcordanceRequest,
   CreateHighlightRequest,
   CreateNoteRequest,
+  CreateBookmarkRequest,
   HighlightRecord,
   LexiconEntry,
   ListHighlightsRequest,
@@ -15,16 +17,23 @@ import type {
   NoteIdRequest,
   UpdateNoteRequest,
   CreateNotebookRequest,
+  CreateTagRequest,
   ExportNoteRequest,
   ExportNotebookRequest,
   NotebookRecord,
   CrossReference,
   CrossReferenceRequest,
   NoteRecord,
+  ReadingPositionRecord,
+  ReadingPositionRequest,
   ResourceSummary,
+  ResourceIdRequest,
   SearchHit,
   SearchRequest,
   WindowState,
+  TagLinkRequest,
+  TagRecord,
+  TagsForTargetRequest,
 } from './ipc/contracts.js';
 import type { AppSettings, SettingsPatch } from './settings.js';
 import type { Workspace } from './workspace/types.js';
@@ -61,6 +70,16 @@ export interface VerseScapeBridge {
     createNote(request: CreateNoteRequest): Promise<IpcResult<NoteRecord>>;
     createHighlight(request: CreateHighlightRequest): Promise<IpcResult<HighlightRecord>>;
     listHighlights(request: ListHighlightsRequest): Promise<IpcResult<HighlightRecord[]>>;
+    createBookmark(request: CreateBookmarkRequest): Promise<IpcResult<BookmarkRecord>>;
+    listBookmarks(): Promise<IpcResult<BookmarkRecord[]>>;
+    deleteBookmark(request: NoteIdRequest): Promise<IpcResult<null>>;
+    setReadingPosition(request: ReadingPositionRequest): Promise<IpcResult<ReadingPositionRecord>>;
+    getReadingPosition(request: ResourceIdRequest): Promise<IpcResult<ReadingPositionRecord | null>>;
+    listTags(): Promise<IpcResult<TagRecord[]>>;
+    createTag(request: CreateTagRequest): Promise<IpcResult<TagRecord>>;
+    addTagLink(request: TagLinkRequest): Promise<IpcResult<null>>;
+    deleteTagLink(request: TagLinkRequest): Promise<IpcResult<null>>;
+    listTagsForTarget(request: TagsForTargetRequest): Promise<IpcResult<TagRecord[]>>;
     listNotes(request: ListNotesRequest): Promise<IpcResult<NoteRecord[]>>;
     listNoteAnchors(request: NoteIdRequest): Promise<IpcResult<NoteAnchorRecord[]>>;
     addNoteAnchor(request: CreateNoteAnchorRequest): Promise<IpcResult<NoteAnchorRecord>>;

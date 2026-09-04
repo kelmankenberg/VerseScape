@@ -3,6 +3,7 @@ import { IpcChannels, IpcEvents } from '@shared/ipc/channels.js';
 import type { VerseScapeBridge } from '@shared/bridge.js';
 import type {
   AppInfo,
+  BookmarkRecord,
   ChapterData,
   CrossReference,
   HighlightRecord,
@@ -11,8 +12,10 @@ import type {
   NoteAnchorRecord,
   NotebookRecord,
   ResourceSummary,
+  ReadingPositionRecord,
   SearchHit,
   WindowState,
+  TagRecord,
 } from '@shared/ipc/contracts.js';
 import type { AppSettings } from '@shared/settings.js';
 import type { Workspace } from '@shared/workspace/types.js';
@@ -74,6 +77,22 @@ const bridge: VerseScapeBridge = {
       ipcRenderer.invoke(IpcChannels.annotationsListHighlights, request) as Promise<
         IpcResult<HighlightRecord[]>
       >,
+    createBookmark: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsCreateBookmark, request) as Promise<IpcResult<BookmarkRecord>>,
+    listBookmarks: () =>
+      ipcRenderer.invoke(IpcChannels.annotationsListBookmarks) as Promise<IpcResult<BookmarkRecord[]>>,
+    deleteBookmark: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsDeleteBookmark, request) as Promise<IpcResult<null>>,
+    setReadingPosition: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsSetReadingPosition, request) as Promise<IpcResult<ReadingPositionRecord>>,
+    getReadingPosition: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsGetReadingPosition, request) as Promise<IpcResult<ReadingPositionRecord | null>>,
+    listTags: () => ipcRenderer.invoke(IpcChannels.annotationsListTags) as Promise<IpcResult<TagRecord[]>>,
+    createTag: (request) => ipcRenderer.invoke(IpcChannels.annotationsCreateTag, request) as Promise<IpcResult<TagRecord>>,
+    addTagLink: (request) => ipcRenderer.invoke(IpcChannels.annotationsAddTagLink, request) as Promise<IpcResult<null>>,
+    deleteTagLink: (request) => ipcRenderer.invoke(IpcChannels.annotationsDeleteTagLink, request) as Promise<IpcResult<null>>,
+    listTagsForTarget: (request) =>
+      ipcRenderer.invoke(IpcChannels.annotationsListTagsForTarget, request) as Promise<IpcResult<TagRecord[]>>,
     listNotes: (request) =>
       ipcRenderer.invoke(IpcChannels.annotationsListNotes, request) as Promise<
         IpcResult<NoteRecord[]>

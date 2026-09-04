@@ -15,6 +15,7 @@ Settled items are struck through and recorded in [13-decision-log.md](13-decisio
 | A6     | Is macOS a future target?                                | Default: keep the code portable, do not build/test it.                                   |
 | A7     | **New** — Which open-source licence?                     | **Resolved D-08:** GPL-3.0-or-later.                                                     |
 | A8     | **New** — Do you want public contributions from day one? | Drives CONTRIBUTING.md, issue templates, code of conduct, and how strict the PR gate is. |
+| ~~PC-01..10~~ | ~~How should a Personal Commentary differ from Notes while remaining a user-authored commentary resource?~~ | **Resolved D-33:** see [14-personal-commentary-redesign.md](14-personal-commentary-redesign.md). |
 
 ## B. Shell and window chrome
 

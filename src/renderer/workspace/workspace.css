@@ -2361,3 +2361,176 @@ background: var(--vs-bg-surface);
 .notes-panel__outline-collapse:focus-visible {
   outline: 1px solid var(--vs-accent);
 }
+
+.notes-panel__reference {
+  color: var(--vs-accent);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.notes-panel__editor-inline-input {
+  display: flex;
+  align-items: center;
+  height: 26px;
+  margin-left: 4px;
+  border: 1px solid var(--vs-border);
+}
+
+.notes-panel__editor-inline-input input {
+  width: 118px;
+  min-width: 0;
+  height: 24px;
+  padding: 2px 6px;
+  border: 0;
+  background: var(--vs-bg);
+  color: var(--vs-fg);
+  font: inherit;
+  font-size: 11px;
+  outline: none;
+}
+
+.notes-panel__editor-inline-input button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--vs-border);
+  background: transparent;
+  color: var(--vs-fg-muted);
+  cursor: pointer;
+}
+
+.notes-panel__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px var(--vs-space-3);
+  border-bottom: 1px solid var(--vs-border);
+}
+
+.notes-panel__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 5px;
+  border: 1px solid var(--vs-border);
+  border-radius: 3px;
+  color: var(--vs-fg-muted);
+  font-size: 10px;
+}
+
+.notes-panel__tag button {
+  display: flex;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.notes-page__notebook {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+}
+
+.notes-page__notebook-select,
+.notes-page__bookmark > button:first-child {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 28px;
+  padding: 4px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--vs-fg);
+  text-align: left;
+  cursor: pointer;
+}
+
+.notes-page__notebook-select:hover,
+.notes-page__bookmark > button:first-child:hover {
+  background: color-mix(in srgb, var(--vs-accent) 8%, transparent);
+}
+
+.notes-page__notebook-toggle,
+.notes-page__notebook-spacer {
+  display: flex;
+  flex: 0 0 20px;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--vs-fg-muted);
+}
+
+.notes-page__notebook-toggle { cursor: pointer; }
+
+.notes-page__create-notebook {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+  border: 1px solid var(--vs-border);
+  background: var(--vs-bg-surface);
+}
+
+.notes-page__create-notebook input {
+  width: 140px;
+  min-width: 0;
+  height: 26px;
+  padding: 3px 7px;
+  border: 0;
+  background: transparent;
+  color: var(--vs-fg);
+  font: inherit;
+  font-size: 11px;
+  outline: none;
+}
+
+.notes-page__create-notebook button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--vs-border);
+  background: transparent;
+  color: var(--vs-fg-muted);
+  cursor: pointer;
+}
+
+.notes-page__create-notebook button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.notes-page__bookmark {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+}
+
+.notes-page__bookmark > button:last-child {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--vs-fg-muted);
+  cursor: pointer;
+}

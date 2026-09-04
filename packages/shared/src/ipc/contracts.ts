@@ -223,6 +223,61 @@ export const listHighlightsRequest = z.object({
 });
 export type ListHighlightsRequest = z.infer<typeof listHighlightsRequest>;
 
+export const bookmarkRecord = z.object({
+  id: z.string().min(1),
+  label: z.string().nullable(),
+  verseKey: z.number().int().positive(),
+  resourceId: resourceSummary.shape.id.nullable(),
+  createdAt: z.string().min(1),
+});
+export type BookmarkRecord = z.infer<typeof bookmarkRecord>;
+
+export const createBookmarkRequest = z.object({
+  label: z.string().trim().max(500).nullable().default(null),
+  verseKey: z.number().int().positive(),
+  resourceId: resourceSummary.shape.id.nullable().default(null),
+});
+export type CreateBookmarkRequest = z.infer<typeof createBookmarkRequest>;
+
+export const readingPositionRecord = z.object({
+  resourceId: resourceSummary.shape.id,
+  verseKey: z.number().int().positive(),
+  updatedAt: z.string().min(1),
+});
+export type ReadingPositionRecord = z.infer<typeof readingPositionRecord>;
+
+export const readingPositionRequest = z.object({
+  resourceId: resourceSummary.shape.id,
+  verseKey: z.number().int().positive(),
+});
+export type ReadingPositionRequest = z.infer<typeof readingPositionRequest>;
+
+export const resourceIdRequest = z.object({ resourceId: resourceSummary.shape.id });
+export type ResourceIdRequest = z.infer<typeof resourceIdRequest>;
+
+export const tagRecord = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  colour: z.string().nullable(),
+});
+export type TagRecord = z.infer<typeof tagRecord>;
+
+export const createTagRequest = z.object({
+  name: z.string().trim().min(1).max(100),
+  colour: z.string().regex(/^#[0-9a-fA-F]{6}$/u).nullable().default(null),
+});
+export type CreateTagRequest = z.infer<typeof createTagRequest>;
+
+export const tagLinkRequest = z.object({
+  tagId: z.string().min(1),
+  targetKind: z.enum(['note', 'highlight', 'bookmark']),
+  targetId: z.string().min(1),
+});
+export type TagLinkRequest = z.infer<typeof tagLinkRequest>;
+
+export const tagsForTargetRequest = tagLinkRequest.omit({ tagId: true });
+export type TagsForTargetRequest = z.infer<typeof tagsForTargetRequest>;
+
 export const listNotesRequest = z.object({
   start: z.number().int().positive().optional(),
   end: z.number().int().positive().optional(),
@@ -285,6 +340,16 @@ export const contracts = {
     request: listHighlightsRequest,
     response: z.array(highlightRecord),
   },
+  'annotations:create-bookmark': { request: createBookmarkRequest, response: bookmarkRecord },
+  'annotations:list-bookmarks': { request: emptyRequest, response: z.array(bookmarkRecord) },
+  'annotations:delete-bookmark': { request: noteIdRequest, response: z.null() },
+  'annotations:set-reading-position': { request: readingPositionRequest, response: readingPositionRecord },
+  'annotations:get-reading-position': { request: resourceIdRequest, response: readingPositionRecord.nullable() },
+  'annotations:list-tags': { request: emptyRequest, response: z.array(tagRecord) },
+  'annotations:create-tag': { request: createTagRequest, response: tagRecord },
+  'annotations:add-tag-link': { request: tagLinkRequest, response: z.null() },
+  'annotations:delete-tag-link': { request: tagLinkRequest, response: z.null() },
+  'annotations:list-tags-for-target': { request: tagsForTargetRequest, response: z.array(tagRecord) },
   'annotations:list-notes': {
     request: listNotesRequest,
     response: z.array(noteRecord),

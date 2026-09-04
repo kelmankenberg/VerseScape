@@ -94,7 +94,7 @@ See [05-workspace-panel-system.md](05-workspace-panel-system.md) for the model.
 | FR-NT-10 | M   | A personal commentary opens in a commentary panel alongside published commentaries, appears in the Library, and participates in sync sets and verse sync exactly as a published resource does. |
 | FR-NT-11 | M   | Entries may anchor to a single verse or an arbitrary verse range, and more than one entry may cover the same verse. The panel shows every entry covering the current reference, in canonical order. |
 | FR-NT-12 | M   | Creating or editing an entry is possible directly from the commentary panel and from a Bible panel's selection context menu.                       |
-| FR-NT-13 | S   | A personal commentary can be exported as a whole to Markdown/HTML/PDF, and shared as a `.vsres` resource file others can import.                    |
+| FR-NT-13 | S   | A personal commentary can be exported as a whole to XML, Markdown, HTML, or PDF; XML is the portable import/export format.                           |
 | FR-NT-14 | M   | Creating a note from the selection toolbar (FR-RD-06) anchors it to the containing verse, not the word, and pre-fills the note's title from the selected text; the user may edit or clear it. |
 
 ## 6. Library and resources

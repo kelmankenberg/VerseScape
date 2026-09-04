@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Bookmark, ChevronDown, ChevronUp, SearchIcon, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, SearchIcon, X } from 'lucide-react';
 import {
   formatReference,
   fromVerseKey,
@@ -26,6 +26,7 @@ import { CrossReferencesButton } from './CrossReferencesButton.js';
 import { DisplayOptionsButton } from './DisplayOptionsButton.js';
 import { SelectionToolbar } from './SelectionToolbar.js';
 import type { BibleSelection } from './SelectionToolbar.js';
+import { SelectionContextMenu } from './SelectionContextMenu.js';
 import { stripToPlainText, findAllOffsets } from './text-utils.js';
 import { useBibleChapterWindow } from './use-bible-chapter-window.js';
 import type { PanelProps } from './registry.js';
@@ -95,7 +96,6 @@ function plainOffsetInVerse(verseElement: HTMLElement, node: Node, domOffset: nu
 export function SamplePanel({ tabId, state, setState, visible }: PanelProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const initialScrollKey = useRef('');
-  const restoredReadingPositionResource = useRef<string | null>(null);
   const pendingRestore = useRef<{ verseKey: number; offset: number } | null>(null);
   const positioningTarget = useRef<number | null>(null);
   const suppressWindowShiftUntil = useRef(0);
@@ -107,7 +107,7 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
   const [resourceError, setResourceError] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
   const [selection, setSelection] = useState<BibleSelection | null>(null);
-  const [bookmarked, setBookmarked] = useState(false);
+  const [contextMenuSelection, setContextMenuSelection] = useState<BibleSelection | null>(null);
   const [contentsOpen, setContentsOpen] = useState(true);
   const [expandedBooks, setExpandedBooks] = useState<Set<string>>(new Set());
   const globalDisplayOptions = useSettings((store) => store.settings.reading);
@@ -126,19 +126,6 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
   const parsed = parseReference(reference);
   const anchor = parsed.ok ? parsed.range.start : { book: 'JHN', chapter: 3, verse: 1 };
   const book = getBook(anchor.book);
-  useEffect(() => {
-    void window.versescape.annotations.setReadingPosition({ resourceId, verseKey: toVerseKey(anchor) });
-  }, [anchor, resourceId]);
-  useEffect(() => {
-    if (restoredReadingPositionResource.current === resourceId) return;
-    restoredReadingPositionResource.current = resourceId;
-    void window.versescape.annotations.getReadingPosition({ resourceId }).then((result) => {
-      if (!result.ok || !result.data) return;
-      const target = fromVerseKey(result.data.verseKey);
-      if (!target) return;
-      navigateTab(tabId, result.data.verseKey, formatReference({ start: target, end: target }));
-    });
-  }, [navigateTab, resourceId, tabId]);
   useEffect(() => {
     if (visible) rememberBibleTab(tabId);
   }, [rememberBibleTab, tabId, visible]);
@@ -633,14 +620,42 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
     return nearest;
   }
 
-  const addBookmark = (): void => {
-    if (bookmarked) return;
-    void window.versescape.annotations.createBookmark({
-      label: formatReference({ start: anchor, end: anchor }),
-      verseKey: toVerseKey(anchor),
-      resourceId,
-    }).then((result) => {
-      if (result.ok) setBookmarked(true);
+  const captureContextMenu = (event: React.MouseEvent<HTMLDivElement>): void => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+      // If there's no selection, allow the context menu to proceed naturally
+      return;
+    }
+    event.preventDefault();
+    const range = selection.getRangeAt(0);
+    const text = range.toString().trim();
+    const common = range.commonAncestorContainer;
+    const element = common instanceof Element ? common : common.parentElement;
+    const verse = element?.closest<HTMLElement>('[data-verse]');
+    const verseKey = Number(verse?.dataset['verse']);
+    if (!text || !verse || !Number.isInteger(verseKey)) return;
+    const source = verses.find((item) => item.key === verseKey);
+    if (!source) return;
+    const selectedVerseKeys = verses
+      .filter((item) => {
+        const element = document.querySelector<HTMLElement>(`[data-verse="${item.key}"]`);
+        return element ? range.intersectsNode(element) : false;
+      })
+      .map((item) => item.key);
+    const startKey = Math.min(verseKey, ...(selectedVerseKeys.length > 0 ? selectedVerseKeys : [verseKey]));
+    const endKey = Math.max(verseKey, ...(selectedVerseKeys.length > 0 ? selectedVerseKeys : [verseKey]));
+    setContextMenuSelection({
+      text,
+      verseKey,
+      verseText: source.text,
+      startOffset: plainOffsetInVerse(verse, range.startContainer, range.startOffset),
+      endOffset: plainOffsetInVerse(verse, range.endContainer, range.endOffset),
+      selectionStartKey: startKey,
+      selectionEndKey: endKey,
+      reference: formatReference({ start: fromVerseKey(verseKey)!, end: fromVerseKey(verseKey)! }),
+      translation:
+        resources.find((resource) => resource.id === resourceId)?.abbreviation ?? resourceId,
+      rect: range.getBoundingClientRect(),
     });
   };
 
@@ -669,16 +684,6 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
           ))}
         </select>
         <div className="bible-panel__toolbar-actions">
-          <button
-            type="button"
-            className="bible-panel__find-toggle"
-            aria-label="Bookmark current reference"
-            aria-pressed={bookmarked}
-            title="Bookmark current reference"
-            onClick={addBookmark}
-          >
-            <Bookmark size={14} aria-hidden />
-          </button>
           <button
             type="button"
             className="bible-panel__find-toggle"
@@ -851,6 +856,7 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
             className="bible-panel__scroll"
             data-testid="bible-scroll"
             onMouseUp={captureSelection}
+            onContextMenu={captureContextMenu}
             onScroll={() => setSelection(null)}
           >
           <div
@@ -917,7 +923,6 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
                     }
                   >
                     <span className="bible-panel__number">{verse.verse}</span>
-                    {((highlightsByVerse.get(verse.key) ?? []).length > 0 || (findOpen ? (findHighlightsByVerse.get(verse.key) ?? []).length > 0 : false)) && <span className="bible-panel__highlight-indicator" title={`${highlightsByVerse.get(verse.key)?.length ?? 0} highlight(s)`} />}
                     {displayOptions.showCrossReferences && (
                       <CrossReferencesButton verseKey={verse.key} onNavigate={navigateToVerse} />
                     )}
@@ -996,6 +1001,64 @@ export function SamplePanel({ tabId, state, setState, visible }: PanelProps): Re
               startBook: '',
               endBook: '',
             });
+          }}
+        />
+      )}
+      {contextMenuSelection && (
+        <SelectionContextMenu
+          selection={contextMenuSelection}
+          onDismiss={() => setContextMenuSelection(null)}
+          onCreateNote={(title) => {
+            openPanel('notes', undefined, {
+              verseKey: contextMenuSelection.verseKey,
+              resourceId,
+              ...(contextMenuSelection.selectionStartKey !== undefined && contextMenuSelection.selectionEndKey !== undefined
+                ? { selectionStartKey: contextMenuSelection.selectionStartKey, selectionEndKey: contextMenuSelection.selectionEndKey }
+                : {}),
+            });
+            void window.versescape.annotations
+              .createNote({
+                verseKey: contextMenuSelection.verseKey,
+                title,
+                resourceId,
+              })
+              .then((result) => {
+                if (result.ok) {
+                  openPanel('notes', undefined, {
+                    verseKey: contextMenuSelection.verseKey,
+                    noteId: result.data.id,
+                    resourceId,
+                    ...(contextMenuSelection.selectionStartKey !== undefined && contextMenuSelection.selectionEndKey !== undefined
+                      ? { selectionStartKey: contextMenuSelection.selectionStartKey, selectionEndKey: contextMenuSelection.selectionEndKey }
+                      : {}),
+                  });
+                }
+              });
+            setContextMenuSelection(null);
+          }}
+          onCreateHighlight={(colour, style) => {
+            void window.versescape.annotations
+              .createHighlight({
+                verseKey: contextMenuSelection.verseKey,
+                startOffset: contextMenuSelection.startOffset,
+                endOffset: contextMenuSelection.endOffset,
+                colour,
+                style,
+              })
+              .then((result) => {
+                if (result.ok) setHighlights((previous) => [...previous, result.data]);
+              });
+            setContextMenuSelection(null);
+          }}
+          onSearch={(query) => {
+            openPanel('search-results', undefined, {
+              query,
+              resourceIds: resources.map((resource) => resource.id),
+              testament: '',
+              startBook: '',
+              endBook: '',
+            });
+            setContextMenuSelection(null);
           }}
         />
       )}
